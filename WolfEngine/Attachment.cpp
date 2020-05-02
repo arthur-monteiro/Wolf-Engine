@@ -1,8 +1,9 @@
 #include "Attachment.h"
 
-Wolf::Attachment::Attachment(VkFormat format, VkSampleCountFlagBits sampleCount, VkImageLayout finalLayout,
+Wolf::Attachment::Attachment(VkExtent2D extent, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageLayout finalLayout,
                              VkAttachmentStoreOp storeOperation, VkImageUsageFlags usageType)
 {
+	this->extent = extent;
 	this->format = format;
 	this->sampleCount = sampleCount;
 	this->finalLayout = finalLayout;

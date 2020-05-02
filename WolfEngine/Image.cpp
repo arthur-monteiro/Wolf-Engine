@@ -25,7 +25,7 @@ void Wolf::Image::createFromImage(VkDevice device, VkImage image, VkFormat forma
 	m_mipLevels = 1;
 }
 
-void Wolf::Image::createFromPixels(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, VkExtent3D extent, VkFormat format,
+void Wolf::Image::createFromPixels(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format,
                                    unsigned char* pixels)
 {
 	//m_imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
@@ -63,7 +63,7 @@ void Wolf::Image::createFromPixels(VkDevice device, VkPhysicalDevice physicalDev
 }
 
 void Wolf::Image::createFromBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool,
-                                   VkQueue graphicsQueue, VkExtent3D extent, VkFormat format, VkBuffer buffer)
+	Queue graphicsQueue, VkExtent3D extent, VkFormat format, VkBuffer buffer)
 {
 	m_imageFormat = format;
 
@@ -84,7 +84,7 @@ void Wolf::Image::createFromBuffer(VkDevice device, VkPhysicalDevice physicalDev
 	m_imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
-void Wolf::Image::createFromFile(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::string filename)
+void Wolf::Image::createFromFile(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::string filename)
 {
 	int texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -103,7 +103,7 @@ void Wolf::Image::createFromFile(VkDevice device, VkPhysicalDevice physicalDevic
 	m_imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
 }
 
-void Wolf::Image::createCubeMapFromImages(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::array<Image*, 6> images)
+void Wolf::Image::createCubeMapFromImages(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::array<Image*, 6> images)
 {
 	m_mipLevels = images[0]->getMipLevels();
 	m_imageFormat = images[0]->getFormat();
@@ -129,7 +129,7 @@ void Wolf::Image::createCubeMapFromImages(VkDevice device, VkPhysicalDevice phys
 	m_imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
-void Wolf::Image::setImageLayout(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage)
+void Wolf::Image::setImageLayout(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage)
 {
 	transitionImageLayout(device, commandPool, graphicsQueue, m_image, m_imageFormat, m_imageLayout, newLayout, m_mipLevels, 1, sourceStage, destinationStage);
 	m_imageLayout = newLayout;
@@ -201,7 +201,7 @@ VkImageView Wolf::Image::createImageView(VkDevice device, VkImage image, VkForma
 	return imageView;
 }
 
-void Wolf::Image::transitionImageLayout(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
+void Wolf::Image::transitionImageLayout(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
                                         uint32_t mipLevels, uint32_t arrayLayers, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage)
 {
 	for (uint32_t arrayLayer = 0; arrayLayer < arrayLayers; arrayLayer++)
@@ -215,7 +215,7 @@ void Wolf::Image::transitionImageLayout(VkDevice device, VkCommandPool commandPo
 	}
 }
 
-void Wolf::Image::copyBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t baseArrayLayer)
+void Wolf::Image::copyBufferToImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t baseArrayLayer)
 {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
 
@@ -249,7 +249,7 @@ void Wolf::Image::copyBufferToImage(VkDevice device, VkCommandPool commandPool, 
 	endSingleTimeCommands(device, graphicsQueue, commandBuffer, commandPool);
 }
 
-void Wolf::Image::generateMipmaps(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, VkImage image, VkFormat imageFormat, int32_t texWidth,
+void Wolf::Image::generateMipmaps(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkImage image, VkFormat imageFormat, int32_t texWidth,
                                   int32_t texHeight, uint32_t mipLevels, uint32_t baseArrayLayer)
 {
 	VkFormatProperties formatProperties;

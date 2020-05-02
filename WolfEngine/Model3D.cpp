@@ -17,31 +17,26 @@ int Wolf::Model3D::addMeshFromVertices(void* vertices, uint32_t vertexCount, siz
 	return -1;
 }
 
-void Wolf::Model3D::loadObj(std::string filename, std::string mtlFolder)
+void Wolf::Model3D::loadObj(ModelLoadingInfo modelLoadingInfo)
 {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 	std::string err, warn;
 
-	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename.c_str(), mtlFolder.c_str()))
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelLoadingInfo.filename.c_str(), modelLoadingInfo.mtlFolder.c_str()))
 		throw std::runtime_error(err);
 
 #ifndef NDEBUG
 	if (!err.empty())
-		std::cout << "[Loading objet file] Error : " << err << " for " << filename << " !" << std::endl;
+		std::cout << "[Loading objet file] Error : " << err << " for " << modelLoadingInfo.filename << " !" << std::endl;
 	if (!warn.empty())
-		std::cout << "[Loading objet file]  Warning : " << warn << " for " << filename << " !" << std::endl;
+		std::cout << "[Loading objet file]  Warning : " << warn << " for " << modelLoadingInfo.filename << " !" << std::endl;
 #endif // !NDEBUG
 
-	//m_meshes.resize(materials.size());
-
 	std::unordered_map<Vertex3D, uint32_t> uniqueVertices = {};
-	//uniqueVertices.resize(materials.size());
 	std::vector<Vertex3D> vertices;
-	//vertices.resize(materials.size());
 	std::vector<uint32_t> indices;
-	//indices.resize(materials.size());
 
 	std::vector<uint32_t> lastIndices;
 
@@ -54,8 +49,8 @@ void Wolf::Model3D::loadObj(std::string filename, std::string mtlFolder)
 
 			int materialID = shape.mesh.material_ids[numVertex / 3];
 
-			/*if (materialID < 0)
-				continue;*/
+			if (modelLoadingInfo.loadMaterials && materialID < 0)
+				continue;
 
 			vertex.pos =
 			{
@@ -70,15 +65,21 @@ void Wolf::Model3D::loadObj(std::string filename, std::string mtlFolder)
 					1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
 			};
 
-			/*vertex.normal =
+			if(attrib.normals.size() <= 3 * index.normal_index + 2)
+				vertex.normal = glm::vec3(0.0f, 1.0f, 0.0f);
+			else
 			{
-					attrib.normals[3 * index.normal_index + 0],
-					attrib.normals[3 * index.normal_index + 1],
-					attrib.normals[3 * index.normal_index + 2]
-			};*/
-			vertex.normal = glm::vec3(0.0f, 1.0f, 0.0f);
+				vertex.normal =
+				{
+						attrib.normals[3 * index.normal_index + 0],
+						attrib.normals[3 * index.normal_index + 1],
+						attrib.normals[3 * index.normal_index + 2]
+				};
+			}
 
-			vertex.materialID = 0; // shape.mesh.material_ids[numVertex / 3];
+			if(!modelLoadingInfo.loadMaterials)
+				vertex.materialID = 0;
+			else vertex.materialID = shape.mesh.material_ids[numVertex / 3];
 
 			if (uniqueVertices.count(vertex) == 0)
 			{
@@ -126,28 +127,21 @@ void Wolf::Model3D::loadObj(std::string filename, std::string mtlFolder)
 		tempTriangle[i % 3] = vertices[indices[i]];
 	}
 
-	/*for (int i(0); i < vertices.size(); ++i)
+	if(modelLoadingInfo.loadMaterials)
 	{
-		graphicsQueueMutex->lock();
+		m_images.resize(materials.size() * 5);
+		int indexTexture = 0;
+		for (int i(0); i < materials.size(); ++i)
+		{
+			m_images[indexTexture++].createFromFile(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].diffuse_texname, modelLoadingInfo.mtlFolder));
+			m_images[indexTexture++].createFromFile(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].bump_texname, modelLoadingInfo.mtlFolder));
+			m_images[indexTexture++].createFromFile(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].specular_highlight_texname, modelLoadingInfo.mtlFolder));
+			m_images[indexTexture++].createFromFile(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].ambient_texname, modelLoadingInfo.mtlFolder));
+			m_images[indexTexture++].createFromFile(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].ambient_texname, modelLoadingInfo.mtlFolder));
+		}
+	}
 
-		m_meshes[i].mesh.loadFromVertices(device, physicalDevice, commandPool, graphicsQueue, vertices[i], indices[i]);
-
-		m_meshes[i].textures[0].createFromFile(device, physicalDevice, commandPool, graphicsQueue,
-											   getTexName(materials[i].diffuse_texname, mtlFolder));
-		m_meshes[i].textures[1].createFromFile(device, physicalDevice, commandPool, graphicsQueue,
-											   getTexName(materials[i].bump_texname, mtlFolder));
-		m_meshes[i].textures[2].createFromFile(device, physicalDevice, commandPool, graphicsQueue,
-											   getTexName(materials[i].specular_highlight_texname, mtlFolder));
-		m_meshes[i].textures[3].createFromFile(device, physicalDevice, commandPool, graphicsQueue,
-											   getTexName(materials[i].ambient_texname, mtlFolder));
-		m_meshes[i].textures[4].createFromFile(device, physicalDevice, commandPool, graphicsQueue,
-											   getTexName(materials[i].ambient_texname, mtlFolder));
-
-		graphicsQueueMutex->unlock();
-
-		for(int j(0); j < 5; ++j)
-			m_meshes[i].textures[j].createSampler(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, static_cast<float>(m_meshes[i].textures[j].getMipLevels()), VK_FILTER_LINEAR);
-	}*/
+	m_sampler.initialize(VK_SAMPLER_ADDRESS_MODE_REPEAT, static_cast<float>(m_images[0].getMipLevels()), VK_FILTER_LINEAR);
 
 	//graphicsQueueMutex->lock();
 	Mesh<Vertex3D> mesh;

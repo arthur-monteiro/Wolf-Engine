@@ -1,6 +1,10 @@
 #pragma once
 
 #include "VulkanHelper.h"
+#include <algorithm>
+#include <set>
+#include <ostream>
+#include <iostream>
 
 std::vector<const char*> getRequiredExtensions()
 {
@@ -226,7 +230,7 @@ void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDeviceSize
 	vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }
 
-void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+void copyBuffer(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
 
@@ -257,7 +261,7 @@ VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPo
 	return commandBuffer;
 }
 
-void endSingleTimeCommands(VkDevice device, VkQueue graphicsQueue, VkCommandBuffer commandBuffer, VkCommandPool commandPool)
+void endSingleTimeCommands(VkDevice device, Queue graphicsQueue, VkCommandBuffer commandBuffer, VkCommandPool commandPool)
 {
 	vkEndCommandBuffer(commandBuffer);
 
@@ -266,8 +270,10 @@ void endSingleTimeCommands(VkDevice device, VkQueue graphicsQueue, VkCommandBuff
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
 
-	vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(graphicsQueue);
+	graphicsQueue.mutex->lock();
+	vkQueueSubmit(graphicsQueue.queue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(graphicsQueue.queue);
+	graphicsQueue.mutex->unlock();
 
 	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
@@ -315,7 +321,7 @@ VkPhysicalDeviceRayTracingPropertiesNV getPhysicalDeviceRayTracingProperties(VkP
 	return raytracingProperties;
 }
 
-void copyImage(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkImage source, VkImage dst, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t mipLevel)
+void copyImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage source, VkImage dst, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t mipLevel)
 {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
 

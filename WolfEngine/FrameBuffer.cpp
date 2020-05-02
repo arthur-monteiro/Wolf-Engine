@@ -40,7 +40,7 @@ bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDev
 
 	// Find result image
 	VkImageUsageFlagBits resultType = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-	int nbImage = 0;
+	unsigned int nbImage = 0;
 	for (int i(0); i < attachments.size(); ++i)
 	{
 		if (attachments[i].usageType == (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT))

@@ -15,7 +15,7 @@ namespace Wolf
 
 		VkImageUsageFlags usageType{};
 
-		Attachment(VkFormat format, VkSampleCountFlagBits sampleCount, VkImageLayout finalLayout,
+		Attachment(VkExtent2D extent, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageLayout finalLayout,
 		           VkAttachmentStoreOp storeOperation, VkImageUsageFlags usageType);
 		Attachment(): format(), sampleCount(), finalLayout(), storeOperation()
 		{

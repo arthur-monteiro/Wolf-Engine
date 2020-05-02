@@ -9,7 +9,7 @@ namespace Wolf
 	class Model2DTextured : public Wolf::Model
 	{
 	public:
-		Model2DTextured(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, InputVertexTemplate inputVertexTemplate) : Model(device, physicalDevice, commandPool, graphicsQueue, inputVertexTemplate) {};
+		Model2DTextured(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, InputVertexTemplate inputVertexTemplate) : Model(device, physicalDevice, commandPool, graphicsQueue, inputVertexTemplate) {};
 		~Model2DTextured();
 		
 		int addMeshFromVertices(void* vertices, uint32_t vertexCount, size_t vertexSize, std::vector<uint32_t> indices) override;

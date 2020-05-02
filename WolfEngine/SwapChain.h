@@ -15,7 +15,7 @@ namespace Wolf
 		~SwapChain();
 
 		uint32_t getCurrentImage(VkDevice device);
-		void present(VkQueue presentQueue, VkSemaphore waitSemaphore, uint32_t imageIndex);
+		void present(Queue presentQueue, VkSemaphore waitSemaphore, uint32_t imageIndex);
 		void recreate(VkSurfaceKHR surface, GLFWwindow* window);
 
 		void cleanup();

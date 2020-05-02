@@ -35,7 +35,7 @@ void Wolf::CommandBuffer::endCommandBuffer()
 		throw std::runtime_error("Error : end command buffer");
 }
 
-void Wolf::CommandBuffer::submit(VkDevice device, VkQueue queue, std::vector<Wolf::Semaphore*> waitSemaphores,
+void Wolf::CommandBuffer::submit(VkDevice device, Queue queue, std::vector<Wolf::Semaphore*> waitSemaphores,
 	std::vector<VkSemaphore> signalSemaphores)
 {
 	VkSubmitInfo submitInfo = {};
@@ -59,6 +59,11 @@ void Wolf::CommandBuffer::submit(VkDevice device, VkQueue queue, std::vector<Wol
 	submitInfo.pWaitSemaphores = semaphores.data();
 	submitInfo.pWaitDstStageMask = stages.data();
 
-	if (vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+	queue.mutex->lock();
+	if (vkQueueSubmit(queue.queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+	{
+		queue.mutex->unlock();
 		throw std::runtime_error("Error : submit to graphics queue");
+	}
+	queue.mutex->unlock();
 }

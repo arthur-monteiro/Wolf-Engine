@@ -12,6 +12,6 @@ namespace Wolf
 		VkDevice m_device = VK_NULL_HANDLE;
 		VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 		VkCommandPool m_commandPool = VK_NULL_HANDLE;
-		VkQueue m_graphicsQueue = VK_NULL_HANDLE;
+		Queue m_graphicsQueue = {};
 	};
 }

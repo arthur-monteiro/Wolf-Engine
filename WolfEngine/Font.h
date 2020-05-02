@@ -13,7 +13,7 @@ namespace Wolf
 	class Font : public VulkanElement
 	{
 	public:
-		Font(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue);
+		Font(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue);
 		~Font();
 
 		void setFont(int ySize, std::string path);

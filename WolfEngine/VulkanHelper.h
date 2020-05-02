@@ -4,10 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include <vector>
-#include <algorithm>
-#include <set>
-#include <string>
-#include <iostream>
+#include <mutex>
 
 struct QueueFamilyIndices
 {
@@ -34,6 +31,12 @@ struct HardwareCapabilities
 	VkDeviceSize VRAMSize = 0;
 };
 
+struct Queue
+{
+	VkQueue queue;
+	std::mutex* mutex;
+};
+
 std::vector<const char*> getRequiredExtensions();
 bool isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::vector<const char*> deviceExtensions, HardwareCapabilities& outHardwareCapabilities);
 QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
@@ -44,11 +47,11 @@ uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, Vk
 VkFormat findDepthFormat(VkPhysicalDevice physicalDevice);
 VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice physicalDevice);
 void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+void copyBuffer(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);
-void endSingleTimeCommands(VkDevice device, VkQueue graphicsQueue, VkCommandBuffer commandBuffer, VkCommandPool commandPool);
+void endSingleTimeCommands(VkDevice device, Queue graphicsQueue, VkCommandBuffer commandBuffer, VkCommandPool commandPool);
 VkCommandPool createCommandPool(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, uint32_t queueFamilyIndex);
 bool hasStencilComponent(VkFormat format);
 bool hasDepthComponent(VkFormat format);
 VkPhysicalDeviceRayTracingPropertiesNV getPhysicalDeviceRayTracingProperties(VkPhysicalDevice physicalDevice);
-void copyImage(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkImage source, VkImage dst, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t mipLevel);
+void copyImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage source, VkImage dst, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t mipLevel);

@@ -2,6 +2,8 @@
 
 #include "Mesh.h"
 #include "InputVertexTemplate.h"
+#include "Image.h"
+#include "Sampler.h"
 
 namespace Wolf
 {
@@ -13,20 +15,39 @@ namespace Wolf
 			InputVertexTemplate inputVertexTemplate;
 		};
 
-		Model(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, InputVertexTemplate inputVertexTemplate);		
+		Model(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, InputVertexTemplate inputVertexTemplate);
 		virtual ~Model();
 
 		virtual int addMeshFromVertices(void* vertices, uint32_t vertexCount, size_t vertexSize, std::vector<uint32_t> indices) { return -1; }
-		virtual void loadObj(std::string filename, std::string mtlFolder) {}
+
+		struct ModelLoadingInfo
+		{
+			// Files paths
+			std::string filename;
+			std::string mtlFolder;
+
+			// Default options
+			glm::vec3 defaultNormal = glm::vec3(0.0f, 1.0f, 0.0f);
+
+			// Material Options
+			bool loadMaterials = true;
+		};
+		virtual void loadObj(ModelLoadingInfo modelLoadingInfo) {}
 
 		virtual std::vector<VertexBuffer> getVertexBuffers() { return {}; }
+		virtual size_t getNumberOfImages() { return m_images.size(); }
+		virtual Sampler* getSampler() { return &m_sampler; }
+		virtual std::vector<Image*> getImages();
 		
 	protected:
 		VkDevice m_device;
 		VkPhysicalDevice m_physicalDevice;
 		VkCommandPool m_commandPool;
-		VkQueue m_graphicsQueue;
+		Queue m_graphicsQueue;
 
 		InputVertexTemplate m_inputVertexTemplate;
+
+		std::vector<Image> m_images;
+		Sampler m_sampler;
 	};
 }

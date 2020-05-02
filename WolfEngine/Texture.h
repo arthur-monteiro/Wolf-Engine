@@ -15,16 +15,16 @@ namespace Wolf
 	class Texture : public VulkanElement
 	{
 	public:
-		Texture(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue);
+		Texture(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue);
 		~Texture();
 
 		void create(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent2D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect);
 		void createFromImage(VkDevice device, Image* image);
-		void createFromPixels(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, VkExtent3D extent, VkFormat format, unsigned char* pixels);
+		void createFromPixels(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format, unsigned char* pixels);
 		bool loadFromFile(std::string filename);
 		void createSampler(VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter);
 
-		void setImageLayout(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage);
+		void setImageLayout(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage);
 
 		void cleanup(VkDevice device);
 

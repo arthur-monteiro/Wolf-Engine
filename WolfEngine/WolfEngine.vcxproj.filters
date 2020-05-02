@@ -117,6 +117,9 @@
     <ClCompile Include="Model3D.cpp">
       <Filter>Templates</Filter>
     </ClCompile>
+    <ClCompile Include="Template3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WolfEngine.h">
@@ -211,6 +214,9 @@
     </ClInclude>
     <ClInclude Include="Model3D.h">
       <Filter>Templates</Filter>
+    </ClInclude>
+    <ClInclude Include="Template3D.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

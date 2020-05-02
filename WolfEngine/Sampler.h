@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanHelper.h"
+#include "VulkanElement.h"
 
 namespace Wolf
 {
@@ -10,13 +10,13 @@ namespace Wolf
 		uint32_t binding;
 	};
 	
-	class Sampler
+	class Sampler : public VulkanElement
 	{
 	public:
-		Sampler() = default;
+		Sampler(VkDevice device);
 		~Sampler();
 
-		void initialize(VkDevice device, VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy = 16.0f);
+		void initialize(VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy = 16.0f);
 		void cleanup(VkDevice device);
 
 		VkSampler getSampler() { return m_textureSampler; }

@@ -25,12 +25,9 @@ namespace Wolf
 		VkPhysicalDevice getPhysicalDevice() const { return m_physicalDevice; }
 		VkSurfaceKHR getSurface() { return m_surface; }
 
-		VkQueue getGraphicsQueue() { return m_graphicsQueue; }
-		VkQueue getPresentQueue() { return m_presentQueue; }
-		VkQueue getComputeQueue() { return m_computeQueue; }
-		std::mutex* getGraphicsQueueMutex() { return m_mutexGraphicsQueue; }
-		std::mutex* getPresentQueueMutex() { return m_mutexPresentQueue; }
-		std::mutex* getComputeQueueMutex() { return m_mutexComputeQueue; }
+		Queue getGraphicsQueue() { return { m_graphicsQueue, m_mutexGraphicsQueue }; }
+		Queue getPresentQueue() { return { m_presentQueue, m_mutexPresentQueue }; }
+		Queue getComputeQueue() { return { m_computeQueue, m_mutexComputeQueue }; }
 
 		HardwareCapabilities getHardwareCapabilities() { return m_hardwareCapabilities; }
 

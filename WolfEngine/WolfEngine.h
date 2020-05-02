@@ -45,6 +45,10 @@ namespace Wolf
 
 		void waitIdle();
 
+		// Getters
+	public:
+		GLFWwindow* getWindowPtr() { return m_window->getWindow(); }
+
 	private:
 		static void windowResizeCallback(void* systemManagerInstance, int width, int height)
 		{

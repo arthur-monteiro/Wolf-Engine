@@ -27,7 +27,8 @@ namespace Wolf
 	class Instance : public InstanceParent
 	{
 	public:
-		Instance(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue);
+		Instance(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool,
+			Queue graphicsQueue);
 		~Instance() = default;
 
 		void loadFromVector(std::vector<T> data);
@@ -43,7 +44,7 @@ namespace Wolf
 
 	template <typename T>
 	Instance<T>::Instance(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool,
-		VkQueue graphicsQueue) : InstanceParent()
+		Queue graphicsQueue) : InstanceParent()
 	{
 		m_device = device;
 		m_physicalDevice = physicalDevice;

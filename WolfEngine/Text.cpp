@@ -1,6 +1,6 @@
 #include "Text.h"
 
-Wolf::Text::Text(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue)
+Wolf::Text::Text(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue)
 {
 	m_device = device;
 	m_physicalDevice = physicalDevice;

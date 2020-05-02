@@ -13,9 +13,9 @@ Wolf::Scene::Scene(SceneCreateInfo createInfo, VkDevice device, VkPhysicalDevice
 	m_computeCommandPool = computeCommandPool;
 }
 
-int Wolf::Scene::addRenderPass(RenderPassCreateInfo createInfo)
+int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo)
 {
-	std::vector<VkClearValue> clearValues;
+	/*std::vector<VkClearValue> clearValues;
 	VkExtent2D extent;
 	if(createInfo.commandBufferID == -1)
 	{
@@ -28,8 +28,56 @@ int Wolf::Scene::addRenderPass(RenderPassCreateInfo createInfo)
 	else
 	{
 		extent = createInfo.extent;
+	}*/
+
+	if(createInfo.outputIsSwapChain)
+	{
+		createInfo.outputs.resize(2);
+		
+		createInfo.outputs[0].clearValue = { 1.0f };
+		createInfo.outputs[0].attachment = Attachment(m_swapChainImages[0]->getExtent(), findDepthFormat(m_physicalDevice), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+		createInfo.outputs[1].clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
+		createInfo.outputs[1].attachment = Attachment(m_swapChainImages[0]->getExtent(), m_swapChainImages[0]->getFormat(), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 	}
-	m_sceneRenderPasses.emplace_back(createInfo.commandBufferID, clearValues, extent);
+	else
+	{
+		if (createInfo.outputs.empty())
+		{
+			Debug::sendError("RenderPass creation must include output");
+			return -1;
+		}
+
+		bool depthAttachmentPresent = false;
+		for (RenderPassOutput& output : createInfo.outputs)
+		{
+			if (output.attachment.usageType & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+				depthAttachmentPresent = true;
+
+			if (output.attachment.extent.width == 0 || output.attachment.extent.height == 0)
+				output.attachment.extent = m_swapChainImages[0]->getExtent();
+
+		}
+		if (!depthAttachmentPresent)
+		{
+			RenderPassOutput depthOutput;
+			depthOutput.clearValue = { 1.0f };
+			depthOutput.attachment = Attachment(createInfo.outputs[0].attachment.extent, findDepthFormat(m_physicalDevice), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+			createInfo.outputs.push_back(depthOutput);
+		}
+	}
+	
+	m_sceneRenderPasses.emplace_back(createInfo.commandBufferID, createInfo.outputs, createInfo.outputIsSwapChain);
+
+	std::vector<Attachment> attachments(0);
+	for (RenderPassOutput& output : m_sceneRenderPasses[m_sceneRenderPasses.size() - 1].outputs)
+		attachments.push_back(output.attachment);
+
+	// Render pass creation
+	if (m_sceneRenderPasses[m_sceneRenderPasses.size() - 1].outputIsSwapChain)
+		m_sceneRenderPasses[m_sceneRenderPasses.size() - 1].renderPass = std::make_unique<RenderPass>(m_device, m_physicalDevice, m_graphicsCommandPool, attachments, m_swapChainImages);
+	else
+		m_sceneRenderPasses[m_sceneRenderPasses.size() - 1].renderPass = std::make_unique<RenderPass>(m_device, m_physicalDevice, m_graphicsCommandPool, attachments, std::vector<VkExtent2D>(1, attachments[0].extent));
 
 	return static_cast<int>(m_sceneRenderPasses.size() - 1);
 }
@@ -111,7 +159,7 @@ void Wolf::Scene::addModel(AddModelInfo addModelInfo)
 void Wolf::Scene::addText(AddTextInfo addTextInfo)
 {	
 	// Build text
-	const VkExtent2D outputExtent = m_sceneRenderPasses[addTextInfo.renderPassID].extent;
+	const VkExtent2D outputExtent = m_sceneRenderPasses[addTextInfo.renderPassID].outputs[0].attachment.extent;
 	addTextInfo.text->build(outputExtent, addTextInfo.font, addTextInfo.size);
 
 	// Uniform Buffer Objects
@@ -165,19 +213,9 @@ void Wolf::Scene::record()
 	
 	for(SceneRenderPass& sceneRenderPass : m_sceneRenderPasses)
 	{
-		if(sceneRenderPass.commandBufferID == -1) // swapChain
-		{
-			sceneRenderPass.attachments.resize(2);
-			sceneRenderPass.attachments[0] = Attachment(findDepthFormat(m_physicalDevice), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-			sceneRenderPass.attachments[1] = Attachment(m_swapChainImages[0]->getFormat(), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-			
-			sceneRenderPass.renderPass = std::make_unique<RenderPass>(m_device, m_physicalDevice, m_graphicsCommandPool, sceneRenderPass.attachments, m_swapChainImages);
-
-			for(std::unique_ptr<Renderer>& renderer : sceneRenderPass.renderers)
-			{
-				renderer->create(m_device, sceneRenderPass.renderPass->getRenderPass(), m_swapChainImages[0]->getExtent(), VK_SAMPLE_COUNT_1_BIT, m_descriptorPool.getDescriptorPool());
-			}
-		}
+		// Renderers creation
+		for (std::unique_ptr<Renderer>& renderer : sceneRenderPass.renderers)
+			renderer->create(m_device, sceneRenderPass.renderPass->getRenderPass(), m_swapChainImages[0]->getExtent(), VK_SAMPLE_COUNT_1_BIT, m_descriptorPool.getDescriptorPool());
 	}
 	
 	// As a scene is designed to be renderer on a screen, we need to create a command buffer for each swapchain image
@@ -195,7 +233,14 @@ void Wolf::Scene::record()
 		{
 			if(m_sceneRenderPasses[j].commandBufferID == -1)
 			{
-				m_sceneRenderPasses[j].renderPass->beginRenderPass(i, m_sceneRenderPasses[j].clearValues, m_swapChainCommandBuffers[i]->getCommandBuffer());
+				std::vector<VkClearValue> clearValues(0);
+				for (RenderPassOutput& output : m_sceneRenderPasses[j].outputs)
+					clearValues.push_back(output.clearValue);
+
+				if(m_sceneRenderPasses[j].outputIsSwapChain)
+					m_sceneRenderPasses[j].renderPass->beginRenderPass(i, clearValues, m_swapChainCommandBuffers[i]->getCommandBuffer());
+				else
+					m_sceneRenderPasses[j].renderPass->beginRenderPass(0, clearValues, m_swapChainCommandBuffers[i]->getCommandBuffer());
 
 				for(std::unique_ptr<Renderer>& renderer : m_sceneRenderPasses[j].renderers)
 				{
@@ -205,22 +250,22 @@ void Wolf::Scene::record()
 					std::vector<std::tuple<VertexBuffer, InstanceBuffer, VkDescriptorSet>> meshesToRender = renderer->getMeshes();
 					for(std::tuple<VertexBuffer, InstanceBuffer, VkDescriptorSet>& mesh : meshesToRender)
 					{
-						bool isInstancied = std::get<1>(meshesToRender[j]).nInstances > 0 && std::get<1>(meshesToRender[j]).instanceBuffer;
+						bool isInstancied = std::get<1>(mesh).nInstances > 0 && std::get<1>(mesh).instanceBuffer;
 						
-						vkCmdBindVertexBuffers(m_swapChainCommandBuffers[i]->getCommandBuffer(), 0, 1, &std::get<0>(meshesToRender[j]).vertexBuffer, offsets);
-						vkCmdBindIndexBuffer(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(meshesToRender[j]).indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+						vkCmdBindVertexBuffers(m_swapChainCommandBuffers[i]->getCommandBuffer(), 0, 1, &std::get<0>(mesh).vertexBuffer, offsets);
+						vkCmdBindIndexBuffer(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(mesh).indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 						if(isInstancied)
-							vkCmdBindVertexBuffers(m_swapChainCommandBuffers[i]->getCommandBuffer(), 1, 1, &std::get<1>(meshesToRender[j]).instanceBuffer, offsets);
+							vkCmdBindVertexBuffers(m_swapChainCommandBuffers[i]->getCommandBuffer(), 1, 1, &std::get<1>(mesh).instanceBuffer, offsets);
 
-						if(std::get<2>(meshesToRender[j]) != VK_NULL_HANDLE) // render can be done without descriptor set
+						if(std::get<2>(mesh) != VK_NULL_HANDLE) // render can be done without descriptor set
 							vkCmdBindDescriptorSets(m_swapChainCommandBuffers[i]->getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-								renderer->getPipelineLayout(), 0, 1, &std::get<2>(meshesToRender[j]), 0, nullptr);
+								renderer->getPipelineLayout(), 0, 1, &std::get<2>(mesh), 0, nullptr);
 
 						if(!isInstancied)
-							vkCmdDrawIndexed(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(meshesToRender[j]).nbIndices, 1, 0, 0, 0);
+							vkCmdDrawIndexed(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(mesh).nbIndices, 1, 0, 0, 0);
 						else
-							vkCmdDrawIndexed(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(meshesToRender[j]).nbIndices, std::get<1>(meshesToRender[j]).nInstances, 0, 0, 0);
+							vkCmdDrawIndexed(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(mesh).nbIndices, std::get<1>(meshesToRender[j]).nInstances, 0, 0, 0);
 					}
 				}
 				
@@ -237,7 +282,7 @@ void Wolf::Scene::record()
 	}
 }
 
-void Wolf::Scene::frame(VkQueue graphicsQueue, uint32_t swapChainImageIndex, Semaphore* imageAvailableSemaphore)
+void Wolf::Scene::frame(Queue graphicsQueue, uint32_t swapChainImageIndex, Semaphore* imageAvailableSemaphore)
 {
 	m_swapChainCommandBuffers[swapChainImageIndex]->submit(m_device, graphicsQueue, { imageAvailableSemaphore }, { m_swapChainCompleteSemaphore->getSemaphore() });
 }

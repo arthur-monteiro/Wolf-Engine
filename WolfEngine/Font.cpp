@@ -1,6 +1,6 @@
 #include "Font.h"
 
-Wolf::Font::Font(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue)
+Wolf::Font::Font(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue) : m_sampler(device)
 {
 	m_device = device;
 	m_physicalDevice = physicalDevice;
@@ -16,7 +16,6 @@ Wolf::Font::~Font()
 	}
 	m_images.clear();
 	m_characters.clear();
-	m_sampler.cleanup(m_device);
 }
 
 void Wolf::Font::setFont(int ySize, std::string path)
@@ -67,7 +66,7 @@ void Wolf::Font::setFont(int ySize, std::string path)
 	FT_Done_Face(face);
 	FT_Done_FreeType(ft);
 
-	m_sampler.initialize(m_device, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 1.0f, VK_FILTER_LINEAR);
+	m_sampler.initialize(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 1.0f, VK_FILTER_LINEAR);
 }
 
 std::vector<Wolf::Image*> Wolf::Font::getImages()

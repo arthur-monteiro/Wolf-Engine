@@ -168,6 +168,7 @@
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Semaphore.cpp" />
     <ClCompile Include="SwapChain.cpp" />
+    <ClCompile Include="Template3D.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="UniformBufferObject.cpp" />
@@ -201,6 +202,7 @@
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Semaphore.h" />
     <ClInclude Include="SwapChain.h" />
+    <ClInclude Include="Template3D.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="UniformBufferObject.h" />

@@ -171,7 +171,7 @@ uint32_t Wolf::SwapChain::getCurrentImage(VkDevice device)
 	return imageIndex;
 }
 
-void Wolf::SwapChain::present(VkQueue presentQueue, VkSemaphore waitSemaphore, uint32_t imageIndex)
+void Wolf::SwapChain::present(Queue presentQueue, VkSemaphore waitSemaphore, uint32_t imageIndex)
 {
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -195,14 +195,18 @@ void Wolf::SwapChain::present(VkQueue presentQueue, VkSemaphore waitSemaphore, u
 	}
 	 m_lastFrameTimeCounter = std::chrono::high_resolution_clock::now();*/
 
-	VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
+	presentQueue.mutex->lock();
+	VkResult result = vkQueuePresentKHR(presentQueue.queue, &presentInfo);
+	presentQueue.mutex->unlock();
 
 	/*if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 		recreateSwapChain();
 	else if (result != VK_SUCCESS)
 		throw std::runtime_error("Erreur : affichage de la swapchain");*/
 
-	vkQueueWaitIdle(presentQueue);
+	presentQueue.mutex->lock();
+	vkQueueWaitIdle(presentQueue.queue);
+	presentQueue.mutex->unlock();
 }
 
 void Wolf::SwapChain::recreate(VkSurfaceKHR surface, GLFWwindow* window)

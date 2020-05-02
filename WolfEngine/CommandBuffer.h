@@ -15,7 +15,7 @@ namespace Wolf
 
 		void beginCommandBuffer();
 		void endCommandBuffer();
-		void submit(VkDevice device, VkQueue queue, std::vector<Wolf::Semaphore*> waitSemaphores, std::vector<VkSemaphore> signalSemaphores);
+		void submit(VkDevice device, Queue queue, std::vector<Wolf::Semaphore*> waitSemaphores, std::vector<VkSemaphore> signalSemaphores);
 
 		// Getter
 	public:

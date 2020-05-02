@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <utility>
 
 #include "VulkanElement.h"
 #include "Image.h"
@@ -28,10 +29,19 @@ namespace Wolf
 		
 		Scene(SceneCreateInfo createInfo, VkDevice device, VkPhysicalDevice physicalDevice, std::vector<Image*> swapChainImages, VkCommandPool graphicsCommandPool, VkCommandPool computeCommandPool);
 
+		struct RenderPassOutput
+		{
+			VkClearValue clearValue;
+			Attachment attachment;
+		};
+
 		struct RenderPassCreateInfo
 		{
 			int commandBufferID;
-			VkExtent2D extent;
+			bool outputIsSwapChain = false;
+
+			// Output
+			std::vector<RenderPassOutput> outputs;
 		};
 		int addRenderPass(RenderPassCreateInfo createInfo);
 
@@ -92,7 +102,7 @@ namespace Wolf
 		
 		void record();
 		
-		void frame(VkQueue graphicsQueue, uint32_t swapChainImageIndex, Semaphore* imageAvailableSemaphore);
+		void frame(Queue graphicsQueue, uint32_t swapChainImageIndex, Semaphore* imageAvailableSemaphore);
 
 		VkSemaphore getSwapChainSemaphore() const { return m_swapChainCompleteSemaphore->getSemaphore(); }
 
@@ -124,17 +134,18 @@ namespace Wolf
 		{
 			std::unique_ptr<RenderPass> renderPass;
 			int commandBufferID;
-			std::vector<Attachment> attachments;
-			std::vector<VkClearValue> clearValues;
-			VkExtent2D extent;
+
+			// Output
+			std::vector<RenderPassOutput> outputs;
+			bool outputIsSwapChain = false;
 
 			std::vector<std::unique_ptr<Renderer>> renderers;
 
-			SceneRenderPass(int commandBufferID, std::vector<VkClearValue> clearValues, VkExtent2D extent)
+			SceneRenderPass(int commandBufferID, std::vector<RenderPassOutput> outputs, bool outputIsSwapChain)
 			{
-				this->clearValues = clearValues;
+				this->outputs = std::move(outputs);
+				this->outputIsSwapChain = outputIsSwapChain;
 				this->commandBufferID = commandBufferID;
-				this->extent = extent;
 			}
 		};
 		std::vector<SceneRenderPass> m_sceneRenderPasses;

@@ -22,7 +22,7 @@ void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevi
 	m_renderPass = createRenderPass(device, attachments);
 
 	m_framebuffers.resize(extents.size());
-	for (int i(0); i < m_framebuffers.size(); ++i)
+	for (size_t i(0); i < m_framebuffers.size(); ++i)
 	{
 		m_framebuffers[i].initialize(device, physicalDevice, m_renderPass, extents[i], attachments);
 	}
@@ -42,7 +42,7 @@ void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevi
 	m_renderPass = createRenderPass(device, attachments);
 
 	m_framebuffers.resize(images.size());
-	for (int i(0); i < images.size(); ++i)
+	for (size_t i(0); i < images.size(); ++i)
 		m_framebuffers[i].initialize(device, physicalDevice, m_renderPass, images[i], attachments);
 
 	m_renderCompleteSemaphore.initialize(device);

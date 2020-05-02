@@ -19,7 +19,7 @@ namespace Wolf
 		Mesh() = default;
 		~Mesh() {}
 
-		void loadFromVertices(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::vector<T> vertices, std::vector<uint32_t> indices)
+		void loadFromVertices(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::vector<T> vertices, std::vector<uint32_t> indices)
 		{
 			m_vertices = vertices;
 			m_indices = indices;
@@ -54,7 +54,7 @@ namespace Wolf
 		VkDeviceMemory m_indexBufferMemory;
 
 	private:
-		void createVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, VkDeviceSize size, void* data)
+		void createVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkDeviceSize size, void* data)
 		{
 			VkBuffer stagingBuffer;
 			VkDeviceMemory stagingBufferMemory;
@@ -73,7 +73,7 @@ namespace Wolf
 			vkFreeMemory(device, stagingBufferMemory, nullptr);
 		}
 
-		void createIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue)
+		void createIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue)
 		{
 			const VkDeviceSize bufferSize = sizeof(m_indices[0]) * m_indices.size();
 

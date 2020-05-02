@@ -10,7 +10,7 @@ namespace Wolf
 	class Text : public VulkanElement
 	{
 	public:
-		Text(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue);
+		Text(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue);
 		~Text();
 
 		int addWString(std::wstring text, glm::vec2 position, glm::vec3 color);
