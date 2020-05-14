@@ -10,6 +10,7 @@
 #include "Model.h"
 #include "Font.h"
 #include "Text.h"
+#include "OVR.h"
 
 namespace Wolf
 {	
@@ -21,6 +22,8 @@ namespace Wolf
 
 		uint32_t windowWidth = 0;
 		uint32_t windowHeight = 0;
+
+		bool useOVR = false;
 
 		std::function<void(Debug::Severity, std::string)> debugCallback;
 	};
@@ -39,7 +42,8 @@ namespace Wolf
 		Texture* createTexture();
 		Font* createFont();
 		Text* createText();
-		
+
+		void updateOVR();
 		void frame(Scene* scene);
 		bool windowShouldClose();
 
@@ -48,6 +52,9 @@ namespace Wolf
 		// Getters
 	public:
 		GLFWwindow* getWindowPtr() { return m_window->getWindow(); }
+		ovrSession getOVRSession() { return m_vulkan->getOVRSession(); }
+		std::array < glm::mat4, 2> getVRProjMatrices() { return m_ovr->getProjMatrices(); }
+		std::array < glm::mat4, 2> getVRViewMatrices() { return m_ovr->getViewMatrices(); }
 
 	private:
 		static void windowResizeCallback(void* systemManagerInstance, int width, int height)
@@ -59,6 +66,8 @@ namespace Wolf
 		std::unique_ptr<Vulkan> m_vulkan;
 		std::unique_ptr<Window> m_window;
 		std::unique_ptr<SwapChain> m_swapChain;
+		std::unique_ptr<OVR> m_ovr;
+		bool m_useOVR = false;
 
 		CommandPool m_graphicsCommandPool;
 		CommandPool m_computeCommandPool;

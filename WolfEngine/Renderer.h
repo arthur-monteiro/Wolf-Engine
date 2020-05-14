@@ -39,6 +39,8 @@ namespace Wolf
 		void create(VkDevice device, VkRenderPass renderPass, VkExtent2D extent, VkSampleCountFlagBits msaa, VkDescriptorPool descriptorPool);
 		void destroyPipeline(VkDevice device);
 
+		void setViewport(std::array<float, 2> viewportScale, std::array<float, 2> viewportOffset);
+
 		int addMesh(VertexBuffer vertexBuffer,
 			std::vector<std::pair<UniformBufferObject*, UniformBufferObjectLayout>> ubos, std::vector<std::pair<Texture*, TextureLayout>> textures,
 			std::vector<std::pair<Image*, ImageLayout>> images, std::vector<std::pair<Sampler*, SamplerLayout>> samplers, std::vector<std::pair<VkBuffer, BufferLayout>> buffers);
@@ -63,6 +65,9 @@ namespace Wolf
 		std::vector<VkVertexInputBindingDescription> m_vertexInputDescription;
 		std::vector<VkVertexInputAttributeDescription> m_attributeInputDescription;
 		std::vector<bool> m_alphaBlending;
+
+		std::array<float, 2> m_viewportScale = { 1.0f, 1.0f };
+		std::array<float, 2> m_viewportOffset = { 0.0f, 0.0f };
 
 		VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
 

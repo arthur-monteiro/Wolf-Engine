@@ -15,16 +15,25 @@ Wolf::WolfInstance::WolfInstance(WolfInstanceCreateInfo createInfo)
 		Debug::sendError("Window width is invalid or exceed max width. Width sent : " + std::to_string(createInfo.windowWidth) + ", maximum width = " + std::to_string(MAX_WIDTH));
 	
 	m_window = std::make_unique<Window>(createInfo.applicationName, createInfo.windowWidth, createInfo.windowHeight, this, windowResizeCallback);
-	m_vulkan = std::make_unique<Vulkan>(m_window->getWindow());
+	m_vulkan = std::make_unique<Vulkan>(m_window->getWindow(), createInfo.useOVR);
 	m_swapChain = std::make_unique<SwapChain>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_vulkan->getSurface(), m_window->getWindow());
 
 	m_graphicsCommandPool.initializeForGraphicsQueue(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_vulkan->getSurface());
 	m_computeCommandPool.initializeForGraphicsQueue(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_vulkan->getSurface());
+
+	m_useOVR = createInfo.useOVR;
+	if (createInfo.useOVR)
+	{
+		m_ovr = std::make_unique<OVR>(m_vulkan->getDevice(), m_vulkan->getOVRSession(), m_vulkan->getGraphicsLuid());
+	}
 }
 
 Wolf::Scene* Wolf::WolfInstance::createScene(Scene::SceneCreateInfo createInfo)
 {
-	m_scenes.push_back(std::make_unique<Scene>(createInfo, m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_swapChain->getImages(), m_graphicsCommandPool.getCommandPool(), m_computeCommandPool.getCommandPool()));
+	if(m_useOVR)
+		m_scenes.push_back(std::make_unique<Scene>(createInfo, m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_ovr->getImages(), m_swapChain->getImages(), m_graphicsCommandPool.getCommandPool(), m_computeCommandPool.getCommandPool()));
+	else
+		m_scenes.push_back(std::make_unique<Scene>(createInfo, m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_swapChain->getImages(), m_graphicsCommandPool.getCommandPool(), m_computeCommandPool.getCommandPool()));
 	return m_scenes[m_scenes.size() - 1].get();
 }
 
@@ -74,13 +83,31 @@ Wolf::Text* Wolf::WolfInstance::createText()
 	return m_texts[m_texts.size() - 1].get();
 }
 
+void Wolf::WolfInstance::updateOVR()
+{
+	m_ovr->update();
+}
+
 void Wolf::WolfInstance::frame(Scene* scene)
 {
 	glfwPollEvents();
+
+	if(m_useOVR)
+	{
+		const uint32_t swapChainImageIndex = m_ovr->getCurrentImage(m_vulkan->getDevice(), m_vulkan->getGraphicsQueue().queue);
+		scene->frame(m_vulkan->getGraphicsQueue(), swapChainImageIndex, m_swapChain->getImageAvailableSemaphore());
+		m_ovr->present(swapChainImageIndex);
+
+		const uint32_t windowSwapChainImageIndex = m_swapChain->getCurrentImage(m_vulkan->getDevice());
+		m_swapChain->present(m_vulkan->getPresentQueue(), scene->getSwapChainSemaphore(), windowSwapChainImageIndex);
+	}
 	
-	const uint32_t swapChainImageIndex = m_swapChain->getCurrentImage(m_vulkan->getDevice());
-	scene->frame(m_vulkan->getGraphicsQueue(), swapChainImageIndex, m_swapChain->getImageAvailableSemaphore());
-	m_swapChain->present(m_vulkan->getPresentQueue(), scene->getSwapChainSemaphore(), swapChainImageIndex);
+	else
+	{
+		const uint32_t swapChainImageIndex = m_swapChain->getCurrentImage(m_vulkan->getDevice());
+		scene->frame(m_vulkan->getGraphicsQueue(), swapChainImageIndex, m_swapChain->getImageAvailableSemaphore());
+		m_swapChain->present(m_vulkan->getPresentQueue(), scene->getSwapChainSemaphore(), swapChainImageIndex);
+	}
 }
 
 bool Wolf::WolfInstance::windowShouldClose()

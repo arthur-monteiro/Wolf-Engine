@@ -149,9 +149,9 @@ void Wolf::Model3D::loadObj(ModelLoadingInfo modelLoadingInfo)
 	m_meshes.push_back(mesh);
 	//graphicsQueueMutex->unlock();
 
-	/*m_images.resize(materials.size() * 5);
+	/*m_images.resize(materials.m_size() * 5);
 	int indexTexture = 0;
-	for (int i(0); i < materials.size(); ++i)
+	for (int i(0); i < materials.m_size(); ++i)
 	{
 		graphicsQueueMutex->lock();
 

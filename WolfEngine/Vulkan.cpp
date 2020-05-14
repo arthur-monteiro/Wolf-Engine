@@ -1,7 +1,26 @@
 #include "Vulkan.h"
+#include "Debug.h"
 
-Wolf::Vulkan::Vulkan(GLFWwindow* glfwWindowPointer)
+Wolf::Vulkan::Vulkan(GLFWwindow* glfwWindowPointer, bool useOVR)
 {
+	if (useOVR)
+	{
+		ovrInitParams initParams = { ovrInit_RequestVersion | ovrInit_FocusAware, OVR_MINOR_VERSION, NULL, 0, 0 };
+		ovrResult result = ovr_Initialize(&initParams);
+		if (!OVR_SUCCESS(result))
+		{
+			Debug::sendError("Failed to initialize OVR");
+			return;
+		}
+
+		result = ovr_Create(&m_session, &m_luid);
+		if (!OVR_SUCCESS(result))
+		{
+			Debug::sendError("Failed to create OVR");
+			return;
+		}
+	}	
+	
 #ifndef NDEBUG
 	m_validationLayers = { "VK_LAYER_LUNARG_standard_validation" };
 #endif
@@ -12,8 +31,8 @@ Wolf::Vulkan::Vulkan(GLFWwindow* glfwWindowPointer)
 	if (glfwCreateWindowSurface(m_instance, glfwWindowPointer, nullptr, &m_surface) != VK_SUCCESS)
 		throw std::runtime_error("Error : window surface creation");
 
-	m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-	m_raytracingDeviceExtensions = { VK_NV_RAY_TRACING_EXTENSION_NAME, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME };
+	m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, "VK_KHR_external_memory_win32", VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME, "VK_KHR_external_semaphore_win32", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME };
+	m_raytracingDeviceExtensions = { VK_NV_RAY_TRACING_EXTENSION_NAME };
 
 	pickPhysicalDevice();
 	createDevice();
@@ -34,6 +53,12 @@ void Wolf::Vulkan::cleanup()
 
 void Wolf::Vulkan::createInstance()
 {
+	char extensionNames[4096];
+	uint32_t extensionNamesSize = sizeof(extensionNames);
+	auto ret = ovr_GetInstanceExtensionsVk(m_luid, extensionNames, &extensionNamesSize);
+	ovrErrorInfo errorInfo;
+	ovr_GetLastErrorInfo(&errorInfo);
+	
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "App Name";
@@ -75,6 +100,17 @@ void Wolf::Vulkan::setupDebugCallback()
 
 void Wolf::Vulkan::pickPhysicalDevice()
 {
+	if(m_session)
+	{
+		ovrResult result = ovr_GetSessionPhysicalDeviceVk(m_session, m_luid, m_instance, &m_physicalDevice);
+		if (!OVR_SUCCESS(result))
+		{
+			Debug::sendError("Failed to get physical device from OVR");
+			return;
+		}
+		return;
+	}
+	
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
 

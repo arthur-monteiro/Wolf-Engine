@@ -42,7 +42,7 @@ void Wolf::SwapChain::initialize(VkSurfaceKHR surface,
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
 	createInfo.imageExtent = extent;
 	createInfo.imageArrayLayers = 1;
-	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
 	QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice, surface);
 	uint32_t queueFamilyIndices[] = { static_cast<uint32_t>(indices.graphicsFamily), static_cast<uint32_t>(indices.presentFamily) };
@@ -156,7 +156,7 @@ VkExtent2D Wolf::SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& cap
 uint32_t Wolf::SwapChain::getCurrentImage(VkDevice device)
 {
 	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(device, m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore.getSemaphore(), VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(device, m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore.getSemaphore() , VK_NULL_HANDLE, &imageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
@@ -176,8 +176,16 @@ void Wolf::SwapChain::present(Queue presentQueue, VkSemaphore waitSemaphore, uin
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &waitSemaphore;
+	if (waitSemaphore)
+	{
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = &waitSemaphore;
+	}
+	else
+	{
+		presentInfo.waitSemaphoreCount = 0;
+		presentInfo.pWaitSemaphores = nullptr;
+	}
 
 	VkSwapchainKHR swapChains[] = { m_swapChain };
 	presentInfo.swapchainCount = 1;

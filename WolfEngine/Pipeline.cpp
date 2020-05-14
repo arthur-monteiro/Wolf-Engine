@@ -6,8 +6,8 @@ Wolf::Pipeline::~Pipeline()
 = default;
 
 void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::string vertexShader, std::string geometryShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
-                                std::vector<VkVertexInputAttributeDescription> attributeInputDescription, VkExtent2D extent, VkSampleCountFlagBits msaaSamples, std::vector<bool> alphaBlending,
-                                VkDescriptorSetLayout* descriptorSetLayout, VkPrimitiveTopology topology, VkBool32 enableDepthTesting, bool addColors)
+	std::vector<VkVertexInputAttributeDescription> attributeInputDescription, VkExtent2D extent, VkSampleCountFlagBits msaaSamples, std::vector<bool> alphaBlending,
+	VkDescriptorSetLayout * descriptorSetLayout, std::array<float, 2> viewportScale, std::array<float, 2> viewportOffset, VkPrimitiveTopology topology, VkBool32 enableDepthTesting, bool addColors)
 {
 	/* Pipeline layout */
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
@@ -81,10 +81,10 @@ void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::s
 
 	/* Viewport */
 	VkViewport viewport = {};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(extent.width);
-	viewport.height = static_cast<float>(extent.height);
+	viewport.x = extent.width * viewportOffset[0];
+	viewport.y = extent.height * viewportOffset[1];
+	viewport.width = extent.width * viewportScale[0];
+	viewport.height = extent.height * viewportScale[1];
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 

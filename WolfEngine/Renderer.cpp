@@ -61,7 +61,7 @@ void Wolf::Renderer::create(VkDevice device, VkRenderPass renderPass, VkExtent2D
 {
 	if (!m_pipelineCreated)
 	{
-		m_pipeline.initialize(device, renderPass, m_vertexShader, m_geometryShader, m_fragmentShader, m_vertexInputDescription, m_attributeInputDescription, extent, msaa, m_alphaBlending, &m_descriptorSetLayout);
+		m_pipeline.initialize(device, renderPass, m_vertexShader, m_geometryShader, m_fragmentShader, m_vertexInputDescription, m_attributeInputDescription, extent, msaa, m_alphaBlending, &m_descriptorSetLayout, m_viewportScale, m_viewportOffset);
 		m_pipelineCreated = true;
 	}
 
@@ -81,6 +81,12 @@ void Wolf::Renderer::destroyPipeline(VkDevice device)
 
 	m_pipeline.cleanup(device);
 	m_pipelineCreated = false;
+}
+
+void Wolf::Renderer::setViewport(std::array<float, 2> viewportScale, std::array<float, 2> viewportOffset)
+{
+	m_viewportScale = viewportScale;
+	m_viewportOffset = viewportOffset;
 }
 
 int Wolf::Renderer::addMesh(VertexBuffer vertexBuffer,

@@ -118,6 +118,9 @@
       <Filter>Templates</Filter>
     </ClCompile>
     <ClCompile Include="Template3D.cpp">
+      <Filter>Templates</Filter>
+    </ClCompile>
+    <ClCompile Include="OVR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -216,6 +219,9 @@
       <Filter>Templates</Filter>
     </ClInclude>
     <ClInclude Include="Template3D.h">
+      <Filter>Templates</Filter>
+    </ClInclude>
+    <ClInclude Include="OVR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -21,6 +21,9 @@ std::vector<const char*> getRequiredExtensions()
 	extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 #endif
 
+	extensions.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+	extensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
+
 	return extensions;
 }
 

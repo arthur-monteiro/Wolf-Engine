@@ -28,6 +28,7 @@ namespace Wolf
 		};
 		
 		Scene(SceneCreateInfo createInfo, VkDevice device, VkPhysicalDevice physicalDevice, std::vector<Image*> swapChainImages, VkCommandPool graphicsCommandPool, VkCommandPool computeCommandPool);
+		Scene(SceneCreateInfo createInfo, VkDevice device, VkPhysicalDevice physicalDevice, std::vector<Image*> ovrSwapChainImages, std::vector<Image*> windowSwapChainImages, VkCommandPool graphicsCommandPool, VkCommandPool computeCommandPool);
 
 		struct RenderPassOutput
 		{
@@ -63,6 +64,10 @@ namespace Wolf
 			std::vector<ImageLayout> imageLayouts;
 			std::vector<SamplerLayout> samplerLayouts;
 			std::vector<BufferLayout> bufferLayouts;
+
+			// Viewport
+			std::array<float, 2> viewportScale = { 1.0f, 1.0f };
+			std::array<float, 2> viewportOffset = { 0.0f, 0.0f };
 		};
 		int addRenderer(RendererCreateInfo createInfo);
 
@@ -120,6 +125,9 @@ namespace Wolf
 		std::unique_ptr<Semaphore> m_swapChainCompleteSemaphore;
 		CommandType m_swapChainCommandType = CommandType::GRAPHICS;
 
+		// VR
+		std::vector<Image*> m_windowSwapChainImages; // mirror images
+
 		// CommandBuffer
 		struct SceneCommandBuffer
 		{
@@ -149,6 +157,9 @@ namespace Wolf
 			}
 		};
 		std::vector<SceneRenderPass> m_sceneRenderPasses;
+
+		// VR
+		bool m_useOVR = false;
 	};
 
 	template <typename T>

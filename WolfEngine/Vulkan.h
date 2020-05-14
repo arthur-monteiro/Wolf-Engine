@@ -8,13 +8,14 @@
 #include <mutex>
 
 #include "VulkanHelper.h"
+#include <OVR_CAPI_Vk.h>
 
 namespace Wolf
 {
 	class Vulkan
 	{
 	public:
-		Vulkan(GLFWwindow* glfwWindowPointer);
+		Vulkan(GLFWwindow* glfwWindowPointer, bool useOVR);
 		~Vulkan();
 
 		void cleanup();
@@ -22,6 +23,7 @@ namespace Wolf
 		// Getters
 	public:
 		VkDevice getDevice() const { return m_device; }
+		VkInstance getInstance() { return m_instance; }
 		VkPhysicalDevice getPhysicalDevice() const { return m_physicalDevice; }
 		VkSurfaceKHR getSurface() { return m_surface; }
 
@@ -30,6 +32,9 @@ namespace Wolf
 		Queue getComputeQueue() { return { m_computeQueue, m_mutexComputeQueue }; }
 
 		HardwareCapabilities getHardwareCapabilities() { return m_hardwareCapabilities; }
+
+		ovrSession getOVRSession() { return m_session; }
+		ovrGraphicsLuid getGraphicsLuid() { return m_luid; }
 
 	private:
 		/* Main Loading Functions */
@@ -86,6 +91,10 @@ namespace Wolf
 		/* Properties */
 		VkSampleCountFlagBits m_maxMsaaSamples = VK_SAMPLE_COUNT_1_BIT;
 		HardwareCapabilities m_hardwareCapabilities;
+
+		/* VR */
+		ovrSession                  m_session = nullptr;
+		ovrGraphicsLuid             m_luid;
 	};
 
 }

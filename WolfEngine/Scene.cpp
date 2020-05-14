@@ -13,6 +13,22 @@ Wolf::Scene::Scene(SceneCreateInfo createInfo, VkDevice device, VkPhysicalDevice
 	m_computeCommandPool = computeCommandPool;
 }
 
+Wolf::Scene::Scene(SceneCreateInfo createInfo, VkDevice device, VkPhysicalDevice physicalDevice,
+	std::vector<Image*> ovrSwapChainImages, std::vector<Image*> windowSwapChainImages,
+	VkCommandPool graphicsCommandPool, VkCommandPool computeCommandPool)
+{
+	m_useOVR = true;
+
+	m_device = device;
+	m_physicalDevice = physicalDevice;
+	m_swapChainImages = std::move(ovrSwapChainImages);
+	m_swapChainCommandType = createInfo.swapChainCommandType;
+
+	m_graphicsCommandPool = graphicsCommandPool;
+	m_computeCommandPool = computeCommandPool;
+	m_windowSwapChainImages = std::move(windowSwapChainImages);
+}
+
 int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo)
 {
 	/*std::vector<VkClearValue> clearValues;
@@ -37,8 +53,8 @@ int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo)
 		createInfo.outputs[0].clearValue = { 1.0f };
 		createInfo.outputs[0].attachment = Attachment(m_swapChainImages[0]->getExtent(), findDepthFormat(m_physicalDevice), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-		createInfo.outputs[1].clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
-		createInfo.outputs[1].attachment = Attachment(m_swapChainImages[0]->getExtent(), m_swapChainImages[0]->getFormat(), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+		createInfo.outputs[1].clearValue = { 1.0f, 0.0f, 0.0f, 1.0f };
+		createInfo.outputs[1].attachment = Attachment(m_swapChainImages[0]->getExtent(), m_swapChainImages[0]->getFormat(), VK_SAMPLE_COUNT_1_BIT, m_useOVR ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 	}
 	else
 	{
@@ -136,6 +152,7 @@ int Wolf::Scene::addRenderer(RendererCreateInfo createInfo)
 								std::move(createInfo.samplerLayouts), std::move(createInfo.bufferLayouts), { true });
 	
 	m_sceneRenderPasses[createInfo.renderPassID].renderers.push_back(std::unique_ptr<Renderer>(r));
+	m_sceneRenderPasses[createInfo.renderPassID].renderers.back()->setViewport(createInfo.viewportScale, createInfo.viewportOffset);
 
 	return static_cast<int>(m_sceneRenderPasses[createInfo.renderPassID].renderers.size() - 1);
 }
@@ -247,6 +264,15 @@ void Wolf::Scene::record()
 					vkCmdBindPipeline(m_swapChainCommandBuffers[i]->getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer->getPipeline());
 					const VkDeviceSize offsets[1] = { 0 };
 
+					/*VkViewport viewport;
+					viewport.x = 0;
+					viewport.y = 0;
+					viewport.height = 100;
+					viewport.width = 100;
+					viewport.minDepth = 0.0f;
+					viewport.maxDepth = 1.0f;
+					vkCmdSetViewport(m_swapChainCommandBuffers[i]->getCommandBuffer(), 0, 1, &viewport);*/
+
 					std::vector<std::tuple<VertexBuffer, InstanceBuffer, VkDescriptorSet>> meshesToRender = renderer->getMeshes();
 					for(std::tuple<VertexBuffer, InstanceBuffer, VkDescriptorSet>& mesh : meshesToRender)
 					{
@@ -270,6 +296,32 @@ void Wolf::Scene::record()
 				}
 				
 				m_sceneRenderPasses[j].renderPass->endRenderPass(m_swapChainCommandBuffers[i]->getCommandBuffer());
+
+				// Copy result to mirror
+				if(m_useOVR)
+				{
+					Image::transitionImageLayoutUsingCommandBuffer(m_swapChainCommandBuffers[i]->getCommandBuffer(), m_windowSwapChainImages[i]->getImage(), VK_FORMAT_R8G8B8A8_UNORM /* just no depth */, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+						1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0);
+
+					VkImageBlit region = {};
+					region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+					region.srcSubresource.mipLevel = 0;
+					region.srcSubresource.baseArrayLayer = 0;
+					region.srcSubresource.layerCount = 1;
+					region.srcOffsets[0] = { 0, 0, 0 };
+					region.srcOffsets[1] = { static_cast<int32_t>(m_swapChainImages[0]->getExtent().width), static_cast<int32_t>(m_swapChainImages[0]->getExtent().height), 1 };
+					region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+					region.dstSubresource.mipLevel = 0;
+					region.dstSubresource.baseArrayLayer = 0;
+					region.dstSubresource.layerCount = 1;
+					region.dstOffsets[0] = { 0, 0, 0 };
+					region.dstOffsets[1] = { static_cast<int32_t>(m_windowSwapChainImages[i]->getExtent().width),  static_cast<int32_t>(m_windowSwapChainImages[i]->getExtent().height), 1 };
+					vkCmdBlitImage(m_swapChainCommandBuffers[i]->getCommandBuffer(), m_swapChainImages[i]->getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+						m_windowSwapChainImages[i]->getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region, VK_FILTER_LINEAR);
+
+					Image::transitionImageLayoutUsingCommandBuffer(m_swapChainCommandBuffers[i]->getCommandBuffer(), m_windowSwapChainImages[i]->getImage(), VK_FORMAT_R8G8B8A8_UNORM /* just no depth */, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+						1, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
+				}
 			}
 		}
 		
@@ -284,5 +336,8 @@ void Wolf::Scene::record()
 
 void Wolf::Scene::frame(Queue graphicsQueue, uint32_t swapChainImageIndex, Semaphore* imageAvailableSemaphore)
 {
-	m_swapChainCommandBuffers[swapChainImageIndex]->submit(m_device, graphicsQueue, { imageAvailableSemaphore }, { m_swapChainCompleteSemaphore->getSemaphore() });
+	if(imageAvailableSemaphore)
+		m_swapChainCommandBuffers[swapChainImageIndex]->submit(m_device, graphicsQueue, { imageAvailableSemaphore }, { m_swapChainCompleteSemaphore->getSemaphore() });
+	else
+		m_swapChainCommandBuffers[swapChainImageIndex]->submit(m_device, graphicsQueue, { }, { });
 }

@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{E852A000-ADBF-466C-BDE8-00123981EC13}</ProjectGuid>
     <RootNamespace>WolfEngine</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -99,7 +99,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(TINYOBJ_PATH);$(FREETYPE_PATH)\include\freetype2;$(GLM_PATH);$(STB_IMAGE_PATH)\stb_image;$(GLFW_PATH)\include;$(VULKAN_SDK)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(TINYOBJ_PATH);$(FREETYPE_PATH)\include\freetype2;$(GLM_PATH);$(STB_IMAGE_PATH)\stb_image;$(GLFW_PATH)\include;C:\VulkanSDK\1.1.126.0\Include;C:\Users\Arthur\Documents\OVR\LibOVR\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -161,6 +161,7 @@
     <ClCompile Include="Model2D.cpp" />
     <ClCompile Include="Model2DTextured.cpp" />
     <ClCompile Include="Model3D.cpp" />
+    <ClCompile Include="OVR.cpp" />
     <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
@@ -195,6 +196,7 @@
     <ClInclude Include="Model2D.h" />
     <ClInclude Include="Model2DTextured.h" />
     <ClInclude Include="Model3D.h" />
+    <ClInclude Include="OVR.h" />
     <ClInclude Include="Pipeline.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderPass.h" />

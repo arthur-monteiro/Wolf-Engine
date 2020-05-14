@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanHelper.h"
+#include <array>
 
 namespace Wolf
 {
@@ -12,7 +13,7 @@ namespace Wolf
 
 		void initialize(VkDevice device, VkRenderPass renderPass, std::string vertexShader, std::string geometryShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 			std::vector<VkVertexInputAttributeDescription> attributeInputDescription, VkExtent2D extent, VkSampleCountFlagBits msaaSamples, std::vector<bool> alphaBlending,
-			VkDescriptorSetLayout* descriptorSetLayout, VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkBool32 enableDepthTesting = VK_TRUE, bool addColors = false);
+			VkDescriptorSetLayout* descriptorSetLayout, std::array<float, 2> viewportScale, std::array<float, 2> viewportOffset, VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkBool32 enableDepthTesting = VK_TRUE, bool addColors = false);
 		void initialize(VkDevice device, std::string computeShader, VkDescriptorSetLayout* descriptorSetLayout);
 
 		void cleanup(VkDevice device);
