@@ -44,7 +44,7 @@ namespace Wolf
 		Text* createText();
 
 		void updateOVR();
-		void frame(Scene* scene);
+		void frame(Scene* scene, std::vector<int> commandBufferIDs, std::vector<std::pair<int, int>> commandBufferSynchronisation);
 		bool windowShouldClose();
 
 		void waitIdle();
@@ -55,6 +55,8 @@ namespace Wolf
 		ovrSession getOVRSession() { return m_vulkan->getOVRSession(); }
 		std::array < glm::mat4, 2> getVRProjMatrices() { return m_ovr->getProjMatrices(); }
 		std::array < glm::mat4, 2> getVRViewMatrices() { return m_ovr->getViewMatrices(); }
+		void setVRPlayerPosition(glm::vec3 playerPosition) { m_ovr->setPlayerPos(playerPosition); }
+		VkExtent2D getWindowSize() { return m_swapChain->getImages()[0]->getExtent(); }
 
 	private:
 		static void windowResizeCallback(void* systemManagerInstance, int width, int height)

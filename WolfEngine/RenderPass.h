@@ -29,7 +29,6 @@ namespace Wolf
 
 		// Getters
 	public:
-		Wolf::Semaphore* getRenderCompleteSemaphore() { return &m_renderCompleteSemaphore; }
 		std::vector<Wolf::Image*> getImages(int framebufferID) { return m_framebuffers[framebufferID].getImages(); }
 		VkRenderPass getRenderPass() { return m_renderPass; }
 		VkFramebuffer getFramebuffer() { return m_framebuffers[0].getFramebuffer(); }
@@ -37,7 +36,6 @@ namespace Wolf
 	private:
 		VkRenderPass m_renderPass;
 		std::vector<Framebuffer> m_framebuffers;
-		Wolf::Semaphore m_renderCompleteSemaphore;
 
 	private:
 		static VkRenderPass createRenderPass(VkDevice device, std::vector<Attachment> attachments);

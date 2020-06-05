@@ -25,18 +25,18 @@ namespace Wolf
 	public:
 		~Renderer();
 
-		Renderer(VkDevice device, std::string vertexShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
+		Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 			std::vector<VkVertexInputAttributeDescription> attributeInputDescription, std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts,
 			std::vector<TextureLayout> textureLayouts, std::vector<ImageLayout> imageLayouts, std::vector<SamplerLayout> samplerLayouts, std::vector<BufferLayout> bufferLayouts,
 			std::vector<bool> alphaBlending);
-		Renderer(VkDevice device, std::string vertexShader, std::string geometryShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
+		Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::string geometryShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 			std::vector<VkVertexInputAttributeDescription> attributeInputDescription, std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts,
 			std::vector<TextureLayout> textureLayouts, std::vector<ImageLayout> imageLayouts, std::vector<SamplerLayout> samplerLayouts, std::vector<BufferLayout> bufferLayouts,
 			std::vector<bool> alphaBlending);
-		Renderer(VkDevice device, std::string vertexShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
+		Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 			std::vector<VkVertexInputAttributeDescription> attributeInputDescription, std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts,
 			std::vector<TextureLayout> textureLayouts, std::vector<bool> alphaBlending);
-		void create(VkDevice device, VkRenderPass renderPass, VkExtent2D extent, VkSampleCountFlagBits msaa, VkDescriptorPool descriptorPool);
+		void create(VkDevice device, VkRenderPass renderPass, VkSampleCountFlagBits msaa, VkDescriptorPool descriptorPool);
 		void destroyPipeline(VkDevice device);
 
 		void setViewport(std::array<float, 2> viewportScale, std::array<float, 2> viewportOffset);
@@ -66,6 +66,7 @@ namespace Wolf
 		std::vector<VkVertexInputAttributeDescription> m_attributeInputDescription;
 		std::vector<bool> m_alphaBlending;
 
+		VkExtent2D m_extent = { 0, 0};
 		std::array<float, 2> m_viewportScale = { 1.0f, 1.0f };
 		std::array<float, 2> m_viewportOffset = { 0.0f, 0.0f };
 

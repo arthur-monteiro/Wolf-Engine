@@ -22,6 +22,8 @@ namespace Wolf
 		std::array < glm::mat4, 2> getProjMatrices() { return m_projMatrices; }
 		std::array < glm::mat4, 2> getViewMatrices() { return m_viewMatrices; }
 
+		void setPlayerPos(glm::vec3 playerPos) { m_playerPos = playerPos; }
+
 	public:
 		std::vector<Image*> getImages();
 

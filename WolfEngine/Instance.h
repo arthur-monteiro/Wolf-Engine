@@ -36,7 +36,7 @@ namespace Wolf
 		void cleanup(VkDevice device);
 
 	public: // Getters
-		InstanceBuffer getInstanceBuffer() const { return { m_instanceBuffer, static_cast<uint32_t>(m_instances.m_size()) }; }
+		InstanceBuffer getInstanceBuffer() const { return { m_instanceBuffer, static_cast<uint32_t>(m_instances.size()) }; }
 
 	private:
 		std::vector<T> m_instances;
@@ -56,7 +56,7 @@ namespace Wolf
 	void Instance<T>::loadFromVector(std::vector<T> data)
 	{
 		m_instances = std::move(data);
-		const VkDeviceSize bufferSize = sizeof(m_instances[0]) * m_instances.m_size();
+		const VkDeviceSize bufferSize = sizeof(m_instances[0]) * m_instances.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;

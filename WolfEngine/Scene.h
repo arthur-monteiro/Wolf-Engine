@@ -21,7 +21,7 @@ namespace Wolf
 	class Scene : public VulkanElement
 	{
 	public:
-		enum class CommandType { GRAPHICS, COMPUTE };
+		enum class CommandType { GRAPHICS, COMPUTE, TRANSFER };
 		struct	SceneCreateInfo
 		{
 			CommandType swapChainCommandType = CommandType::GRAPHICS;
@@ -46,6 +46,13 @@ namespace Wolf
 		};
 		int addRenderPass(RenderPassCreateInfo createInfo);
 
+		struct CommandBufferCreateInfo
+		{
+			CommandType commandType = CommandType::COMPUTE;
+			VkPipelineStageFlags finalPipelineStage;
+		};
+		int addCommandBuffer(CommandBufferCreateInfo createInfo);
+
 		struct RendererCreateInfo
 		{
 			int renderPassID;
@@ -57,6 +64,7 @@ namespace Wolf
 			InstanceTemplate instanceTemplate = InstanceTemplate::NO;
 			std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions;
 			std::vector<VkVertexInputBindingDescription> inputBindingDescriptions;
+			std::vector<bool> alphaBlending = { true };
 
 			// Descriptor set layout
 			std::vector<UniformBufferObjectLayout> uboLayouts;
@@ -66,6 +74,7 @@ namespace Wolf
 			std::vector<BufferLayout> bufferLayouts;
 
 			// Viewport
+			VkExtent2D extent = { 0, 0 };
 			std::array<float, 2> viewportScale = { 1.0f, 1.0f };
 			std::array<float, 2> viewportOffset = { 0.0f, 0.0f };
 		};
@@ -107,7 +116,8 @@ namespace Wolf
 		
 		void record();
 		
-		void frame(Queue graphicsQueue, uint32_t swapChainImageIndex, Semaphore* imageAvailableSemaphore);
+		void frame(Queue graphicsQueue, Queue computeQueue, uint32_t swapChainImageIndex, Semaphore* imageAvailableSemaphore, std::vector<int> commandBufferIDs,
+			std::vector<std::pair<int, int>>);
 
 		VkSemaphore getSwapChainSemaphore() const { return m_swapChainCompleteSemaphore->getSemaphore(); }
 
@@ -134,6 +144,11 @@ namespace Wolf
 			std::unique_ptr<CommandBuffer> commandBuffer;
 			std::unique_ptr<Semaphore> semaphore;
 			CommandType type;
+
+			SceneCommandBuffer(CommandType type)
+			{
+				this->type = type;
+			}
 		};
 		std::vector<SceneCommandBuffer> m_sceneCommandBuffers;
 
@@ -160,6 +175,9 @@ namespace Wolf
 
 		// VR
 		bool m_useOVR = false;
+
+	private:
+		inline void recordRenderPass(SceneRenderPass& sceneRenderPasse);
 	};
 
 	template <typename T>

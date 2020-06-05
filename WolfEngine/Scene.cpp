@@ -53,7 +53,7 @@ int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo)
 		createInfo.outputs[0].clearValue = { 1.0f };
 		createInfo.outputs[0].attachment = Attachment(m_swapChainImages[0]->getExtent(), findDepthFormat(m_physicalDevice), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-		createInfo.outputs[1].clearValue = { 1.0f, 0.0f, 0.0f, 1.0f };
+		createInfo.outputs[1].clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
 		createInfo.outputs[1].attachment = Attachment(m_swapChainImages[0]->getExtent(), m_swapChainImages[0]->getFormat(), VK_SAMPLE_COUNT_1_BIT, m_useOVR ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 	}
 	else
@@ -96,6 +96,24 @@ int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo)
 		m_sceneRenderPasses[m_sceneRenderPasses.size() - 1].renderPass = std::make_unique<RenderPass>(m_device, m_physicalDevice, m_graphicsCommandPool, attachments, std::vector<VkExtent2D>(1, attachments[0].extent));
 
 	return static_cast<int>(m_sceneRenderPasses.size() - 1);
+}
+
+int Wolf::Scene::addCommandBuffer(CommandBufferCreateInfo createInfo)
+{
+	m_sceneCommandBuffers.emplace_back(createInfo.commandType);
+	
+	if (createInfo.commandType == CommandType::GRAPHICS)
+		m_sceneCommandBuffers.back().commandBuffer = std::make_unique<CommandBuffer>(m_device, m_graphicsCommandPool);
+	else if (createInfo.commandType == CommandType::COMPUTE)
+		m_sceneCommandBuffers.back().commandBuffer = std::make_unique<CommandBuffer>(m_device, m_computeCommandPool);
+	else
+		Debug::sendError("Invalid command type");
+	
+	m_sceneCommandBuffers.back().semaphore = std::make_unique<Semaphore>();
+	m_sceneCommandBuffers.back().semaphore->initialize(m_device);
+	m_sceneCommandBuffers.back().semaphore->setPipelineStage(createInfo.finalPipelineStage);
+
+	return static_cast<int>(m_sceneCommandBuffers.size() - 1);
 }
 
 int Wolf::Scene::addRenderer(RendererCreateInfo createInfo)
@@ -146,10 +164,13 @@ int Wolf::Scene::addRenderer(RendererCreateInfo createInfo)
 			createInfo.inputBindingDescriptions.push_back(inputBindingDescription);
 		break;
 	}
+
+	if (createInfo.extent.width == 0)
+		createInfo.extent = m_swapChainImages[0]->getExtent();
 	
-	const auto r = new Renderer(m_device, createInfo.vertexShaderPath, createInfo.fragmentShaderPath, createInfo.inputBindingDescriptions, 
+	const auto r = new Renderer(m_device, createInfo.extent, createInfo.vertexShaderPath, createInfo.fragmentShaderPath, createInfo.inputBindingDescriptions, 
 	                            std::move(createInfo.inputAttributeDescriptions), std::move(createInfo.uboLayouts), std::move(createInfo.textureLayouts), std::move(createInfo.imageLayouts), 
-								std::move(createInfo.samplerLayouts), std::move(createInfo.bufferLayouts), { true });
+								std::move(createInfo.samplerLayouts), std::move(createInfo.bufferLayouts), createInfo.alphaBlending);
 	
 	m_sceneRenderPasses[createInfo.renderPassID].renderers.push_back(std::unique_ptr<Renderer>(r));
 	m_sceneRenderPasses[createInfo.renderPassID].renderers.back()->setViewport(createInfo.viewportScale, createInfo.viewportOffset);
@@ -232,7 +253,7 @@ void Wolf::Scene::record()
 	{
 		// Renderers creation
 		for (std::unique_ptr<Renderer>& renderer : sceneRenderPass.renderers)
-			renderer->create(m_device, sceneRenderPass.renderPass->getRenderPass(), m_swapChainImages[0]->getExtent(), VK_SAMPLE_COUNT_1_BIT, m_descriptorPool.getDescriptorPool());
+			renderer->create(m_device, sceneRenderPass.renderPass->getRenderPass(), VK_SAMPLE_COUNT_1_BIT, m_descriptorPool.getDescriptorPool());
 	}
 	
 	// As a scene is designed to be renderer on a screen, we need to create a command buffer for each swapchain image
@@ -332,12 +353,97 @@ void Wolf::Scene::record()
 		m_swapChainCompleteSemaphore = std::make_unique<Semaphore>();
 		m_swapChainCompleteSemaphore->initialize(m_device);
 	}
+
+	// Other command buffers
+	for(size_t i(0); i < m_sceneCommandBuffers.size(); ++i)
+	{
+		m_sceneCommandBuffers[i].commandBuffer->beginCommandBuffer();
+
+		for (auto& sceneRenderPasse : m_sceneRenderPasses)
+		{
+			if (sceneRenderPasse.commandBufferID == static_cast<int>(i))
+			{
+				recordRenderPass(sceneRenderPasse);
+			}
+		}
+
+		m_sceneCommandBuffers[i].commandBuffer->endCommandBuffer();
+	}
 }
 
-void Wolf::Scene::frame(Queue graphicsQueue, uint32_t swapChainImageIndex, Semaphore* imageAvailableSemaphore)
+inline void Wolf::Scene::recordRenderPass(SceneRenderPass& sceneRenderPasse)
 {
-	if(imageAvailableSemaphore)
-		m_swapChainCommandBuffers[swapChainImageIndex]->submit(m_device, graphicsQueue, { imageAvailableSemaphore }, { m_swapChainCompleteSemaphore->getSemaphore() });
-	else
-		m_swapChainCommandBuffers[swapChainImageIndex]->submit(m_device, graphicsQueue, { }, { });
+	std::vector<VkClearValue> clearValues(0);
+	for (RenderPassOutput& output : sceneRenderPasse.outputs)
+		clearValues.push_back(output.clearValue);
+
+	sceneRenderPasse.renderPass->beginRenderPass(0, clearValues, m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer());
+
+	for (std::unique_ptr<Renderer>& renderer : sceneRenderPasse.renderers)
+	{
+		vkCmdBindPipeline(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer->getPipeline());
+		const VkDeviceSize offsets[1] = { 0 };
+
+		std::vector<std::tuple<VertexBuffer, InstanceBuffer, VkDescriptorSet>> meshesToRender = renderer->getMeshes();
+		for (std::tuple<VertexBuffer, InstanceBuffer, VkDescriptorSet>& mesh : meshesToRender)
+		{
+			bool isInstancied = std::get<1>(mesh).nInstances > 0 && std::get<1>(mesh).instanceBuffer;
+
+			vkCmdBindVertexBuffers(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), 0, 1, &std::get<0>(mesh).vertexBuffer, offsets);
+			vkCmdBindIndexBuffer(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), std::get<0>(mesh).indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+			if (isInstancied)
+				vkCmdBindVertexBuffers(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), 1, 1, &std::get<1>(mesh).instanceBuffer, offsets);
+
+			if (std::get<2>(mesh) != VK_NULL_HANDLE) // render can be done without descriptor set
+				vkCmdBindDescriptorSets(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+					renderer->getPipelineLayout(), 0, 1, &std::get<2>(mesh), 0, nullptr);
+
+			if (!isInstancied)
+				vkCmdDrawIndexed(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), std::get<0>(mesh).nbIndices, 1, 0, 0, 0);
+			else
+				vkCmdDrawIndexed(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), std::get<0>(mesh).nbIndices, std::get<1>(mesh).nInstances, 0, 0, 0);
+		}
+	}
+
+	sceneRenderPasse.renderPass->endRenderPass(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer());
+}
+
+void Wolf::Scene::frame(Queue graphicsQueue, Queue computeQueue, uint32_t swapChainImageIndex, Semaphore* imageAvailableSemaphore, std::vector<int> commandBufferIDs, 
+	std::vector<std::pair<int, int>> commandBufferSynchronisation)
+{
+	for(auto& commandBufferID : commandBufferIDs)
+	{
+		if (commandBufferID < 0)
+			continue;
+
+		if (m_sceneCommandBuffers[commandBufferID].type == CommandType::GRAPHICS)
+			m_sceneCommandBuffers[commandBufferID].commandBuffer->submit(m_device, graphicsQueue, {}, { m_sceneCommandBuffers[commandBufferID].semaphore->getSemaphore() });
+		else if (m_sceneCommandBuffers[commandBufferID].type == CommandType::COMPUTE)
+			m_sceneCommandBuffers[commandBufferID].commandBuffer->submit(m_device, computeQueue, {}, { m_sceneCommandBuffers[commandBufferID].semaphore->getSemaphore() });
+		else
+			Debug::sendError("Invalid queue type at sumbit");
+	}
+
+	std::vector<Semaphore*> waitSemaphoreSwapChain;
+	std::vector<VkSemaphore> signalSemaphoreSwapChain;
+	if (imageAvailableSemaphore)
+	{
+		waitSemaphoreSwapChain.push_back(imageAvailableSemaphore);
+		signalSemaphoreSwapChain.push_back(m_swapChainCompleteSemaphore->getSemaphore());	
+	}
+
+	for(auto& commandBufferWaiting : commandBufferSynchronisation)
+	{
+		if(commandBufferWaiting.second == -1)
+		{
+			if (commandBufferWaiting.first == -1)
+				Debug::sendError("No command buffer can't wait from swapchain command buffer");
+			else if (commandBufferWaiting.first < 0)
+				Debug::sendError("Invalid command buffer ID");
+			waitSemaphoreSwapChain.push_back(m_sceneCommandBuffers[commandBufferWaiting.first].semaphore.get());
+		}
+	}
+
+	m_swapChainCommandBuffers[swapChainImageIndex]->submit(m_device, graphicsQueue, waitSemaphoreSwapChain, signalSemaphoreSwapChain);
 }

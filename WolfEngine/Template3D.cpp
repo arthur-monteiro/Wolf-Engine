@@ -3,14 +3,8 @@
 #include <utility>
 
 Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scene, std::string modelFilename,
-                             std::string mtlFolder) : m_wolfInstance(wolfInstance), m_scene(scene)
+                             std::string mtlFolder, float ratio) : m_wolfInstance(wolfInstance), m_scene(scene)
 {
-	// Render Pass Creation
-	Scene::RenderPassCreateInfo renderPassCreateInfo{};
-	renderPassCreateInfo.commandBufferID = -1; // default command buffer
-	renderPassCreateInfo.outputIsSwapChain = true;
-	m_renderPassID = m_scene->addRenderPass(renderPassCreateInfo);
-
 	Model::ModelCreateInfo modelCreateInfo{};
 	modelCreateInfo.inputVertexTemplate = InputVertexTemplate::FULL_3D_MATERIAL;
 	Model* model = m_wolfInstance->createModel(modelCreateInfo);
@@ -22,6 +16,20 @@ Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scen
 
 	// Renderer
 	{
+		Scene::CommandBufferCreateInfo commandBufferCreateInfo;
+		commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		commandBufferCreateInfo.commandType = Scene::CommandType::GRAPHICS;
+		m_gBufferCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
+		m_GBuffer = std::make_unique<GBuffer>(wolfInstance, scene, m_gBufferCommandBufferID, wolfInstance->getWindowSize(), VK_SAMPLE_COUNT_1_BIT, model, glm::mat4(1.0f), false);
+		
+		//m_cascadedShadowMapping = std::make_unique<CascadedShadowMapping>(wolfInstance, scene, model, 0.1f, 32.f, glm::radians(45.0f), ratio);
+
+		// Render Pass Creation
+		Scene::RenderPassCreateInfo renderPassCreateInfo{};
+		renderPassCreateInfo.commandBufferID = -1; // default command buffer
+		renderPassCreateInfo.outputIsSwapChain = true;
+		m_renderPassID = m_scene->addRenderPass(renderPassCreateInfo);
+		
 		Scene::RendererCreateInfo rendererCreateInfo;
 		rendererCreateInfo.vertexShaderPath = "Shaders/template3D/vert.spv";
 		rendererCreateInfo.fragmentShaderPath = "Shaders/template3D/frag.spv";
@@ -51,6 +59,8 @@ Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scen
 
 		Scene::AddModelInfo addModelInfo{};
 		addModelInfo.model = model;
+		addModelInfo.renderPassID = m_renderPassID;
+		addModelInfo.rendererID = m_rendererID;
 
 		// UBO
 		m_uboMVP = wolfInstance->createUniformBufferObject();
@@ -84,14 +94,26 @@ Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scen
 	m_scene->record();
 }
 
-void Wolf::Template3D::updateViewMatrix(glm::mat4 view)
+void Wolf::Template3D::update(glm::mat4 view, glm::vec3 cameraPosition, glm::vec3 cameraOrientation)
 {
 	m_viewMatrix = view;
 	updateMVP();
+	//m_cascadedShadowMapping->updateMatrices(glm::vec3(-1.0f, -5.0f, 0.0f), cameraPosition, cameraOrientation, m_modelMatrix);
+}
+
+std::vector<int> Wolf::Template3D::getCommandBufferToSubmit()
+{
+	return { m_gBufferCommandBufferID };
+}
+
+std::vector<std::pair<int, int>> Wolf::Template3D::getCommandBufferSynchronisation()
+{
+	return { { m_gBufferCommandBufferID, -1 } };
 }
 
 void Wolf::Template3D::updateMVP()
 {
 	glm::mat4 mvp = m_projectionMatrix * m_viewMatrix * m_modelMatrix;
+	m_GBuffer->updateMVPMatrix(m_modelMatrix, m_viewMatrix, m_projectionMatrix);
 	m_uboMVP->updateData(&mvp);
 }

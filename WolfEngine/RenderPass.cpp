@@ -26,12 +26,6 @@ void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevi
 	{
 		m_framebuffers[i].initialize(device, physicalDevice, m_renderPass, extents[i], attachments);
 	}
-
-	m_renderCompleteSemaphore.initialize(device);
-	if (attachments.size() > 1)
-		m_renderCompleteSemaphore.setPipelineStage(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-	else
-		m_renderCompleteSemaphore.setPipelineStage(VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
 }
 
 void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, const std::vector<Attachment>& attachments, std::vector<Image*> images)
@@ -44,8 +38,6 @@ void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevi
 	m_framebuffers.resize(images.size());
 	for (size_t i(0); i < images.size(); ++i)
 		m_framebuffers[i].initialize(device, physicalDevice, m_renderPass, images[i], attachments);
-
-	m_renderCompleteSemaphore.initialize(device);
 }
 
 void Wolf::RenderPass::beginRenderPass(size_t framebufferID, std::vector<VkClearValue> clearValues, VkCommandBuffer commandBuffer)
@@ -82,7 +74,6 @@ void Wolf::RenderPass::cleanup(VkDevice device, VkCommandPool commandPool)
 	vkDestroyRenderPass(device, m_renderPass, nullptr);
 	for (int i(0); i < m_framebuffers.size(); ++i)
 		m_framebuffers[i].cleanup(device);
-	m_renderCompleteSemaphore.cleanup(device);
 }
 
 VkRenderPass Wolf::RenderPass::createRenderPass(VkDevice device, std::vector<Attachment> attachments)

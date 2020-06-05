@@ -22,6 +22,9 @@
     <Filter Include="Templates">
       <UniqueIdentifier>{c94afc11-85c3-4f5e-908b-4b4b69ba3a5a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Rendering Algorithms">
+      <UniqueIdentifier>{f9774f90-ac51-4187-b2c4-1f41d498a61c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WolfEngine.cpp">
@@ -123,6 +126,18 @@
     <ClCompile Include="OVR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Template3D_VR.cpp">
+      <Filter>Templates</Filter>
+    </ClCompile>
+    <ClCompile Include="CascadedShadowMapping.cpp">
+      <Filter>Rendering Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="DepthPass.cpp">
+      <Filter>Rendering Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="GBuffer.cpp">
+      <Filter>Rendering Algorithms</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WolfEngine.h">
@@ -223,6 +238,18 @@
     </ClInclude>
     <ClInclude Include="OVR.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Template3D_VR.h">
+      <Filter>Templates</Filter>
+    </ClInclude>
+    <ClInclude Include="CascadedShadowMapping.h">
+      <Filter>Rendering Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="DepthPass.h">
+      <Filter>Rendering Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="GBuffer.h">
+      <Filter>Rendering Algorithms</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

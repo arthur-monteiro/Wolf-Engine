@@ -146,12 +146,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Attachment.cpp" />
+    <ClCompile Include="CascadedShadowMapping.cpp" />
     <ClCompile Include="CommandBuffer.cpp" />
     <ClCompile Include="CommandPool.cpp" />
     <ClCompile Include="Debug.cpp" />
+    <ClCompile Include="DepthPass.cpp" />
     <ClCompile Include="DescriptorPool.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
+    <ClCompile Include="GBuffer.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="InputVertexTemplate.cpp" />
     <ClCompile Include="Instance.cpp" />
@@ -170,6 +173,7 @@
     <ClCompile Include="Semaphore.cpp" />
     <ClCompile Include="SwapChain.cpp" />
     <ClCompile Include="Template3D.cpp" />
+    <ClCompile Include="Template3D_VR.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="UniformBufferObject.cpp" />
@@ -181,12 +185,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Attachment.h" />
+    <ClInclude Include="CascadedShadowMapping.h" />
     <ClInclude Include="CommandBuffer.h" />
     <ClInclude Include="CommandPool.h" />
     <ClInclude Include="Debug.h" />
+    <ClInclude Include="DepthPass.h" />
     <ClInclude Include="DescriptorPool.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="FrameBuffer.h" />
+    <ClInclude Include="GBuffer.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="InputVertexTemplate.h" />
     <ClInclude Include="Instance.h" />
@@ -205,6 +212,7 @@
     <ClInclude Include="Semaphore.h" />
     <ClInclude Include="SwapChain.h" />
     <ClInclude Include="Template3D.h" />
+    <ClInclude Include="Template3D_VR.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="UniformBufferObject.h" />

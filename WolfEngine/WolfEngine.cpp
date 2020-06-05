@@ -1,4 +1,6 @@
 #include "WolfEngine.h"
+
+#include <utility>
 #include "Model2D.h"
 #include "Model2DTextured.h"
 #include "Model3D.h"
@@ -88,14 +90,15 @@ void Wolf::WolfInstance::updateOVR()
 	m_ovr->update();
 }
 
-void Wolf::WolfInstance::frame(Scene* scene)
+void Wolf::WolfInstance::frame(Scene* scene, std::vector<int> commandBufferIDs, std::vector<std::pair<int, int>> commandBufferSynchronisation)
 {
 	glfwPollEvents();
 
 	if(m_useOVR)
 	{
 		const uint32_t swapChainImageIndex = m_ovr->getCurrentImage(m_vulkan->getDevice(), m_vulkan->getGraphicsQueue().queue);
-		scene->frame(m_vulkan->getGraphicsQueue(), swapChainImageIndex, m_swapChain->getImageAvailableSemaphore());
+		scene->frame(m_vulkan->getGraphicsQueue(), m_vulkan->getComputeQueue(), swapChainImageIndex, m_swapChain->getImageAvailableSemaphore(),
+		             std::move(commandBufferIDs), std::move(commandBufferSynchronisation));
 		m_ovr->present(swapChainImageIndex);
 
 		const uint32_t windowSwapChainImageIndex = m_swapChain->getCurrentImage(m_vulkan->getDevice());
@@ -105,7 +108,8 @@ void Wolf::WolfInstance::frame(Scene* scene)
 	else
 	{
 		const uint32_t swapChainImageIndex = m_swapChain->getCurrentImage(m_vulkan->getDevice());
-		scene->frame(m_vulkan->getGraphicsQueue(), swapChainImageIndex, m_swapChain->getImageAvailableSemaphore());
+		scene->frame(m_vulkan->getGraphicsQueue(), m_vulkan->getComputeQueue(), swapChainImageIndex, m_swapChain->getImageAvailableSemaphore(), std::move(commandBufferIDs),
+			std::move(commandBufferSynchronisation));
 		m_swapChain->present(m_vulkan->getPresentQueue(), scene->getSwapChainSemaphore(), swapChainImageIndex);
 	}
 }

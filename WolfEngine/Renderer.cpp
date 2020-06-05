@@ -5,7 +5,7 @@
 Wolf::Renderer::~Renderer()
 = default;
 
-Wolf::Renderer::Renderer(VkDevice device, std::string vertexShader, std::string fragmentShader,
+Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::string fragmentShader,
 	std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 	std::vector<VkVertexInputAttributeDescription> attributeInputDescription,
 	std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts, std::vector<TextureLayout> textureLayouts,
@@ -18,12 +18,13 @@ Wolf::Renderer::Renderer(VkDevice device, std::string vertexShader, std::string 
 	m_vertexInputDescription = std::move(vertexInputDescription);
 	m_attributeInputDescription = std::move(attributeInputDescription);
 	m_alphaBlending = std::move(alphaBlending);
+	m_extent = extent;
 
 	createDescriptorSetLayout(device, std::move(uniformBufferObjectLayouts), std::move(textureLayouts), std::move(imageLayouts), std::move(samplerLayouts),
 		std::move(bufferLayouts));
 }
 
-Wolf::Renderer::Renderer(VkDevice device, std::string vertexShader, std::string geometryShader,
+Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::string geometryShader,
 	std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 	std::vector<VkVertexInputAttributeDescription> attributeInputDescription,
 	std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts, std::vector<TextureLayout> textureLayouts,
@@ -36,12 +37,13 @@ Wolf::Renderer::Renderer(VkDevice device, std::string vertexShader, std::string 
 	m_vertexInputDescription = std::move(vertexInputDescription);
 	m_attributeInputDescription = std::move(attributeInputDescription);
 	m_alphaBlending = std::move(alphaBlending);
+	m_extent = extent;
 
 	createDescriptorSetLayout(device, std::move(uniformBufferObjectLayouts), std::move(textureLayouts), std::move(imageLayouts), std::move(samplerLayouts),
 		std::move(bufferLayouts));
 }
 
-Wolf::Renderer::Renderer(VkDevice device, std::string vertexShader,
+Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader,
 	std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 	std::vector<VkVertexInputAttributeDescription> attributeInputDescription,
 	std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts, std::vector<TextureLayout> textureLayouts,
@@ -53,15 +55,16 @@ Wolf::Renderer::Renderer(VkDevice device, std::string vertexShader,
 	m_vertexInputDescription = std::move(vertexInputDescription);
 	m_attributeInputDescription = std::move(attributeInputDescription);
 	m_alphaBlending = std::move(alphaBlending);
+	m_extent = extent;
 
 	createDescriptorSetLayout(device, std::move(uniformBufferObjectLayouts), std::move(textureLayouts), {}, {}, {}); // !! change definition to allow image and sampler separated
 }
 
-void Wolf::Renderer::create(VkDevice device, VkRenderPass renderPass, VkExtent2D extent, VkSampleCountFlagBits msaa, VkDescriptorPool descriptorPool)
+void Wolf::Renderer::create(VkDevice device, VkRenderPass renderPass, VkSampleCountFlagBits msaa, VkDescriptorPool descriptorPool)
 {
 	if (!m_pipelineCreated)
 	{
-		m_pipeline.initialize(device, renderPass, m_vertexShader, m_geometryShader, m_fragmentShader, m_vertexInputDescription, m_attributeInputDescription, extent, msaa, m_alphaBlending, &m_descriptorSetLayout, m_viewportScale, m_viewportOffset);
+		m_pipeline.initialize(device, renderPass, m_vertexShader, m_geometryShader, m_fragmentShader, m_vertexInputDescription, m_attributeInputDescription, m_extent, msaa, m_alphaBlending, &m_descriptorSetLayout, m_viewportScale, m_viewportOffset);
 		m_pipelineCreated = true;
 	}
 

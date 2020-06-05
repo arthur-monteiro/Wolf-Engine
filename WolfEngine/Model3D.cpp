@@ -14,7 +14,17 @@ Wolf::Model3D::~Model3D()
 int Wolf::Model3D::addMeshFromVertices(void* vertices, uint32_t vertexCount, size_t vertexSize,
                                        std::vector<uint32_t> indices)
 {
-	return -1;
+	Mesh<Vertex3D> mesh;
+	std::vector<Vertex3D> vVertices(vertexCount);
+	for (size_t i(0); i < vertexCount; ++i)
+	{
+		vVertices[i] = reinterpret_cast<Vertex3D*>(vertices)[i];
+	}
+	mesh.loadFromVertices(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, vVertices, std::move(indices));
+
+	m_meshes.push_back(mesh);
+
+	return static_cast<int>(m_meshes.size() - 1);
 }
 
 void Wolf::Model3D::loadObj(ModelLoadingInfo modelLoadingInfo)
@@ -149,9 +159,9 @@ void Wolf::Model3D::loadObj(ModelLoadingInfo modelLoadingInfo)
 	m_meshes.push_back(mesh);
 	//graphicsQueueMutex->unlock();
 
-	/*m_images.resize(materials.m_size() * 5);
+	/*m_images.resize(materials.size() * 5);
 	int indexTexture = 0;
-	for (int i(0); i < materials.m_size(); ++i)
+	for (int i(0); i < materials.size(); ++i)
 	{
 		graphicsQueueMutex->lock();
 
@@ -172,6 +182,7 @@ void Wolf::Model3D::loadObj(ModelLoadingInfo modelLoadingInfo)
 
 std::vector<Wolf::VertexBuffer> Wolf::Model3D::getVertexBuffers()
 {
+	
 	std::vector<VertexBuffer> vertexBuffers;
 
 	for (auto& m_mesh : m_meshes)
