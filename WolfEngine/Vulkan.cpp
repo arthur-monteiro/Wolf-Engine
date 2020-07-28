@@ -22,11 +22,11 @@ Wolf::Vulkan::Vulkan(GLFWwindow* glfwWindowPointer, bool useOVR)
 	}	
 	
 #ifndef NDEBUG
-	m_validationLayers = { "VK_LAYER_LUNARG_standard_validation" };
+	m_validationLayers = { "VK_LAYER_KHRONOS_validation" };
 #endif
 	createInstance();
 #ifndef NDEBUG
-	setupDebugCallback();
+	setupDebugMessenger();
 #endif
 	if (glfwCreateWindowSurface(m_instance, glfwWindowPointer, nullptr, &m_surface) != VK_SUCCESS)
 		throw std::runtime_error("Error : window surface creation");
@@ -76,26 +76,31 @@ void Wolf::Vulkan::createInstance()
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	createInfo.ppEnabledExtensionNames = extensions.data();
 
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
 #ifndef NDEBUG
 	createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
 	createInfo.ppEnabledLayerNames = m_validationLayers.data();
+
+	populateDebugMessengerCreateInfo(debugCreateInfo);
+	createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 #else
 	createInfo.enabledLayerCount = 0;
+	createInfo.pNext = nullptr;
 #endif
 
 	if (vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS)
 		throw std::runtime_error("Error: instance creation");
 }
 
-void Wolf::Vulkan::setupDebugCallback()
+void Wolf::Vulkan::setupDebugMessenger()
 {
-	VkDebugReportCallbackCreateInfoEXT createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-	createInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
-	createInfo.pfnCallback = debugCallback;
+	VkDebugUtilsMessengerCreateInfoEXT createInfo;
+	populateDebugMessengerCreateInfo(createInfo);
 
-	if (createDebugReportCallbackEXT(m_instance, &createInfo, nullptr, &m_debugCallback) != VK_SUCCESS)
-		throw std::runtime_error("Error : Callback debug creation !");
+	if (CreateDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to set up debug messenger!");
+	}
 }
 
 void Wolf::Vulkan::pickPhysicalDevice()
@@ -209,4 +214,13 @@ void Wolf::Vulkan::createDevice()
 		m_mutexComputeQueue = new std::mutex();
 	else
 		m_mutexComputeQueue = m_mutexGraphicsQueue;
+}
+
+void Wolf::Vulkan::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+{
+	createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	createInfo.pfnUserCallback = debugCallback;
 }

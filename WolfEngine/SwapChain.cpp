@@ -118,7 +118,7 @@ VkSurfaceFormatKHR Wolf::SwapChain::chooseSwapSurfaceFormat(const std::vector<Vk
 VkPresentModeKHR Wolf::SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
 	VkPresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
-	return bestMode;
+	//return bestMode;
 
 	for (const auto& availablePresentMode : availablePresentModes)
 	{

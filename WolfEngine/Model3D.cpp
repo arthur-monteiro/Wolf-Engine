@@ -97,10 +97,10 @@ void Wolf::Model3D::loadObj(ModelLoadingInfo modelLoadingInfo)
 				vertices.push_back(vertex);
 			}
 
-			/*if (std::find(m_toBeLast.begin(), m_toBeLast.end(), materialID) == m_toBeLast.end())*/
+			if (std::find(m_toBeLast.begin(), m_toBeLast.end(), materialID) == m_toBeLast.end())
 				indices.push_back(uniqueVertices[vertex]);
-			/*else
-				lastIndices.push_back(uniqueVertices[vertex]);*/
+			else
+				lastIndices.push_back(uniqueVertices[vertex]);
 
 			numVertex++;
 		}

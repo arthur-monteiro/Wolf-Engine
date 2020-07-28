@@ -5,6 +5,7 @@
 Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scene, std::string modelFilename,
                              std::string mtlFolder, float ratio) : m_wolfInstance(wolfInstance), m_scene(scene)
 {
+	// Model creation
 	Model::ModelCreateInfo modelCreateInfo{};
 	modelCreateInfo.inputVertexTemplate = InputVertexTemplate::FULL_3D_MATERIAL;
 	Model* model = m_wolfInstance->createModel(modelCreateInfo);
@@ -14,81 +15,59 @@ Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scen
 	modelLoadingInfo.mtlFolder = std::move(mtlFolder);
 	model->loadObj(modelLoadingInfo);
 
-	// Renderer
+	// Data
 	{
-		Scene::CommandBufferCreateInfo commandBufferCreateInfo;
-		commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-		commandBufferCreateInfo.commandType = Scene::CommandType::GRAPHICS;
-		m_gBufferCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
-		m_GBuffer = std::make_unique<GBuffer>(wolfInstance, scene, m_gBufferCommandBufferID, wolfInstance->getWindowSize(), VK_SAMPLE_COUNT_1_BIT, model, glm::mat4(1.0f), false);
-		
-		//m_cascadedShadowMapping = std::make_unique<CascadedShadowMapping>(wolfInstance, scene, model, 0.1f, 32.f, glm::radians(45.0f), ratio);
-
-		// Render Pass Creation
-		Scene::RenderPassCreateInfo renderPassCreateInfo{};
-		renderPassCreateInfo.commandBufferID = -1; // default command buffer
-		renderPassCreateInfo.outputIsSwapChain = true;
-		m_renderPassID = m_scene->addRenderPass(renderPassCreateInfo);
-		
-		Scene::RendererCreateInfo rendererCreateInfo;
-		rendererCreateInfo.vertexShaderPath = "Shaders/template3D/vert.spv";
-		rendererCreateInfo.fragmentShaderPath = "Shaders/template3D/frag.spv";
-		rendererCreateInfo.inputVerticesTemplate = InputVertexTemplate::FULL_3D_MATERIAL;
-		rendererCreateInfo.instanceTemplate = InstanceTemplate::NO;
-		rendererCreateInfo.renderPassID = m_renderPassID;
-
-		UniformBufferObjectLayout mvpLayout{};
-		mvpLayout.accessibility = VK_SHADER_STAGE_VERTEX_BIT;
-		mvpLayout.binding = 0;
-		rendererCreateInfo.uboLayouts.push_back(mvpLayout);
-
-		SamplerLayout samplerLayout{};
-		samplerLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-		samplerLayout.binding = 1;
-		rendererCreateInfo.samplerLayouts.push_back(samplerLayout);
-
-		for (size_t i(0); i < model->getNumberOfImages(); ++i)
-		{
-			ImageLayout imageLayout{};
-			imageLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-			imageLayout.binding = static_cast<uint32_t>(i + 2);
-			rendererCreateInfo.imageLayouts.push_back(imageLayout);
-		}
-
-		m_rendererID = m_scene->addRenderer(rendererCreateInfo);
-
-		Scene::AddModelInfo addModelInfo{};
-		addModelInfo.model = model;
-		addModelInfo.renderPassID = m_renderPassID;
-		addModelInfo.rendererID = m_rendererID;
-
-		// UBO
-		m_uboMVP = wolfInstance->createUniformBufferObject();
-
 		m_projectionMatrix = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
 		m_projectionMatrix[1][1] *= -1;
 		m_viewMatrix = glm::lookAt(glm::vec3(-2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		m_modelMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
+	}
+
+	// Draw
+	{
+		// GBuffer
+		Scene::CommandBufferCreateInfo commandBufferCreateInfo;
+		commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		commandBufferCreateInfo.commandType = Scene::CommandType::GRAPHICS;
+		m_gBufferCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
 		
-		glm::mat4 mvp = m_projectionMatrix * m_viewMatrix * m_modelMatrix;
-		m_uboMVP->initializeData(&mvp, sizeof(glm::mat4));
-		addModelInfo.ubos.emplace_back(m_uboMVP, mvpLayout);
+		m_GBuffer = std::make_unique<GBuffer>(wolfInstance, scene, m_gBufferCommandBufferID, wolfInstance->getWindowSize(), VK_SAMPLE_COUNT_1_BIT, model, glm::mat4(1.0f), true);
 
-		// Sampler
-		addModelInfo.samplers.emplace_back(model->getSampler(), samplerLayout);
+		Image* depth = m_GBuffer->getDepth();
+		Image* albedo = m_GBuffer->getAlbedo();
+		Image* normalRoughnessMetal = m_GBuffer->getNormalRoughnessMetal();
 
-		// Images
-		std::vector<Image*> images = model->getImages();
-		for(size_t i(0); i < images.size(); ++i)
-		{
-			ImageLayout imageLayout{};
-			imageLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-			imageLayout.binding = static_cast<uint32_t>(i + 2);
+		// SSAO
+		commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+		commandBufferCreateInfo.commandType = Scene::CommandType::COMPUTE;
+		m_SSAOCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
+		m_ssao = std::make_unique<SSAO>(wolfInstance, scene, m_SSAOCommandBufferID, wolfInstance->getWindowSize(), m_projectionMatrix, depth, normalRoughnessMetal, 0.1f, 100.0f);
 
-			addModelInfo.images.emplace_back(images[i], imageLayout);
-		}
-		
-		m_scene->addModel(addModelInfo);
+		// CSM
+		m_cascadedShadowMapping = std::make_unique<CascadedShadowMapping>(wolfInstance, scene, model, 0.1f, 100.0f, 32.f, glm::radians(45.0f), m_wolfInstance->getWindowSize(), 
+			depth, m_projectionMatrix);
+
+		// Direct Lighting
+		m_directLightingSSRBloomCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
+		m_directLighting = std::make_unique<DirectLightingPBR>(wolfInstance, scene, m_directLightingSSRBloomCommandBufferID, m_wolfInstance->getWindowSize(), depth,
+			albedo, normalRoughnessMetal, m_cascadedShadowMapping->getOutputShadowMaskTexture()->getImage(), m_cascadedShadowMapping->getOutputVolumetricLightMaskTexture()->getImage(),
+			m_ssao->getOutputTexture()->getImage(), m_projectionMatrix, 0.1f, 100.0f);
+
+		// Merge
+		Scene::ComputePassCreateInfo mergeComputePassCreateInfo;
+		mergeComputePassCreateInfo.computeShaderPath = "Shaders/Merge/comp.spv";
+		mergeComputePassCreateInfo.outputIsSwapChain = true;
+		mergeComputePassCreateInfo.commandBufferID = -1;
+		mergeComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
+
+		ImageLayout directLightingImage{};
+		directLightingImage.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
+		directLightingImage.binding = 0;
+
+		mergeComputePassCreateInfo.images = { { m_directLighting->getOutputTexture()->getImage(), directLightingImage } };
+		mergeComputePassCreateInfo.outputBinding = 1;
+
+		m_mergeComputePassID = scene->addComputePass(mergeComputePassCreateInfo);
 	}
 
 	m_scene->record();
@@ -98,22 +77,50 @@ void Wolf::Template3D::update(glm::mat4 view, glm::vec3 cameraPosition, glm::vec
 {
 	m_viewMatrix = view;
 	updateMVP();
-	//m_cascadedShadowMapping->updateMatrices(glm::vec3(-1.0f, -5.0f, 0.0f), cameraPosition, cameraOrientation, m_modelMatrix);
+	m_cascadedShadowMapping->updateMatrices(m_lightDir, cameraPosition, cameraOrientation, m_modelMatrix, glm::inverse( m_viewMatrix * m_modelMatrix));
+	m_directLighting->update(glm::transpose(glm::inverse(m_viewMatrix)) * glm::vec4(m_lightDir, 1.0f));
 }
 
 std::vector<int> Wolf::Template3D::getCommandBufferToSubmit()
 {
-	return { m_gBufferCommandBufferID };
+	std::vector<int> r;
+	r.push_back(m_gBufferCommandBufferID);
+	std::vector<int> csmCommandBuffer = m_cascadedShadowMapping->getCascadeCommandBuffers();
+	for (auto& commandBuffer : csmCommandBuffer)
+		r.push_back(commandBuffer);
+	r.push_back(m_SSAOCommandBufferID);
+	std::vector<int> ssaoCommandBuffer = m_ssao->getCommandBufferIDs();
+	for (auto& commandBuffer : ssaoCommandBuffer)
+		r.push_back(commandBuffer);
+	r.push_back(m_directLightingSSRBloomCommandBufferID);
+	
+	return r;
 }
 
 std::vector<std::pair<int, int>> Wolf::Template3D::getCommandBufferSynchronisation()
 {
-	return { { m_gBufferCommandBufferID, -1 } };
+	std::vector<std::pair<int, int>> r = 
+		{ {m_gBufferCommandBufferID, m_SSAOCommandBufferID }, { m_directLightingSSRBloomCommandBufferID, -1 } };
+
+	std::vector<std::pair<int, int>> csmSynchronisation = m_cascadedShadowMapping->getCommandBufferSynchronisation();
+	for(auto& sync : csmSynchronisation)
+	{
+		r.push_back(sync);
+	}
+	r.emplace_back(m_cascadedShadowMapping->getCascadeCommandBuffers().back(), m_directLightingSSRBloomCommandBufferID);
+
+	std::vector<std::pair<int, int>> ssaoSynchronisation = m_ssao->getCommandBufferSynchronisation();
+	r.emplace_back(m_SSAOCommandBufferID, ssaoSynchronisation[0].first);
+	for (auto& sync : ssaoSynchronisation)
+	{
+		r.push_back(sync);
+	}
+	r.emplace_back(ssaoSynchronisation.back().second, m_directLightingSSRBloomCommandBufferID);
+	
+	return r;
 }
 
 void Wolf::Template3D::updateMVP()
 {
-	glm::mat4 mvp = m_projectionMatrix * m_viewMatrix * m_modelMatrix;
 	m_GBuffer->updateMVPMatrix(m_modelMatrix, m_viewMatrix, m_projectionMatrix);
-	m_uboMVP->updateData(&mvp);
 }

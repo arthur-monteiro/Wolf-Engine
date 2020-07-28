@@ -138,6 +138,18 @@
     <ClCompile Include="GBuffer.cpp">
       <Filter>Rendering Algorithms</Filter>
     </ClCompile>
+    <ClCompile Include="ComputePass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SSAO.cpp">
+      <Filter>Rendering Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectLightingPBR.cpp">
+      <Filter>Rendering Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="Blur.cpp">
+      <Filter>Rendering Algorithms</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WolfEngine.h">
@@ -249,6 +261,18 @@
       <Filter>Rendering Algorithms</Filter>
     </ClInclude>
     <ClInclude Include="GBuffer.h">
+      <Filter>Rendering Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="ComputePass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SSAO.h">
+      <Filter>Rendering Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectLightingPBR.h">
+      <Filter>Rendering Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="Blur.h">
       <Filter>Rendering Algorithms</Filter>
     </ClInclude>
   </ItemGroup>

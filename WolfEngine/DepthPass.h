@@ -15,6 +15,7 @@ namespace Wolf
 		~DepthPass() = default;
 
 		void update(glm::mat4 mvp);
+		Image* getResult() { return m_scene->getRenderPassOutput(m_renderPassID, 0); }
 
 	private:
 		Wolf::WolfInstance* m_engineInstance;

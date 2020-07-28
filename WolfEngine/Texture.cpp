@@ -12,12 +12,12 @@ Wolf::Texture::~Texture()
 {
 }
 
-void Wolf::Texture::create(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent2D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
+void Wolf::Texture::create(VkExtent2D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
 {
-	m_image.create(device, physicalDevice, extent, usage, format, sampleCount, aspect);
+	m_image.create(m_device, m_physicalDevice, extent, usage, format, sampleCount, aspect);
 }
 
-void Wolf::Texture::createFromImage(VkDevice device, Image* image)
+void Wolf::Texture::createFromImage(Image* image)
 {
 	m_imagePtr = image;
 }
@@ -40,11 +40,11 @@ void Wolf::Texture::createSampler(VkSamplerAddressMode addressMode, float mipLev
 	m_sampler.initialize(addressMode, mipLevels, filter);
 }
 
-void Wolf::Texture::setImageLayout(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage)
+void Wolf::Texture::setImageLayout(VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage)
 {
 	m_imagePtr == nullptr ?
-		m_image.setImageLayout(device, commandPool, graphicsQueue, newLayout, sourceStage, destinationStage) :
-		m_imagePtr->setImageLayout(device, commandPool, graphicsQueue, newLayout, sourceStage, destinationStage);
+		m_image.setImageLayout(m_device, m_commandPool, m_graphicsQueue, newLayout, sourceStage, destinationStage) :
+		m_imagePtr->setImageLayout(m_device, m_commandPool, m_graphicsQueue, newLayout, sourceStage, destinationStage);
 }
 
 void Wolf::Texture::cleanup(VkDevice device)

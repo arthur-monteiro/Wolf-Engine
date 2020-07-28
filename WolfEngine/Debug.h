@@ -12,6 +12,8 @@ namespace Wolf
 		enum class Severity { ERROR, WARNING, INFO };
 
 		static void sendError(std::string errorMessage);
+		static void sendWarning(std::string warningMessage);
+		static void sendInfo(std::string infoMessage);
 
 		static void setCallback(std::function<void(Severity, std::string)> callback);
 

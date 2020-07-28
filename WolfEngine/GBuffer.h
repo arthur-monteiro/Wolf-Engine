@@ -14,6 +14,11 @@ namespace Wolf
 			Model* model, glm::mat4 mvp, bool useDepthAsStorage);
 
 		void updateMVPMatrix(glm::mat4 m, glm::mat4 v, glm::mat4 p);
+		Image* getDepth() { return m_scene->getRenderPassOutput(m_renderPassID, 0); }
+		Image* getAlbedo() { return m_scene->getRenderPassOutput(m_renderPassID, 2); }
+		//Image* getViewPos() { return m_scene->getRenderPassOutput(m_renderPassID, 1); }
+		Image* getNormalRoughnessMetal() { return m_scene->getRenderPassOutput(m_renderPassID, 1); }
+		//Image* getRoughnessMetalAO() { return m_scene->getRenderPassOutput(m_renderPassID, 4); }
 		
 	private:
 		Wolf::WolfInstance* m_engineInstance;

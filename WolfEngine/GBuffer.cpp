@@ -12,7 +12,8 @@ Wolf::GBuffer::GBuffer(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, i
 	renderPassCreateInfo.outputIsSwapChain = false;
 
 	// Attachments -> depth + view pos + albedo + normal + (rougness + metal + ao)
-	m_attachments.resize(5);
+	// new attachments -> depth + (normal compressed + roughness + metal) + (albedo + alpha)
+	m_attachments.resize(3);
 	VkImageUsageFlags depthUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	if (useDepthAsStorage)
 		depthUsage |= VK_IMAGE_USAGE_STORAGE_BIT;
@@ -27,17 +28,17 @@ Wolf::GBuffer::GBuffer(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, i
 	else
 		depthStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	m_attachments[0] = Attachment(extent, VK_FORMAT_D32_SFLOAT, m_sampleCount, depthFinalLayout, depthStoreOp, depthUsage);
-	m_attachments[1] = Attachment(extent, VK_FORMAT_R32G32B32A32_SFLOAT, m_sampleCount, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+	m_attachments[1] = Attachment(extent, VK_FORMAT_R8G8B8A8_UNORM, m_sampleCount, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
 	m_attachments[2] = Attachment(extent, VK_FORMAT_R8G8B8A8_UNORM, m_sampleCount, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
-	m_attachments[3] = Attachment(extent, VK_FORMAT_R32G32B32A32_SFLOAT, m_sampleCount, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
-	m_attachments[4] = Attachment(extent, VK_FORMAT_R8G8B8A8_UNORM, m_sampleCount, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+	//m_attachments[3] = Attachment(extent, VK_FORMAT_R16G16B16A16_SFLOAT, m_sampleCount, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+	//m_attachments[4] = Attachment(extent, VK_FORMAT_R8G8B8A8_UNORM, m_sampleCount, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
 
-	m_clearValues.resize(5);
+	m_clearValues.resize(3);
 	m_clearValues[0] = { 1.0f };
-	m_clearValues[1] = { -10.0f, 0.0f, std::numeric_limits<float>::max(), 1.0f }; // set max to view pos depth
-	m_clearValues[2] = { 1.0f, 0.0f, 0.0f, 1.0f };
-	m_clearValues[3] = { -10.0f, 0.0f, 0.0f, 1.0f };
-	m_clearValues[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+	m_clearValues[1] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	m_clearValues[2] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	//m_clearValues[3] = { -10.0f, 0.0f, 0.0f, 1.0f };
+	//m_clearValues[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
 
 	int i(0);
 	for(auto& attachment : m_attachments)
@@ -78,7 +79,7 @@ Wolf::GBuffer::GBuffer(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, i
 		rendererCreateInfo.imageLayouts.push_back(imageLayout);
 	}
 
-	rendererCreateInfo.alphaBlending = { true, true, true, true };
+	rendererCreateInfo.alphaBlending = { false, false };
 
 	m_rendererID = m_scene->addRenderer(rendererCreateInfo);
 

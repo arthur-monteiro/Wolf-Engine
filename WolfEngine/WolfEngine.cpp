@@ -21,7 +21,7 @@ Wolf::WolfInstance::WolfInstance(WolfInstanceCreateInfo createInfo)
 	m_swapChain = std::make_unique<SwapChain>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_vulkan->getSurface(), m_window->getWindow());
 
 	m_graphicsCommandPool.initializeForGraphicsQueue(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_vulkan->getSurface());
-	m_computeCommandPool.initializeForGraphicsQueue(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_vulkan->getSurface());
+	m_computeCommandPool.initializeForComputeQueue(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_vulkan->getSurface());
 
 	m_useOVR = createInfo.useOVR;
 	if (createInfo.useOVR)

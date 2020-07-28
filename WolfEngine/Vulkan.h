@@ -39,28 +39,32 @@ namespace Wolf
 	private:
 		/* Main Loading Functions */
 		inline void createInstance();
-		inline void setupDebugCallback();
+		inline void setupDebugMessenger();
 		inline void pickPhysicalDevice();
 		inline void createDevice();
 
+		void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
 	private:
-		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix,
-			const char* msg, void* userData)
+		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, 
+			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 		{
-			std::cerr << "Validation Layer : " << msg << std::endl;
+			std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
 			return VK_FALSE;
 		}
 
-		static VkResult createDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback)
-		{
-			auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
-			if (func != nullptr)
-				return func(instance, pCreateInfo, pAllocator, pCallback);
-			else
+		static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+			auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+			if (func != nullptr) 
+			{
+				return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+			}
+			else 
+			{
 				return VK_ERROR_EXTENSION_NOT_PRESENT;
+			}
 		}
-
 	private:
 		/* Vulkan attributes */
 		VkInstance m_instance;
@@ -81,7 +85,7 @@ namespace Wolf
 		/* Extensions / Layers */
 		std::vector<const char*> m_validationLayers = std::vector<const char*>();
 		std::vector<const char*> m_deviceExtensions = std::vector<const char*>();
-		VkDebugReportCallbackEXT m_debugCallback;
+		VkDebugUtilsMessengerEXT m_debugMessenger;
 
 		/* Ray Tracing Availability */
 		bool m_raytracingAvailable = false;

@@ -14,6 +14,7 @@
 #include "DescriptorPool.h"
 #include "Text.h"
 #include "InstanceTemplate.h"
+#include "ComputePass.h"
 
 namespace Wolf
 {
@@ -45,6 +46,27 @@ namespace Wolf
 			std::vector<RenderPassOutput> outputs;
 		};
 		int addRenderPass(RenderPassCreateInfo createInfo);
+
+		struct ComputePassCreateInfo
+		{
+			int commandBufferID;
+			bool outputIsSwapChain = false;
+			uint32_t outputBinding = 0;
+			VkExtent2D extent;
+			VkExtent3D dispatchGroups;
+			
+			std::string computeShaderPath;
+
+			std::vector<std::pair<UniformBufferObject*, UniformBufferObjectLayout>> ubos;
+			//std::vector<std::pair<Texture*, TextureLayout>> textures;
+			std::vector<std::pair<Image*, ImageLayout>> images;
+			std::vector<std::pair<Sampler*, SamplerLayout>> samplers;
+			std::vector<std::pair<VkBuffer, BufferLayout>> buffers;
+
+			std::function<void(void*, VkCommandBuffer)> beforeRecord = nullptr; void* dataForBeforeRecordCallback = nullptr;
+			std::function<void(void*, VkCommandBuffer)> afterRecord = nullptr; void* dataForAfterRecordCallback = nullptr;
+		};
+		int addComputePass(ComputePassCreateInfo createInfo);
 
 		struct CommandBufferCreateInfo
 		{
@@ -117,9 +139,10 @@ namespace Wolf
 		void record();
 		
 		void frame(Queue graphicsQueue, Queue computeQueue, uint32_t swapChainImageIndex, Semaphore* imageAvailableSemaphore, std::vector<int> commandBufferIDs,
-			std::vector<std::pair<int, int>>);
+		           const std::vector<std::pair<int, int>>&);
 
 		VkSemaphore getSwapChainSemaphore() const { return m_swapChainCompleteSemaphore->getSemaphore(); }
+		Image* getRenderPassOutput(int renderPassID, int textureID) { return m_sceneRenderPasses[renderPassID].renderPass->getImages(0)[textureID]; }
 
 	private:
 		// Command Pools
@@ -173,6 +196,27 @@ namespace Wolf
 		};
 		std::vector<SceneRenderPass> m_sceneRenderPasses;
 
+		struct SceneComputePass
+		{
+			std::vector<std::unique_ptr<ComputePass>> computePasses;
+			int commandBufferID;
+			
+			bool outputIsSwapChain = false;
+			uint32_t outputBinding = 0;
+			VkExtent2D extent;
+			VkExtent3D dispatchGroups;
+
+			std::function<void(void*, VkCommandBuffer)> beforeRecord = nullptr; void* dataForBeforeRecordCallback = nullptr;
+			std::function<void(void*, VkCommandBuffer)> afterRecord = nullptr; void* dataForAfterRecordCallback = nullptr;
+
+			SceneComputePass(int commandBufferID, bool outputIsSwapChain)
+			{
+				this->outputIsSwapChain = outputIsSwapChain;
+				this->commandBufferID = commandBufferID;
+			}
+		};
+		std::vector<SceneComputePass> m_sceneComputePasses;
+		
 		// VR
 		bool m_useOVR = false;
 

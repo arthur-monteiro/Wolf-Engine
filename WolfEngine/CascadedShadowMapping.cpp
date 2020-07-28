@@ -1,12 +1,13 @@
 #include "CascadedShadowMapping.h"
 
-Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, Model* model, float cameraNear, float cameraFar, float cameraFOV, VkExtent2D extent)
+Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, Model* model, float cameraNear, float cameraFar, float shadowFar, 
+	float cameraFOV, VkExtent2D extent, Image* depth, glm::mat4 projection)
 {
 	m_engineInstance = engineInstance;
 	m_scene = scene;
 	m_cameraNear = cameraNear;
 	m_cameraFOV = cameraFOV;
-	m_cameraFar = cameraFar;
+	m_cameraFar = shadowFar;
 	m_ratio = static_cast<float>(extent.height) / static_cast<float>(extent.width);
 	m_extent = extent;
 
@@ -20,7 +21,7 @@ Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineIns
 		commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
 		m_cascadeCommandBuffers[i] = scene->addCommandBuffer(commandBufferCreateInfo);
 		
-		m_depthPasses[i] = std::make_unique<DepthPass>(engineInstance, scene, m_cascadeCommandBuffers[i], false, m_shadowMapExtents[i], VK_SAMPLE_COUNT_1_BIT, model, glm::mat4(1.0f), false);
+		m_depthPasses[i] = std::make_unique<DepthPass>(engineInstance, scene, m_cascadeCommandBuffers[i], false, m_shadowMapExtents[i], VK_SAMPLE_COUNT_1_BIT, model, glm::mat4(1.0f), true);
 	}
 
 	// Cascade splits
@@ -36,44 +37,72 @@ Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineIns
 
 	// Shadow Mask
 	Scene::CommandBufferCreateInfo commandBufferCreateInfo;
-	commandBufferCreateInfo.commandType = Scene::CommandType::GRAPHICS;
-	commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	m_shadowMaskCommandBuffer = scene->addCommandBuffer(commandBufferCreateInfo);
+	commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	commandBufferCreateInfo.commandType = Scene::CommandType::COMPUTE;
+	m_shadowMaskCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
+
+	Scene::ComputePassCreateInfo computePassCreateInfo;
+	computePassCreateInfo.extent = engineInstance->getWindowSize();
+	computePassCreateInfo.dispatchGroups = { 16, 16, 1 };
+	computePassCreateInfo.computeShaderPath = "Shaders/CSM/comp.spv";
+	computePassCreateInfo.commandBufferID = m_shadowMaskCommandBufferID;
+
+	ImageLayout depthLayout{};
+	depthLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
+	depthLayout.binding = 0;
+
+	std::array<ImageLayout, CASCADE_COUNT> cascadeLayouts{};
+	for(int i(0); i < CASCADE_COUNT; ++i)
+	{
+		cascadeLayouts[i].accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
+		cascadeLayouts[i].binding = i + 1;
+	}
+
+	ImageLayout shadowMaskOutputLayout{};
+	shadowMaskOutputLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
+	shadowMaskOutputLayout.binding = CASCADE_COUNT + 1;
+
+	m_shadowMaskOutputTexture = engineInstance->createTexture();
+	m_shadowMaskOutputTexture->create(engineInstance->getWindowSize(), VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+	m_shadowMaskOutputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 	
-	Scene::RenderPassCreateInfo renderPassCreateInfo{};
-	
-	m_shadowMaskAttachment = Attachment(m_extent, VK_FORMAT_R8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ATTACHMENT_STORE_OP_STORE,
-		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-	Scene::RenderPassOutput renderPassOutput;
-	renderPassOutput.attachment = m_shadowMaskAttachment;
-	renderPassOutput.clearValue = { 1.0f };
-	renderPassCreateInfo.outputs.push_back(renderPassOutput);
+	ImageLayout volumetricLightOutput{};
+	volumetricLightOutput.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
+	volumetricLightOutput.binding = CASCADE_COUNT + 2;
 
-	renderPassCreateInfo.outputIsSwapChain = false;
-	renderPassCreateInfo.commandBufferID = m_shadowMaskCommandBuffer;
-	
-	m_shadowMaskRenderPass = m_scene->addRenderPass(renderPassCreateInfo);
+	m_volumetricLightOutputTexture = engineInstance->createTexture();
+	m_volumetricLightOutputTexture->create(engineInstance->getWindowSize(), VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+	m_volumetricLightOutputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-	Scene::RendererCreateInfo rendererCreateInfo;
-	rendererCreateInfo.vertexShaderPath = "Shaders/CSM/vertMask.spv";
-	rendererCreateInfo.fragmentShaderPath = "Shaders/CSM/fragMask.spv";
-	rendererCreateInfo.inputVerticesTemplate = InputVertexTemplate::FULL_3D_MATERIAL;
-	rendererCreateInfo.instanceTemplate = InstanceTemplate::NO;
-	rendererCreateInfo.renderPassID = m_shadowMaskRenderPass;
-	rendererCreateInfo.extent = m_extent;
+	computePassCreateInfo.images = { { depth, depthLayout } };
+	for(int i(0); i < CASCADE_COUNT; ++i)
+	{	
+		computePassCreateInfo.images.emplace_back(m_depthPasses[i]->getResult(), cascadeLayouts[i]);
+	}
 
-	UniformBufferObjectLayout mvpLayout{};
-	mvpLayout.accessibility = VK_SHADER_STAGE_VERTEX_BIT;
-	mvpLayout.binding = 0;
-	rendererCreateInfo.uboLayouts.push_back(mvpLayout);
-}
+	computePassCreateInfo.images.emplace_back(m_shadowMaskOutputTexture->getImage(), shadowMaskOutputLayout);
+	computePassCreateInfo.images.emplace_back(m_volumetricLightOutputTexture->getImage(), volumetricLightOutput);
 
-Wolf::CascadedShadowMapping::~CascadedShadowMapping()
-{
+	UniformBufferObjectLayout uboLayout{};
+	uboLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
+	uboLayout.binding = CASCADE_COUNT + 3;
+
+	m_ubo = engineInstance->createUniformBufferObject();
+	m_uboData.cascadeSplits = glm::vec4(m_cascadeSplits[0], m_cascadeSplits[1], m_cascadeSplits[2], m_cascadeSplits[3]);
+	m_uboData.invProjection = glm::inverse(projection);
+	m_uboData.projectionParams.x = cameraFar / (cameraFar - cameraNear);
+	m_uboData.projectionParams.y = (-cameraFar * cameraNear) / (cameraFar - cameraNear);
+	m_ubo->initializeData(&m_uboData, sizeof(ShadowMaskUBO));
+
+	computePassCreateInfo.ubos = { { m_ubo, uboLayout } };
+
+	m_shadowMaskComputePassID = scene->addComputePass(computePassCreateInfo);
+
+	m_blur = std::make_unique<Blur>(engineInstance, scene, m_shadowMaskCommandBufferID, m_volumetricLightOutputTexture->getImage(), nullptr);
 }
 
 void Wolf::CascadedShadowMapping::updateMatrices(glm::vec3 lightDir,
-	glm::vec3 cameraPosition, glm::vec3 cameraOrientation, glm::mat4 model)
+	glm::vec3 cameraPosition, glm::vec3 cameraOrientation, glm::mat4 model, glm::mat4 invModelView)
 {	
 	float lastSplitDist = m_cameraNear;
 	for (int cascade(0); cascade < CASCADE_COUNT; ++cascade)
@@ -84,9 +113,9 @@ void Wolf::CascadedShadowMapping::updateMatrices(glm::vec3 lightDir,
 		float radius = (endCascade - startCascade) / 2.0f;
 
 		const float ar = m_ratio;
-		const float cosHalfHFOV = static_cast<float>(glm::cos(static_cast<double>((m_cameraFOV * (1.0f / ar)) / 2.0f)));
-		const double b = endCascade / cosHalfHFOV;
-		radius = glm::sqrt(b * b + (startCascade + radius) * (startCascade + radius) - 2 * b * startCascade * cosHalfHFOV);
+		const float cosHalfHFOV = static_cast<float>(glm::cos((m_cameraFOV * (1.0f / ar)) / 2.0f));
+		const float b = endCascade / cosHalfHFOV;
+		radius = glm::sqrt(b * b + (startCascade + radius) * (startCascade + radius) - 2.0f * b * startCascade * cosHalfHFOV);
 
 		const float texelPerUnit = static_cast<float>(m_shadowMapExtents[cascade].width) / (radius * 2.0f);
 		glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), glm::vec3(texelPerUnit));
@@ -103,8 +132,12 @@ void Wolf::CascadedShadowMapping::updateMatrices(glm::vec3 lightDir,
 
 		glm::mat4 proj = glm::ortho(-radius, radius, -radius, radius, -30.0f * 6.0f, 30.0f * 6.0f);
 		m_lightSpaceMatrices[cascade] = proj * lightViewMatrix * model;
+		m_uboData.lightSpaceMatrices[cascade] = m_lightSpaceMatrices[cascade];
 		m_depthPasses[cascade]->update(m_lightSpaceMatrices[cascade]);
 
 		lastSplitDist += m_cascadeSplits[cascade];
 	}
+
+	m_uboData.invModelView = invModelView;
+	m_ubo->updateData(&m_uboData);
 }

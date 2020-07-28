@@ -18,7 +18,7 @@ std::vector<const char*> getRequiredExtensions()
 		extensions.push_back(glfwExtensions[i]);
 
 #ifndef NDEBUG
-	extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
 
 	extensions.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
@@ -46,18 +46,18 @@ bool isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
 
-	for (uint32_t i(0); i < memoryProperties.memoryHeapCount; ++i)
-	{
-		if (memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
-		{
-			outHardwareCapabilities.VRAMSize = memoryProperties.memoryHeaps[i].size;
-			if (memoryProperties.memoryHeaps[i].size < 1073741824)
-			{
-				std::cout << "Not enough memory : " << memoryProperties.memoryHeaps[i].size << std::endl;
-				return false;
-			}
-		}
-	}
+	//for (uint32_t i(0); i < memoryProperties.memoryHeapCount; ++i)
+	//{
+	//	if (memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+	//	{
+	//		outHardwareCapabilities.VRAMSize = memoryProperties.memoryHeaps[i].size;
+	//		if (memoryProperties.memoryHeaps[i].size < 1073741824)
+	//		{
+	//			std::cout << "Not enough memory : " << memoryProperties.memoryHeaps[i].size << std::endl;
+	//			return false;
+	//		}
+	//	}
+	//}
 
 	return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }

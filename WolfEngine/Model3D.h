@@ -22,6 +22,7 @@ namespace Wolf
 
 	private:
 		std::vector<Wolf::Mesh<Vertex3D>> m_meshes;
+		std::vector<int> m_toBeLast = { 2, 19, 0 }; // flower contains alpha blending
 	};
 
 	inline std::string Model3D::getTexName(std::string texName, std::string folder)
