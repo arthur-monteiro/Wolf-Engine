@@ -28,7 +28,7 @@ namespace Wolf
 		Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 			std::vector<VkVertexInputAttributeDescription> attributeInputDescription, std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts,
 			std::vector<TextureLayout> textureLayouts, std::vector<ImageLayout> imageLayouts, std::vector<SamplerLayout> samplerLayouts, std::vector<BufferLayout> bufferLayouts,
-			std::vector<bool> alphaBlending);
+			std::vector<bool> alphaBlending, bool enableDepthTesting, bool enableConservativeRasterization);
 		Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::string geometryShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 			std::vector<VkVertexInputAttributeDescription> attributeInputDescription, std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts,
 			std::vector<TextureLayout> textureLayouts, std::vector<ImageLayout> imageLayouts, std::vector<SamplerLayout> samplerLayouts, std::vector<BufferLayout> bufferLayouts,
@@ -65,6 +65,9 @@ namespace Wolf
 		std::vector<VkVertexInputBindingDescription> m_vertexInputDescription;
 		std::vector<VkVertexInputAttributeDescription> m_attributeInputDescription;
 		std::vector<bool> m_alphaBlending;
+		VkPrimitiveTopology m_primitiveTopoly;
+		bool m_enableDepthTesting;
+		bool m_enableConservativeRasterization;
 
 		VkExtent2D m_extent = { 0, 0};
 		std::array<float, 2> m_viewportScale = { 1.0f, 1.0f };

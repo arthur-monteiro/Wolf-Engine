@@ -10,10 +10,6 @@ Wolf::Model::Model(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPo
 	m_inputVertexTemplate = inputVertexTemplate;
 }
 
-Wolf::Model::~Model()
-{
-}
-
 std::vector<Wolf::Image*> Wolf::Model::getImages()
 {
 	std::vector<Image*> r(m_images.size());

@@ -1,2 +1,7 @@
-﻿  Template3D.cpp
+﻿  LightPropagationVolumes.cpp
+F:\Code\WolfEngine\WolfEngine\LightPropagationVolumes.h(36,31): warning C4244: 'initializing': conversion from 'float' to 'const uint32_t', possible loss of data
+F:\Code\WolfEngine\WolfEngine\LightPropagationVolumes.cpp(372,51): warning C4267: '=': conversion from 'size_t' to 'uint32_t', possible loss of data
+  Template3D.cpp
+F:\Code\WolfEngine\WolfEngine\LightPropagationVolumes.h(36,31): warning C4244: 'initializing': conversion from 'float' to 'const uint32_t', possible loss of data
+  Generating Code...
   WolfEngine.vcxproj -> F:\Code\WolfEngine\x64\Debug\WolfEngine.lib

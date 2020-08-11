@@ -8,11 +8,7 @@ Wolf::Texture::Texture(VkDevice device, VkPhysicalDevice physicalDevice, VkComma
 	m_graphicsQueue = graphicsQueue;	
 }
 
-Wolf::Texture::~Texture()
-{
-}
-
-void Wolf::Texture::create(VkExtent2D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
+void Wolf::Texture::create(VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
 {
 	m_image.create(m_device, m_physicalDevice, extent, usage, format, sampleCount, aspect);
 }

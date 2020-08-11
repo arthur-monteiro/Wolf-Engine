@@ -44,6 +44,7 @@ namespace Wolf
 
 			// Output
 			std::vector<RenderPassOutput> outputs;
+			VkExtent2D extent = { 0, 0 };
 		};
 		int addRenderPass(RenderPassCreateInfo createInfo);
 
@@ -87,6 +88,8 @@ namespace Wolf
 			std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions;
 			std::vector<VkVertexInputBindingDescription> inputBindingDescriptions;
 			std::vector<bool> alphaBlending = { true };
+			bool enableDepthTesting = true;
+			bool enableConservativeRasterization = false;
 
 			// Descriptor set layout
 			std::vector<UniformBufferObjectLayout> uboLayouts;

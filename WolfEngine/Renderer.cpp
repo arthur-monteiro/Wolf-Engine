@@ -10,7 +10,7 @@ Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexS
 	std::vector<VkVertexInputAttributeDescription> attributeInputDescription,
 	std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts, std::vector<TextureLayout> textureLayouts,
 	std::vector<ImageLayout> imageLayouts, std::vector<SamplerLayout> samplerLayouts,
-	std::vector<BufferLayout> bufferLayouts, std::vector<bool> alphaBlending)
+	std::vector<BufferLayout> bufferLayouts, std::vector<bool> alphaBlending, bool enableDepthTesting, bool enableConservativeRasterization)
 {
 	m_vertexShader = std::move(vertexShader);
 	m_geometryShader = "";
@@ -19,6 +19,9 @@ Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexS
 	m_attributeInputDescription = std::move(attributeInputDescription);
 	m_alphaBlending = std::move(alphaBlending);
 	m_extent = extent;
+	m_primitiveTopoly = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	m_enableDepthTesting = enableDepthTesting;
+	m_enableConservativeRasterization = enableConservativeRasterization;
 
 	createDescriptorSetLayout(device, std::move(uniformBufferObjectLayouts), std::move(textureLayouts), std::move(imageLayouts), std::move(samplerLayouts),
 		std::move(bufferLayouts));
@@ -38,7 +41,10 @@ Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexS
 	m_attributeInputDescription = std::move(attributeInputDescription);
 	m_alphaBlending = std::move(alphaBlending);
 	m_extent = extent;
-
+	m_primitiveTopoly = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	m_enableDepthTesting = true;
+	m_enableConservativeRasterization = false;
+	
 	createDescriptorSetLayout(device, std::move(uniformBufferObjectLayouts), std::move(textureLayouts), std::move(imageLayouts), std::move(samplerLayouts),
 		std::move(bufferLayouts));
 }
@@ -56,6 +62,9 @@ Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexS
 	m_attributeInputDescription = std::move(attributeInputDescription);
 	m_alphaBlending = std::move(alphaBlending);
 	m_extent = extent;
+	m_primitiveTopoly = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	m_enableDepthTesting = true;
+	m_enableConservativeRasterization = false;
 
 	createDescriptorSetLayout(device, std::move(uniformBufferObjectLayouts), std::move(textureLayouts), {}, {}, {}); // !! change definition to allow image and sampler separated
 }
@@ -64,7 +73,8 @@ void Wolf::Renderer::create(VkDevice device, VkRenderPass renderPass, VkSampleCo
 {
 	if (!m_pipelineCreated)
 	{
-		m_pipeline.initialize(device, renderPass, m_vertexShader, m_geometryShader, m_fragmentShader, m_vertexInputDescription, m_attributeInputDescription, m_extent, msaa, m_alphaBlending, &m_descriptorSetLayout, m_viewportScale, m_viewportOffset);
+		m_pipeline.initialize(device, renderPass, m_vertexShader, m_geometryShader, m_fragmentShader, m_vertexInputDescription, m_attributeInputDescription, 
+			m_extent, msaa, m_alphaBlending, &m_descriptorSetLayout, m_viewportScale, m_viewportOffset, m_primitiveTopoly, m_enableDepthTesting, false, m_enableConservativeRasterization);
 		m_pipelineCreated = true;
 	}
 
@@ -165,12 +175,46 @@ void Wolf::Renderer::createDescriptorSetLayout(VkDevice device, std::vector<Unif
 		bindings.push_back(imageSamplerLayoutBinding);
 	}
 
-	if (!imageLayouts.empty())
+	int sampledImageBinding = -1;
+	int nbSampledImage = 0;
+	for (auto& imageLayout : imageLayouts)
+	{
+		if (imageLayout.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+		{
+			if(sampledImageBinding == -1)
+				sampledImageBinding = imageLayout.binding;
+			nbSampledImage++;
+		}
+	}
+	if (sampledImageBinding >= 0)
 	{
 		VkDescriptorSetLayoutBinding imageLayoutBinding = {};
-		imageLayoutBinding.binding = imageLayouts[0].binding;
-		imageLayoutBinding.descriptorCount = static_cast<uint32_t>(imageLayouts.size());
+		imageLayoutBinding.binding = sampledImageBinding;
+		imageLayoutBinding.descriptorCount = static_cast<uint32_t>(nbSampledImage);
 		imageLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		imageLayoutBinding.stageFlags = imageLayouts[0].accessibility;
+		imageLayoutBinding.pImmutableSamplers = nullptr;
+
+		bindings.push_back(imageLayoutBinding);
+	}
+
+	int storageImageBinding = -1;
+	int nbStorageImage = 0;
+	for (auto& imageLayout : imageLayouts)
+	{
+		if (imageLayout.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+		{
+			if (storageImageBinding == -1)
+				storageImageBinding = imageLayout.binding;
+			nbStorageImage++;
+		}
+	}
+	if (storageImageBinding >= 0)
+	{
+		VkDescriptorSetLayoutBinding imageLayoutBinding = {};
+		imageLayoutBinding.binding = storageImageBinding;
+		imageLayoutBinding.descriptorCount = static_cast<uint32_t>(nbStorageImage);
+		imageLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		imageLayoutBinding.stageFlags = imageLayouts[0].accessibility;
 		imageLayoutBinding.pImmutableSamplers = nullptr;
 
@@ -270,23 +314,79 @@ VkDescriptorSet Wolf::Renderer::createDescriptorSet(VkDevice device, VkDescripto
 		descriptorWrites.push_back(descriptorWrite);
 	}
 
-	std::vector<VkDescriptorImageInfo> imageInfo(images.size());
+	// Sampled Images
+	int sampledImageBinding = -1;
+	int nbSampledImage = 0;
+	for (auto& imageLayout : images)
+	{
+		if (imageLayout.second.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+		{
+			if (sampledImageBinding == -1)
+				sampledImageBinding = imageLayout.second.binding;
+			nbSampledImage++;
+		}
+	}
+	std::vector<VkDescriptorImageInfo> imageInfo(nbSampledImage);
+	int index = 0;
 	for (int i(0); i < images.size(); ++i)
 	{
-		imageInfo[i].imageLayout = images[i].first->getImageLayout();
-		imageInfo[i].imageView = images[i].first->getImageView();
+		if(images[i].second.descriptorType != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+			continue;
+		imageInfo[index].imageLayout = images[i].first->getImageLayout();
+		imageInfo[index].imageView = images[i].first->getImageView();
+
+		index++;
 	}
 
-	if (!images.empty())
+	if (nbSampledImage > 0)
 	{
 		VkWriteDescriptorSet descriptorWrite;
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrite.dstSet = descriptorSet;
-		descriptorWrite.dstBinding = images[0].second.binding;
+		descriptorWrite.dstBinding = sampledImageBinding;
 		descriptorWrite.dstArrayElement = 0;
 		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		descriptorWrite.descriptorCount = static_cast<uint32_t>(imageInfo.size());
 		descriptorWrite.pImageInfo = imageInfo.data();
+		descriptorWrite.pNext = NULL;
+
+		descriptorWrites.push_back(descriptorWrite);
+	}
+
+	// Storage images
+	int storageImageBinding = -1;
+	int nbStorageImage = 0;
+	for (auto& imageLayout : images)
+	{
+		if (imageLayout.second.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+		{
+			if (storageImageBinding == -1)
+				storageImageBinding = imageLayout.second.binding;
+			nbStorageImage++;
+		}
+	}
+	index = 0;
+	std::vector<VkDescriptorImageInfo> storageImageInfo(nbStorageImage);
+	for (int i(0); i < images.size(); ++i)
+	{
+		if (images[i].second.descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+			continue;
+		storageImageInfo[index].imageLayout = images[i].first->getImageLayout();
+		storageImageInfo[index].imageView = images[i].first->getImageView();
+
+		index++;
+	}
+
+	if (nbStorageImage > 0)
+	{
+		VkWriteDescriptorSet descriptorWrite;
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = descriptorSet;
+		descriptorWrite.dstBinding = storageImageBinding;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		descriptorWrite.descriptorCount = static_cast<uint32_t>(storageImageInfo.size());
+		descriptorWrite.pImageInfo = storageImageInfo.data();
 		descriptorWrite.pNext = NULL;
 
 		descriptorWrites.push_back(descriptorWrite);

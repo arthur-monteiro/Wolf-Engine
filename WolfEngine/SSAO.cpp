@@ -63,7 +63,8 @@ Wolf::SSAO::SSAO(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 	outputLayout.binding = 2;
 
 	m_outputTexture = engineInstance->createTexture();
-	m_outputTexture->create(engineInstance->getWindowSize(), VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+	m_outputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, VK_SAMPLE_COUNT_1_BIT, 
+		VK_IMAGE_ASPECT_COLOR_BIT);
 	m_outputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 	computePassCreateInfo.images = { { depth, depthLayout }, { normal, normalLayout }, { m_outputTexture->getImage(), outputLayout} };

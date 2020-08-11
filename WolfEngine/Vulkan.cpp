@@ -31,7 +31,8 @@ Wolf::Vulkan::Vulkan(GLFWwindow* glfwWindowPointer, bool useOVR)
 	if (glfwCreateWindowSurface(m_instance, glfwWindowPointer, nullptr, &m_surface) != VK_SUCCESS)
 		throw std::runtime_error("Error : window surface creation");
 
-	m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, "VK_KHR_external_memory_win32", VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME, "VK_KHR_external_semaphore_win32", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, VK_KHR_MULTIVIEW_EXTENSION_NAME };
+	m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, "VK_KHR_external_memory_win32", VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+		"VK_KHR_external_semaphore_win32", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, VK_KHR_MULTIVIEW_EXTENSION_NAME, VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME };
 	m_raytracingDeviceExtensions = { VK_NV_RAY_TRACING_EXTENSION_NAME };
 
 	pickPhysicalDevice();
@@ -138,6 +139,15 @@ void Wolf::Vulkan::pickPhysicalDevice()
 
 			m_physicalDevice = device;
 			m_maxMsaaSamples = getMaxUsableSampleCount(m_physicalDevice);
+
+			PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR = 
+				reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceProperties2KHR"));
+			VkPhysicalDeviceProperties2KHR deviceProps2{};
+			m_conservativeRasterProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT;
+			deviceProps2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+			deviceProps2.pNext = &m_conservativeRasterProps;
+			vkGetPhysicalDeviceProperties2KHR(m_physicalDevice, &deviceProps2);
+			
 			if (m_raytracingAvailable)
 				m_raytracingProperties = getPhysicalDeviceRayTracingProperties(m_physicalDevice);
 			break;

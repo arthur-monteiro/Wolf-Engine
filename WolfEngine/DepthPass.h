@@ -11,7 +11,7 @@ namespace Wolf
 	{
 	public:
 		DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int commandBufferID, bool outputIsSwapChain, VkExtent2D extent, VkSampleCountFlagBits sampleCount,
-			Model* model, glm::mat4 mvp, bool useAsStorage);
+			Model* model, glm::mat4 mvp, bool useAsStorage, bool useAsSampled);
 		~DepthPass() = default;
 
 		void update(glm::mat4 mvp);

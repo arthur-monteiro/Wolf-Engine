@@ -21,7 +21,8 @@ Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineIns
 		commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
 		m_cascadeCommandBuffers[i] = scene->addCommandBuffer(commandBufferCreateInfo);
 		
-		m_depthPasses[i] = std::make_unique<DepthPass>(engineInstance, scene, m_cascadeCommandBuffers[i], false, m_shadowMapExtents[i], VK_SAMPLE_COUNT_1_BIT, model, glm::mat4(1.0f), true);
+		m_depthPasses[i] = std::make_unique<DepthPass>(engineInstance, scene, m_cascadeCommandBuffers[i], false, m_shadowMapExtents[i], VK_SAMPLE_COUNT_1_BIT, model, glm::mat4(1.0f), true,
+			true);
 	}
 
 	// Cascade splits
@@ -63,7 +64,8 @@ Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineIns
 	shadowMaskOutputLayout.binding = CASCADE_COUNT + 1;
 
 	m_shadowMaskOutputTexture = engineInstance->createTexture();
-	m_shadowMaskOutputTexture->create(engineInstance->getWindowSize(), VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+	m_shadowMaskOutputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, 
+		VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 	m_shadowMaskOutputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 	
 	ImageLayout volumetricLightOutput{};
@@ -71,7 +73,8 @@ Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineIns
 	volumetricLightOutput.binding = CASCADE_COUNT + 2;
 
 	m_volumetricLightOutputTexture = engineInstance->createTexture();
-	m_volumetricLightOutputTexture->create(engineInstance->getWindowSize(), VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+	m_volumetricLightOutputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, 
+		VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 	m_volumetricLightOutputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 	computePassCreateInfo.images = { { depth, depthLayout } };

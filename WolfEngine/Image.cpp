@@ -1,17 +1,19 @@
 #include "Image.h"
 
-void Wolf::Image::create(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent2D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
+void Wolf::Image::create(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
 {
 	m_imageFormat = format;
 	m_extent = extent;
 	m_sampleCount = sampleCount;
 
-	createImage(device, physicalDevice, extent.width, extent.height, 1, sampleCount, format, VK_IMAGE_TILING_OPTIMAL,
+	createImage(device, physicalDevice, extent.width, extent.height, extent.depth, 1, sampleCount, format, VK_IMAGE_TILING_OPTIMAL,
 		usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 1, 0, VK_IMAGE_LAYOUT_UNDEFINED,
 		m_image, m_imageMemory);
 	m_imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-	m_imageView = createImageView(device, m_image, format, aspect, 1, VK_IMAGE_VIEW_TYPE_2D);
+	if (m_extent.depth == 1) m_imageView = createImageView(device, m_image, format, aspect, 1, VK_IMAGE_VIEW_TYPE_2D);
+	else m_imageView = createImageView(device, m_image, format, aspect, 1, VK_IMAGE_VIEW_TYPE_3D);
+	
 	m_mipLevels = 1;
 }
 
@@ -21,7 +23,7 @@ void Wolf::Image::createFromImage(VkDevice device, VkImage image, VkFormat forma
 	m_imageMemory = VK_NULL_HANDLE;
 	m_imageFormat = format;
 	m_imageView = createImageView(device, m_image, format, aspect, 1, VK_IMAGE_VIEW_TYPE_2D);
-	m_extent = extent;
+	m_extent = { extent.width, extent.height, 1 };
 	m_mipLevels = 1;
 }
 
@@ -44,7 +46,7 @@ void Wolf::Image::createFromPixels(VkDevice device, VkPhysicalDevice physicalDev
 	memcpy(data, pixels, static_cast<size_t>(imageSize));
 	vkUnmapMemory(device, stagingBufferMemory);
 
-	createImage(device, physicalDevice, extent.width, extent.height, m_mipLevels, VK_SAMPLE_COUNT_1_BIT, m_imageFormat, VK_IMAGE_TILING_OPTIMAL,
+	createImage(device, physicalDevice, extent.width, extent.height, 1, m_mipLevels, VK_SAMPLE_COUNT_1_BIT, m_imageFormat, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 1, 0,
 		VK_IMAGE_LAYOUT_PREINITIALIZED, m_image, m_imageMemory);
 
@@ -67,7 +69,7 @@ void Wolf::Image::createFromBuffer(VkDevice device, VkPhysicalDevice physicalDev
 {
 	m_imageFormat = format;
 
-	createImage(device, physicalDevice, extent.width, extent.height, m_mipLevels, VK_SAMPLE_COUNT_1_BIT, m_imageFormat, VK_IMAGE_TILING_OPTIMAL,
+	createImage(device, physicalDevice, extent.width, extent.height, extent.depth, m_mipLevels, VK_SAMPLE_COUNT_1_BIT, m_imageFormat, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 1, 0,
 		VK_IMAGE_LAYOUT_PREINITIALIZED, m_image, m_imageMemory);
 
@@ -110,7 +112,7 @@ void Wolf::Image::createCubeMapFromImages(VkDevice device, VkPhysicalDevice phys
 	m_sampleCount = images[0]->getSampleCount();
 	m_extent = images[0]->getExtent();
 
-	createImage(device, physicalDevice, m_extent.width, m_extent.height, m_mipLevels, m_sampleCount, m_imageFormat, VK_IMAGE_TILING_OPTIMAL,
+	createImage(device, physicalDevice, m_extent.width, m_extent.height, m_mipLevels, 1, m_sampleCount, m_imageFormat, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 6, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
 		m_image, m_imageMemory);
 	transitionImageLayout(device, commandPool, graphicsQueue, m_image, m_imageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_mipLevels, 6,
@@ -142,15 +144,17 @@ void Wolf::Image::cleanup(VkDevice device)
 	vkFreeMemory(device, m_imageMemory, nullptr);
 }
 
-void Wolf::Image::createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling,
-                              VkImageUsageFlags usage, VkMemoryPropertyFlags properties, uint32_t arrayLayers, VkImageCreateFlags flags, VkImageLayout initialLayout, VkImage& image, VkDeviceMemory& imageMemory)
+void Wolf::Image::createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
+	VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, uint32_t arrayLayers, VkImageCreateFlags flags, VkImageLayout initialLayout,
+	VkImage& image, VkDeviceMemory& imageMemory)
 {
 	VkImageCreateInfo imageInfo = {};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	if (depth == 1) imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	else imageInfo.imageType = VK_IMAGE_TYPE_3D;
 	imageInfo.extent.width = width;
 	imageInfo.extent.height = height;
-	imageInfo.extent.depth = 1;
+	imageInfo.extent.depth = depth;
 	imageInfo.mipLevels = mipLevels;
 	imageInfo.arrayLayers = arrayLayers;
 	imageInfo.format = format;
@@ -171,6 +175,10 @@ void Wolf::Image::createImage(VkDevice device, VkPhysicalDevice physicalDevice, 
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
 	allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+
+
+	if (imageInfo.imageType == VK_IMAGE_TYPE_3D)
+		std::cout << "memory 3d image : " << memRequirements.size << std::endl;
 
 	if (allocInfo.memoryTypeIndex < 0)
 		throw std::runtime_error("Error : no memory type found");

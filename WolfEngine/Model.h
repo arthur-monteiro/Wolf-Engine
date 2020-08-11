@@ -16,7 +16,7 @@ namespace Wolf
 		};
 
 		Model(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, InputVertexTemplate inputVertexTemplate);
-		virtual ~Model();
+		virtual ~Model() = default;
 
 		virtual int addMeshFromVertices(void* vertices, uint32_t vertexCount, size_t vertexSize, std::vector<uint32_t> indices) { return -1; }
 

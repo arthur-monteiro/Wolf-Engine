@@ -17,12 +17,13 @@ namespace Wolf
 	{
 		VkShaderStageFlags accessibility;
 		uint32_t binding;
+		VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 	};
 
 	class Image
 	{
 	public:
-		void create(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent2D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect);
+		void create(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect);
 		void createFromImage(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkExtent2D extent);
 		void createFromPixels(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format, unsigned char* pixels);
 		void createFromBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format, VkBuffer buffer);
@@ -39,7 +40,7 @@ namespace Wolf
 		VkImageView getImageView() { return m_imageView; }
 		VkFormat getFormat() { return m_imageFormat; }
 		VkSampleCountFlagBits getSampleCount() { return m_sampleCount; }
-		VkExtent2D getExtent() { return m_extent; }
+		VkExtent3D getExtent() { return m_extent; }
 		VkImageLayout getImageLayout() { return m_imageLayout; }
 		uint32_t getMipLevels() { return m_mipLevels; }
 
@@ -52,12 +53,12 @@ namespace Wolf
 		VkFormat m_imageFormat;
 
 		uint32_t m_mipLevels;
-		VkExtent2D m_extent;
+		VkExtent3D m_extent;
 		VkSampleCountFlagBits m_sampleCount;
 
 	private:
-		static void createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format,
-			VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, uint32_t arrayLayers, VkImageCreateFlags flags, VkImageLayout initialLayout,
+		static void createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipLevels, VkSampleCountFlagBits numSamples, 
+			VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, uint32_t arrayLayers, VkImageCreateFlags flags, VkImageLayout initialLayout,
 			VkImage& image, VkDeviceMemory& imageMemory);
 		static VkImageView createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels, VkImageViewType viewType);
 		static void transitionImageLayout(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,

@@ -9,10 +9,10 @@ namespace Wolf
 	{
 	public:
 		DirectLightingPBR(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int commandBufferID,
-			VkExtent2D extent, Image* depth, Image* albedoImage, Image* normalRoughnessMetal, Image* shadowMask, Image* volumetricLight, Image* aoMaskImage,
+			VkExtent2D extent, Image* depth, Image* albedoImage, Image* normalRoughnessMetal, Image* shadowMask, Image* volumetricLight, Image* aoMaskImage, Image* lightPropagationVolumes,
 			glm::mat4 projection, float near, float far);
 
-		void update(glm::vec3 lightDirectionInViewPosSpace);
+		void update(glm::vec3 lightDirectionInViewPosSpace, glm::mat4 voxelProjection);
 
 		Texture* getOutputTexture() { return m_outputTexture; }
 
@@ -23,6 +23,7 @@ namespace Wolf
 		struct UBOData
 		{
 			glm::mat4 invProjection;
+			glm::mat4 voxelProjection;
 			glm::vec4 projParams;
 			glm::vec4 directionDirectionalLight;
 			glm::vec4 colorDirectionalLight;

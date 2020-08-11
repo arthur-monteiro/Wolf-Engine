@@ -150,6 +150,9 @@
     <ClCompile Include="Blur.cpp">
       <Filter>Rendering Algorithms</Filter>
     </ClCompile>
+    <ClCompile Include="LightPropagationVolumes.cpp">
+      <Filter>Rendering Algorithms</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WolfEngine.h">
@@ -273,6 +276,9 @@
       <Filter>Rendering Algorithms</Filter>
     </ClInclude>
     <ClInclude Include="Blur.h">
+      <Filter>Rendering Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="LightPropagationVolumes.h">
       <Filter>Rendering Algorithms</Filter>
     </ClInclude>
   </ItemGroup>

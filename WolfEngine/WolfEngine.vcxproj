@@ -162,6 +162,7 @@
     <ClCompile Include="InputVertexTemplate.cpp" />
     <ClCompile Include="Instance.cpp" />
     <ClCompile Include="InstanceTemplate.cpp" />
+    <ClCompile Include="LightPropagationVolumes.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Model2D.cpp" />
@@ -205,6 +206,7 @@
     <ClInclude Include="InputVertexTemplate.h" />
     <ClInclude Include="Instance.h" />
     <ClInclude Include="InstanceTemplate.h" />
+    <ClInclude Include="LightPropagationVolumes.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Model2D.h" />

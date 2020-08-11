@@ -95,6 +95,7 @@ namespace Wolf
 		/* Properties */
 		VkSampleCountFlagBits m_maxMsaaSamples = VK_SAMPLE_COUNT_1_BIT;
 		HardwareCapabilities m_hardwareCapabilities;
+		VkPhysicalDeviceConservativeRasterizationPropertiesEXT m_conservativeRasterProps{};
 
 		/* VR */
 		ovrSession                  m_session = nullptr;

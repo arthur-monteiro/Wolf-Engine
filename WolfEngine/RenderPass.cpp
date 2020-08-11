@@ -16,8 +16,8 @@ Wolf::RenderPass::RenderPass(VkDevice device, VkPhysicalDevice physicalDevice, V
 
 void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, const std::vector<Attachment>& attachments, std::vector<VkExtent2D> extents)
 {
-	if (attachments.empty())
-		throw std::runtime_error("Can't create RenderPass without attachment");
+	/*if (attachments.empty())
+		throw std::runtime_error("Can't create RenderPass without attachment");*/
 
 	m_renderPass = createRenderPass(device, attachments);
 
@@ -30,8 +30,8 @@ void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevi
 
 void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, const std::vector<Attachment>& attachments, std::vector<Image*> images)
 {
-	if (attachments.empty())
-		throw std::runtime_error("Can't create RenderPass without attachment");
+	/*if (attachments.empty())
+		throw std::runtime_error("Can't create RenderPass without attachment");*/
 
 	m_renderPass = createRenderPass(device, attachments);
 
@@ -79,7 +79,7 @@ void Wolf::RenderPass::cleanup(VkDevice device, VkCommandPool commandPool)
 VkRenderPass Wolf::RenderPass::createRenderPass(VkDevice device, std::vector<Attachment> attachments)
 {
 	std::vector<VkAttachmentReference> colorAttachmentRefs;
-	VkAttachmentReference depthAttachmentRef;
+	VkAttachmentReference depthAttachmentRef; bool useDepthAttachement = false;
 	std::vector<VkAttachmentReference> resolveAttachmentRefs;
 
 	// Attachment descriptions
@@ -112,6 +112,7 @@ VkRenderPass Wolf::RenderPass::createRenderPass(VkDevice device, std::vector<Att
 		{
 			ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 			depthAttachmentRef = ref;
+			useDepthAttachement = true;
 		}
 	}
 
@@ -120,7 +121,8 @@ VkRenderPass Wolf::RenderPass::createRenderPass(VkDevice device, std::vector<Att
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentRefs.size());
 	subpass.pColorAttachments = colorAttachmentRefs.data();
-	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+	if(useDepthAttachement)
+		subpass.pDepthStencilAttachment = &depthAttachmentRef;
 	if (!resolveAttachmentRefs.empty())
 		subpass.pResolveAttachments = resolveAttachmentRefs.data();
 

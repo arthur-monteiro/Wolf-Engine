@@ -56,7 +56,7 @@ namespace Wolf
 		std::array < glm::mat4, 2> getVRProjMatrices() { return m_ovr->getProjMatrices(); }
 		std::array < glm::mat4, 2> getVRViewMatrices() { return m_ovr->getViewMatrices(); }
 		void setVRPlayerPosition(glm::vec3 playerPosition) { m_ovr->setPlayerPos(playerPosition); }
-		VkExtent2D getWindowSize() { return m_swapChain->getImages()[0]->getExtent(); }
+		VkExtent2D getWindowSize() { return { m_swapChain->getImages()[0]->getExtent().width, m_swapChain->getImages()[0]->getExtent().height }; }
 
 	private:
 		static void windowResizeCallback(void* systemManagerInstance, int width, int height)

@@ -7,7 +7,8 @@ Wolf::Pipeline::~Pipeline()
 
 void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::string vertexShader, std::string geometryShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 	std::vector<VkVertexInputAttributeDescription> attributeInputDescription, VkExtent2D extent, VkSampleCountFlagBits msaaSamples, std::vector<bool> alphaBlending,
-	VkDescriptorSetLayout * descriptorSetLayout, std::array<float, 2> viewportScale, std::array<float, 2> viewportOffset, VkPrimitiveTopology topology, VkBool32 enableDepthTesting, bool addColors)
+	VkDescriptorSetLayout * descriptorSetLayout, std::array<float, 2> viewportScale, std::array<float, 2> viewportOffset, VkPrimitiveTopology topology, VkBool32 enableDepthTesting, bool addColors,
+	bool enableConservativeRasterization, float maxExtraPrimitiveOverestimationSize)
 {
 	/* Pipeline layout */
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
@@ -188,6 +189,17 @@ void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::s
 	depthStencil.stencilTestEnable = VK_FALSE;
 
 	pipelineInfo.pDepthStencilState = &depthStencil;
+
+	// Conservative rasterization
+	if (enableConservativeRasterization)
+	{
+		VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRasterStateCI{};
+		conservativeRasterStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
+		conservativeRasterStateCI.conservativeRasterizationMode = VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT;
+		conservativeRasterStateCI.extraPrimitiveOverestimationSize = maxExtraPrimitiveOverestimationSize;
+
+		rasterizer.pNext = &conservativeRasterStateCI;
+	}
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline) != VK_SUCCESS)
 		throw std::runtime_error("Error : graphic pipeline creation");

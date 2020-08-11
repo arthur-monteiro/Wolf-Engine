@@ -1,7 +1,7 @@
 #include "DepthPass.h"
 
 Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int commandBufferID, bool outputIsSwapChain, VkExtent2D extent, VkSampleCountFlagBits sampleCount,
-	Model* model, glm::mat4 mvp, bool useAsStorage)
+	Model* model, glm::mat4 mvp, bool useAsStorage, bool useAsSampled)
 {
 	m_engineInstance = engineInstance;
 	m_scene = scene;
@@ -16,7 +16,7 @@ Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scen
 	VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	if (useAsStorage)
 		usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-	else
+	if(useAsSampled)
 		usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 	VkImageLayout layout;
 	if (useAsStorage)

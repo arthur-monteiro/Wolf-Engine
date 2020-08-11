@@ -57,6 +57,17 @@ namespace Wolf
 		Texture* getOutputShadowMaskTexture() { return m_shadowMaskOutputTexture; }
 		Texture* getOutputVolumetricLightMaskTexture() { return m_blur->getTextureOutput(); }
 
+		glm::vec4 getCascadeSplits() { return glm::vec4(m_cascadeSplits[0], m_cascadeSplits[1], m_cascadeSplits[2], m_cascadeSplits[3]); }
+		std::array<glm::mat4, CASCADE_COUNT> getLightSpaceMatrices() { return m_lightSpaceMatrices; }
+		std::array<Image*, CASCADE_COUNT> getDepthTextures()
+		{
+			std::array<Image*, CASCADE_COUNT> r{};
+			for (int i(0); i < CASCADE_COUNT; ++i)
+				r[i] = m_depthPasses[i]->getResult();
+
+			return r;
+		}
+
 	private:
 		Wolf::WolfInstance* m_engineInstance;
 		Wolf::Scene* m_scene;

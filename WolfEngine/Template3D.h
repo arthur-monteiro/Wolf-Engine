@@ -7,6 +7,7 @@
 #include "CascadedShadowMapping.h"
 #include "SSAO.h"
 #include "DirectLightingPBR.h"
+#include "LightPropagationVolumes.h"
 
 namespace Wolf
 {
@@ -29,7 +30,7 @@ namespace Wolf
 		Wolf::Scene* m_scene;
 
 		// Data
-		glm::vec3 m_lightDir = glm::vec3(3.5f, -5.0f, -2.5f);
+		glm::vec3 m_lightDir = glm::vec3(4.0f, -5.0f, -1.5f);
 		UniformBufferObject* m_uboMVP;
 		glm::mat4 m_projectionMatrix;
 		glm::mat4 m_viewMatrix;
@@ -46,6 +47,8 @@ namespace Wolf
 
 		int m_directLightingSSRBloomCommandBufferID = -2;
 		std::unique_ptr<DirectLightingPBR> m_directLighting;
+
+		std::unique_ptr<LightPropagationVolumes> m_lightPropagationVolumes;
 
 		// Merge
 		int m_mergeComputePassID = -1;

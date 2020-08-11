@@ -13,7 +13,7 @@ Wolf::Blur::Blur(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 	for(int i(0);  i < 3; ++i)
 	{
 		m_downscaledTextures[i] = engineInstance->createTexture();
-		m_downscaledTextures[i]->create(extent,
+		m_downscaledTextures[i]->create({ extent.width, extent.height, 1 },
 			VK_IMAGE_USAGE_STORAGE_BIT, inputImage->getFormat(), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 		m_downscaledTextures[i]->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
@@ -48,7 +48,7 @@ Wolf::Blur::Blur(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 	// Blur
 	{
 		m_downscaledBlurredTexture = engineInstance->createTexture();
-		m_downscaledBlurredTexture->create(m_downscaledTextures.back()->getImage()->getExtent(),
+		m_downscaledBlurredTexture->create({ m_downscaledTextures.back()->getImage()->getExtent().width, m_downscaledTextures.back()->getImage()->getExtent().height, 1 },
 			VK_IMAGE_USAGE_STORAGE_BIT, inputImage->getFormat(), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 		m_downscaledBlurredTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
@@ -59,7 +59,7 @@ Wolf::Blur::Blur(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 
 		// Horizontal
 		Scene::ComputePassCreateInfo horizontalBlurComputePassCreateInfo;
-		horizontalBlurComputePassCreateInfo.extent = m_downscaledTextures.back()->getImage()->getExtent();
+		horizontalBlurComputePassCreateInfo.extent = { m_downscaledTextures.back()->getImage()->getExtent().width, m_downscaledTextures.back()->getImage()->getExtent().height };
 		horizontalBlurComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
 		horizontalBlurComputePassCreateInfo.computeShaderPath = "Shaders/Blur/horizontal.spv";
 		horizontalBlurComputePassCreateInfo.commandBufferID = m_horizontalBlurCommandBuffer;
@@ -79,14 +79,14 @@ Wolf::Blur::Blur(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 
 		// Vertical
 		m_downscaledBlurredTexture2 = engineInstance->createTexture();
-		m_downscaledBlurredTexture2->create(m_downscaledTextures.back()->getImage()->getExtent(),
+		m_downscaledBlurredTexture2->create({ m_downscaledTextures.back()->getImage()->getExtent().width, m_downscaledTextures.back()->getImage()->getExtent().height, 1 },
 			VK_IMAGE_USAGE_STORAGE_BIT, inputImage->getFormat(), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 		m_downscaledBlurredTexture2->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 		m_verticalBlurCommandBuffer = scene->addCommandBuffer(commandBufferCreateInfo);
 		
 		Scene::ComputePassCreateInfo verticalBlurComputePassCreateInfo;
-		verticalBlurComputePassCreateInfo.extent = m_downscaledTextures.back()->getImage()->getExtent();
+		verticalBlurComputePassCreateInfo.extent = { m_downscaledTextures.back()->getImage()->getExtent().width, m_downscaledTextures.back()->getImage()->getExtent().height };
 		verticalBlurComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
 		verticalBlurComputePassCreateInfo.computeShaderPath = "Shaders/Blur/vertical.spv";
 		verticalBlurComputePassCreateInfo.commandBufferID = m_verticalBlurCommandBuffer;

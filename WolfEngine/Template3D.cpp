@@ -47,11 +47,15 @@ Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scen
 		m_cascadedShadowMapping = std::make_unique<CascadedShadowMapping>(wolfInstance, scene, model, 0.1f, 100.0f, 32.f, glm::radians(45.0f), m_wolfInstance->getWindowSize(), 
 			depth, m_projectionMatrix);
 
+		// Light Propagation Volume
+		m_lightPropagationVolumes = std::make_unique<LightPropagationVolumes>(wolfInstance, scene, model, m_projectionMatrix, m_modelMatrix, m_lightDir, m_cascadedShadowMapping->getCascadeSplits(),
+			m_cascadedShadowMapping->getDepthTextures());
+
 		// Direct Lighting
 		m_directLightingSSRBloomCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
 		m_directLighting = std::make_unique<DirectLightingPBR>(wolfInstance, scene, m_directLightingSSRBloomCommandBufferID, m_wolfInstance->getWindowSize(), depth,
 			albedo, normalRoughnessMetal, m_cascadedShadowMapping->getOutputShadowMaskTexture()->getImage(), m_cascadedShadowMapping->getOutputVolumetricLightMaskTexture()->getImage(),
-			m_ssao->getOutputTexture()->getImage(), m_projectionMatrix, 0.1f, 100.0f);
+			m_ssao->getOutputTexture()->getImage(), m_lightPropagationVolumes->getPropagationTexture()->getImage(), m_projectionMatrix, 0.1f, 100.0f);
 
 		// Merge
 		Scene::ComputePassCreateInfo mergeComputePassCreateInfo;
@@ -64,7 +68,7 @@ Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scen
 		directLightingImage.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
 		directLightingImage.binding = 0;
 
-		mergeComputePassCreateInfo.images = { { m_directLighting->getOutputTexture()->getImage(), directLightingImage } };
+		mergeComputePassCreateInfo.images = { { m_directLighting->getOutputTexture()->getImage() /*m_lightPropagationVolumes->getVoxelViewerOutput()->getImage()*/, directLightingImage } };
 		mergeComputePassCreateInfo.outputBinding = 1;
 
 		m_mergeComputePassID = scene->addComputePass(mergeComputePassCreateInfo);
@@ -77,8 +81,14 @@ void Wolf::Template3D::update(glm::mat4 view, glm::vec3 cameraPosition, glm::vec
 {
 	m_viewMatrix = view;
 	updateMVP();
+
+	glm::mat4 voxelProjection = glm::ortho(-32.0f, 32.0f, -4.0f, 16.0f, 0.0f, 64.0f) *
+		glm::lookAt(glm::vec3(0.0f, 0.0f, -32.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	
 	m_cascadedShadowMapping->updateMatrices(m_lightDir, cameraPosition, cameraOrientation, m_modelMatrix, glm::inverse( m_viewMatrix * m_modelMatrix));
-	m_directLighting->update(glm::transpose(glm::inverse(m_viewMatrix)) * glm::vec4(m_lightDir, 1.0f));
+	m_directLighting->update(glm::transpose(glm::inverse(m_viewMatrix)) * glm::vec4(m_lightDir, 1.0f),
+		voxelProjection * glm::inverse(m_viewMatrix));
+	m_lightPropagationVolumes->update(view, m_cascadedShadowMapping->getLightSpaceMatrices(), m_modelMatrix);
 }
 
 std::vector<int> Wolf::Template3D::getCommandBufferToSubmit()
@@ -92,8 +102,10 @@ std::vector<int> Wolf::Template3D::getCommandBufferToSubmit()
 	std::vector<int> ssaoCommandBuffer = m_ssao->getCommandBufferIDs();
 	for (auto& commandBuffer : ssaoCommandBuffer)
 		r.push_back(commandBuffer);
+	std::vector<int> lpvCommandBuffers = m_lightPropagationVolumes->getCommandBufferIDs();
+	for(auto& commandBuffer : lpvCommandBuffers)
+		r.push_back(commandBuffer);
 	r.push_back(m_directLightingSSRBloomCommandBufferID);
-	
 	return r;
 }
 
@@ -116,6 +128,15 @@ std::vector<std::pair<int, int>> Wolf::Template3D::getCommandBufferSynchronisati
 		r.push_back(sync);
 	}
 	r.emplace_back(ssaoSynchronisation.back().second, m_directLightingSSRBloomCommandBufferID);
+
+	std::vector<std::pair<int, int>> lpvSync = m_lightPropagationVolumes->getCommandBufferSynchronisations();
+	for (auto& sync : lpvSync)
+	{
+		r.push_back(sync);		
+	}
+	
+	r.emplace_back(m_lightPropagationVolumes->getCommandBufferIDs().back(), m_directLightingSSRBloomCommandBufferID);
+	r.emplace_back(m_lightPropagationVolumes->getCommandBufferIDs()[1], m_directLightingSSRBloomCommandBufferID);
 	
 	return r;
 }

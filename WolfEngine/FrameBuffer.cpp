@@ -18,7 +18,7 @@ bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDev
 		else
 			aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-		m_images[i].create(device, physicalDevice, extent, attachments[i].usageType, attachments[i].format, attachments[i].sampleCount, aspect);
+		m_images[i].create(device, physicalDevice, { extent.width, extent.height, 1 }, attachments[i].usageType, attachments[i].format, attachments[i].sampleCount, aspect);
 		imageViewAttachments[i] = m_images[i].getImageView();
 	}
 
@@ -36,7 +36,7 @@ bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDev
 
 bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkRenderPass renderPass, Image* image, std::vector<Attachment> attachments)
 {
-	m_extent = image->getExtent();
+	m_extent = { image->getExtent().width, image->getExtent().height };
 
 	// Find result image
 	VkImageUsageFlagBits resultType = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
@@ -70,7 +70,8 @@ bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDev
 			else
 				aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-			m_images[currentImage].create(device, physicalDevice, image->getExtent(), attachments[i].usageType, attachments[i].format, attachments[i].sampleCount, aspect);
+			m_images[currentImage].create(device, physicalDevice, { image->getExtent().width, image->getExtent().height, 1 }, attachments[i].usageType, attachments[i].format, 
+				attachments[i].sampleCount, aspect);
 
 			imageViewAttachments[i] = m_images[currentImage].getImageView();
 
