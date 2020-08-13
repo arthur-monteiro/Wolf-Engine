@@ -1,9 +1,6 @@
 #include "WolfEngine.h"
 
 #include <utility>
-#include "Model2D.h"
-#include "Model2DTextured.h"
-#include "Model3D.h"
 
 Wolf::WolfInstance::WolfInstance(WolfInstanceCreateInfo createInfo)
 {
@@ -37,24 +34,6 @@ Wolf::Scene* Wolf::WolfInstance::createScene(Scene::SceneCreateInfo createInfo)
 	else
 		m_scenes.push_back(std::make_unique<Scene>(createInfo, m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_swapChain->getImages(), m_graphicsCommandPool.getCommandPool(), m_computeCommandPool.getCommandPool()));
 	return m_scenes[m_scenes.size() - 1].get();
-}
-
-Wolf::Model* Wolf::WolfInstance::createModel(Model::ModelCreateInfo createInfo)
-{
-	switch (createInfo.inputVertexTemplate)
-	{
-	case InputVertexTemplate::POSITION_2D:
-		m_models.push_back(std::unique_ptr<Model>(static_cast<Model*>(new Model2D(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(), createInfo.inputVertexTemplate))));
-		break;
-	case InputVertexTemplate::POSITION_TEXTURECOORD_2D:
-		m_models.push_back(std::unique_ptr<Model>(static_cast<Model*>(new Model2DTextured(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(), createInfo.inputVertexTemplate))));
-		break;
-	case InputVertexTemplate::FULL_3D_MATERIAL:
-		m_models.push_back(std::unique_ptr<Model>(static_cast<Model*>(new Model3D(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(), createInfo.inputVertexTemplate))));
-		break;
-	}
-
-	return m_models[m_models.size() - 1].get();
 }
 
 Wolf::UniformBufferObject* Wolf::WolfInstance::createUniformBufferObject()

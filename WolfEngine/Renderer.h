@@ -28,11 +28,16 @@ namespace Wolf
 		Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 			std::vector<VkVertexInputAttributeDescription> attributeInputDescription, std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts,
 			std::vector<TextureLayout> textureLayouts, std::vector<ImageLayout> imageLayouts, std::vector<SamplerLayout> samplerLayouts, std::vector<BufferLayout> bufferLayouts,
-			std::vector<bool> alphaBlending, bool enableDepthTesting, bool enableConservativeRasterization);
+			std::vector<bool> alphaBlending, bool enableDepthTesting, bool enableConservativeRasterization, VkPolygonMode polygonMode);
 		Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::string geometryShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 			std::vector<VkVertexInputAttributeDescription> attributeInputDescription, std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts,
 			std::vector<TextureLayout> textureLayouts, std::vector<ImageLayout> imageLayouts, std::vector<SamplerLayout> samplerLayouts, std::vector<BufferLayout> bufferLayouts,
 			std::vector<bool> alphaBlending);
+		Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::string fragmentShader, 
+			std::string tessellationControlShader, std::string tessellationEvaluationShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
+			std::vector<VkVertexInputAttributeDescription> attributeInputDescription, std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts,
+			std::vector<TextureLayout> textureLayouts, std::vector<ImageLayout> imageLayouts, std::vector<SamplerLayout> samplerLayouts, std::vector<BufferLayout> bufferLayouts,
+			std::vector<bool> alphaBlending, bool enableDepthTesting, bool enableConservativeRasterization, VkPolygonMode polygonMode);
 		Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 			std::vector<VkVertexInputAttributeDescription> attributeInputDescription, std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts,
 			std::vector<TextureLayout> textureLayouts, std::vector<bool> alphaBlending);
@@ -62,12 +67,15 @@ namespace Wolf
 		std::string m_vertexShader;
 		std::string m_geometryShader;
 		std::string m_fragmentShader;
+		std::string m_tessellationControlShader;
+		std::string m_tessellationEvaluationShader;
 		std::vector<VkVertexInputBindingDescription> m_vertexInputDescription;
 		std::vector<VkVertexInputAttributeDescription> m_attributeInputDescription;
 		std::vector<bool> m_alphaBlending;
 		VkPrimitiveTopology m_primitiveTopoly;
 		bool m_enableDepthTesting;
 		bool m_enableConservativeRasterization;
+		VkPolygonMode m_polygonMode;
 
 		VkExtent2D m_extent = { 0, 0};
 		std::array<float, 2> m_viewportScale = { 1.0f, 1.0f };

@@ -12,6 +12,11 @@
 #include "Text.h"
 #include "OVR.h"
 
+#include "Model2D.h"
+#include "Model2DTextured.h"
+#include "Model3D.h"
+#include "ModelCustom.h"
+
 namespace Wolf
 {	
 	struct WolfInstanceCreateInfo
@@ -35,6 +40,7 @@ namespace Wolf
 		~WolfInstance() = default;
 
 		Scene* createScene(Scene::SceneCreateInfo createInfo);
+		template<typename T = float>
 		Model* createModel(Model::ModelCreateInfo createInfo);
 		template<typename T>
 		Instance<T>* createInstanceBuffer();
@@ -93,5 +99,29 @@ namespace Wolf
 		Instance<T> *instance = new Instance<T>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue());
 		m_instances.push_back(std::unique_ptr<InstanceParent>(instance));
 		return instance;
+	}
+
+	template<typename  T>
+	Model* WolfInstance::createModel(Model::ModelCreateInfo createInfo)
+	{
+		switch (createInfo.inputVertexTemplate)
+		{
+		case InputVertexTemplate::POSITION_2D:
+			m_models.push_back(std::unique_ptr<Model>(static_cast<Model*>(new Model2D(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(),
+				m_vulkan->getGraphicsQueue(), createInfo.inputVertexTemplate))));
+			break;
+		case InputVertexTemplate::POSITION_TEXTURECOORD_2D:
+			m_models.push_back(std::unique_ptr<Model>(static_cast<Model*>(new Model2DTextured(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(), createInfo.inputVertexTemplate))));
+			break;
+		case InputVertexTemplate::FULL_3D_MATERIAL:
+			m_models.push_back(std::unique_ptr<Model>(static_cast<Model*>(new Model3D(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(), createInfo.inputVertexTemplate))));
+			break;
+		case InputVertexTemplate::NO:
+			m_models.push_back(std::unique_ptr<Model>(static_cast<Model*>(new ModelCustom<T>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(),
+				m_vulkan->getGraphicsQueue(), createInfo.inputVertexTemplate))));
+			break;
+		}
+
+		return m_models[m_models.size() - 1].get();
 	}
 }

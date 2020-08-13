@@ -219,10 +219,11 @@ int Wolf::Scene::addRenderer(RendererCreateInfo createInfo)
 	if (createInfo.extent.width == 0)
 		createInfo.extent = { m_swapChainImages[0]->getExtent().width, m_swapChainImages[0]->getExtent().height };
 	
-	const auto r = new Renderer(m_device, createInfo.extent, createInfo.vertexShaderPath, createInfo.fragmentShaderPath, createInfo.inputBindingDescriptions, 
-	                            std::move(createInfo.inputAttributeDescriptions), std::move(createInfo.uboLayouts), std::move(createInfo.textureLayouts), std::move(createInfo.imageLayouts), 
-								std::move(createInfo.samplerLayouts), std::move(createInfo.bufferLayouts), createInfo.alphaBlending, createInfo.enableDepthTesting,
-								createInfo.enableConservativeRasterization);
+	const auto r = new Renderer(m_device, createInfo.extent, createInfo.vertexShaderPath, createInfo.fragmentShaderPath, createInfo.tessellationControlShaderPath,
+		createInfo.tessellationEvaluationShaderPath, createInfo.inputBindingDescriptions,
+		std::move(createInfo.inputAttributeDescriptions), std::move(createInfo.uboLayouts), std::move(createInfo.textureLayouts), std::move(createInfo.imageLayouts),
+		std::move(createInfo.samplerLayouts), std::move(createInfo.bufferLayouts), createInfo.alphaBlending, createInfo.enableDepthTesting,
+		createInfo.enableConservativeRasterization, createInfo.polygonMode);
 	
 	m_sceneRenderPasses[createInfo.renderPassID].renderers.push_back(std::unique_ptr<Renderer>(r));
 	m_sceneRenderPasses[createInfo.renderPassID].renderers.back()->setViewport(createInfo.viewportScale, createInfo.viewportOffset);

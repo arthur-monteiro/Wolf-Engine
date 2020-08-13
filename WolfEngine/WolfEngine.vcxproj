@@ -168,6 +168,7 @@
     <ClCompile Include="Model2D.cpp" />
     <ClCompile Include="Model2DTextured.cpp" />
     <ClCompile Include="Model3D.cpp" />
+    <ClCompile Include="ModelCustom.cpp" />
     <ClCompile Include="OVR.cpp" />
     <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="Model2D.h" />
     <ClInclude Include="Model2DTextured.h" />
     <ClInclude Include="Model3D.h" />
+    <ClInclude Include="ModelCustom.h" />
     <ClInclude Include="OVR.h" />
     <ClInclude Include="Pipeline.h" />
     <ClInclude Include="Renderer.h" />

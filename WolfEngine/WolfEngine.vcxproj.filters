@@ -153,6 +153,9 @@
     <ClCompile Include="LightPropagationVolumes.cpp">
       <Filter>Rendering Algorithms</Filter>
     </ClCompile>
+    <ClCompile Include="ModelCustom.cpp">
+      <Filter>Templates</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WolfEngine.h">
@@ -280,6 +283,9 @@
     </ClInclude>
     <ClInclude Include="LightPropagationVolumes.h">
       <Filter>Rendering Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelCustom.h">
+      <Filter>Templates</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

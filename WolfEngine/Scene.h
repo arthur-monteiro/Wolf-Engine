@@ -81,7 +81,9 @@ namespace Wolf
 			int renderPassID;
 
 			std::string vertexShaderPath;
-			std::string fragmentShaderPath;
+			std::string fragmentShaderPath = "";
+			std::string tessellationControlShaderPath = "";
+			std::string tessellationEvaluationShaderPath = "";
 
 			InputVertexTemplate inputVerticesTemplate = InputVertexTemplate::NO;
 			InstanceTemplate instanceTemplate = InstanceTemplate::NO;
@@ -90,6 +92,7 @@ namespace Wolf
 			std::vector<bool> alphaBlending = { true };
 			bool enableDepthTesting = true;
 			bool enableConservativeRasterization = false;
+			VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL;
 
 			// Descriptor set layout
 			std::vector<UniformBufferObjectLayout> uboLayouts;

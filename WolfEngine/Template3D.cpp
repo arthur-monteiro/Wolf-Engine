@@ -8,7 +8,7 @@ Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scen
 	// Model creation
 	Model::ModelCreateInfo modelCreateInfo{};
 	modelCreateInfo.inputVertexTemplate = InputVertexTemplate::FULL_3D_MATERIAL;
-	Model* model = m_wolfInstance->createModel(modelCreateInfo);
+	Model* model = m_wolfInstance->createModel<>(modelCreateInfo);
 
 	Model::ModelLoadingInfo modelLoadingInfo;
 	modelLoadingInfo.filename = std::move(modelFilename);

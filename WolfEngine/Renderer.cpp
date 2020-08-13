@@ -10,11 +10,14 @@ Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexS
 	std::vector<VkVertexInputAttributeDescription> attributeInputDescription,
 	std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts, std::vector<TextureLayout> textureLayouts,
 	std::vector<ImageLayout> imageLayouts, std::vector<SamplerLayout> samplerLayouts,
-	std::vector<BufferLayout> bufferLayouts, std::vector<bool> alphaBlending, bool enableDepthTesting, bool enableConservativeRasterization)
+	std::vector<BufferLayout> bufferLayouts, std::vector<bool> alphaBlending, bool enableDepthTesting, bool enableConservativeRasterization,
+	VkPolygonMode polygonMode)
 {
 	m_vertexShader = std::move(vertexShader);
 	m_geometryShader = "";
 	m_fragmentShader = std::move(fragmentShader);
+	m_tessellationControlShader = "";
+	m_tessellationEvaluationShader = "";
 	m_vertexInputDescription = std::move(vertexInputDescription);
 	m_attributeInputDescription = std::move(attributeInputDescription);
 	m_alphaBlending = std::move(alphaBlending);
@@ -22,6 +25,7 @@ Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexS
 	m_primitiveTopoly = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	m_enableDepthTesting = enableDepthTesting;
 	m_enableConservativeRasterization = enableConservativeRasterization;
+	m_polygonMode = polygonMode;
 
 	createDescriptorSetLayout(device, std::move(uniformBufferObjectLayouts), std::move(textureLayouts), std::move(imageLayouts), std::move(samplerLayouts),
 		std::move(bufferLayouts));
@@ -37,6 +41,8 @@ Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexS
 	m_vertexShader = std::move(vertexShader);
 	m_geometryShader = std::move(geometryShader);
 	m_fragmentShader = std::move(fragmentShader);
+	m_tessellationControlShader = "";
+	m_tessellationEvaluationShader = "";
 	m_vertexInputDescription = std::move(vertexInputDescription);
 	m_attributeInputDescription = std::move(attributeInputDescription);
 	m_alphaBlending = std::move(alphaBlending);
@@ -44,20 +50,50 @@ Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexS
 	m_primitiveTopoly = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	m_enableDepthTesting = true;
 	m_enableConservativeRasterization = false;
+	m_polygonMode = VK_POLYGON_MODE_FILL;
 	
 	createDescriptorSetLayout(device, std::move(uniformBufferObjectLayouts), std::move(textureLayouts), std::move(imageLayouts), std::move(samplerLayouts),
 		std::move(bufferLayouts));
 }
 
-Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader,
+Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader, std::string fragmentShader,
+	std::string tessellationControlShader, std::string tessellationEvaluationShader,
 	std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 	std::vector<VkVertexInputAttributeDescription> attributeInputDescription,
 	std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts, std::vector<TextureLayout> textureLayouts,
-	std::vector<bool> alphaBlending)
+	std::vector<ImageLayout> imageLayouts, std::vector<SamplerLayout> samplerLayouts,
+	std::vector<BufferLayout> bufferLayouts, std::vector<bool> alphaBlending, bool enableDepthTesting,
+	bool enableConservativeRasterization, VkPolygonMode polygonMode)
+{
+	m_vertexShader = std::move(vertexShader);
+	m_geometryShader = "";
+	m_fragmentShader = std::move(fragmentShader);
+	m_tessellationControlShader = std::move(tessellationControlShader);
+	m_tessellationEvaluationShader = std::move(tessellationEvaluationShader);
+	m_vertexInputDescription = std::move(vertexInputDescription);
+	m_attributeInputDescription = std::move(attributeInputDescription);
+	m_alphaBlending = std::move(alphaBlending);
+	m_extent = extent;
+	m_primitiveTopoly = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	m_enableDepthTesting = enableDepthTesting;
+	m_enableConservativeRasterization = enableConservativeRasterization;
+	m_polygonMode = polygonMode;
+
+	createDescriptorSetLayout(device, std::move(uniformBufferObjectLayouts), std::move(textureLayouts), std::move(imageLayouts), std::move(samplerLayouts),
+		std::move(bufferLayouts));
+}
+
+Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexShader,
+                         std::vector<VkVertexInputBindingDescription> vertexInputDescription,
+                         std::vector<VkVertexInputAttributeDescription> attributeInputDescription,
+                         std::vector<UniformBufferObjectLayout> uniformBufferObjectLayouts, std::vector<TextureLayout> textureLayouts,
+                         std::vector<bool> alphaBlending)
 {
 	m_vertexShader = std::move(vertexShader);
 	m_geometryShader = "";
 	m_fragmentShader = "";
+	m_tessellationControlShader = "";
+	m_tessellationEvaluationShader = "";
 	m_vertexInputDescription = std::move(vertexInputDescription);
 	m_attributeInputDescription = std::move(attributeInputDescription);
 	m_alphaBlending = std::move(alphaBlending);
@@ -65,6 +101,7 @@ Wolf::Renderer::Renderer(VkDevice device, VkExtent2D extent, std::string vertexS
 	m_primitiveTopoly = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	m_enableDepthTesting = true;
 	m_enableConservativeRasterization = false;
+	m_polygonMode = VK_POLYGON_MODE_FILL;
 
 	createDescriptorSetLayout(device, std::move(uniformBufferObjectLayouts), std::move(textureLayouts), {}, {}, {}); // !! change definition to allow image and sampler separated
 }
@@ -73,8 +110,10 @@ void Wolf::Renderer::create(VkDevice device, VkRenderPass renderPass, VkSampleCo
 {
 	if (!m_pipelineCreated)
 	{
-		m_pipeline.initialize(device, renderPass, m_vertexShader, m_geometryShader, m_fragmentShader, m_vertexInputDescription, m_attributeInputDescription, 
-			m_extent, msaa, m_alphaBlending, &m_descriptorSetLayout, m_viewportScale, m_viewportOffset, m_primitiveTopoly, m_enableDepthTesting, false, m_enableConservativeRasterization);
+		m_pipeline.initialize(device, renderPass, m_vertexShader, m_geometryShader, m_fragmentShader,
+			m_tessellationControlShader, m_tessellationEvaluationShader, m_vertexInputDescription, m_attributeInputDescription, 
+			m_extent, msaa, m_alphaBlending, &m_descriptorSetLayout, m_viewportScale, m_viewportOffset, m_primitiveTopoly, m_enableDepthTesting, false, m_enableConservativeRasterization,
+			0.75f, m_polygonMode);
 		m_pipelineCreated = true;
 	}
 

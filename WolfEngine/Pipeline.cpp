@@ -5,10 +5,11 @@
 Wolf::Pipeline::~Pipeline()
 = default;
 
-void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::string vertexShader, std::string geometryShader, std::string fragmentShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
+void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::string vertexShader, std::string geometryShader, std::string fragmentShader, 
+	std::string tessellationControlShader, std::string tessellationEvaluationShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
 	std::vector<VkVertexInputAttributeDescription> attributeInputDescription, VkExtent2D extent, VkSampleCountFlagBits msaaSamples, std::vector<bool> alphaBlending,
 	VkDescriptorSetLayout * descriptorSetLayout, std::array<float, 2> viewportScale, std::array<float, 2> viewportOffset, VkPrimitiveTopology topology, VkBool32 enableDepthTesting, bool addColors,
-	bool enableConservativeRasterization, float maxExtraPrimitiveOverestimationSize)
+	bool enableConservativeRasterization, float maxExtraPrimitiveOverestimationSize, VkPolygonMode polygonMode)
 {
 	/* Pipeline layout */
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
@@ -26,6 +27,8 @@ void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::s
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
 	VkShaderModule geomShaderModule = nullptr;
+	VkShaderModule tesControlShaderModule = nullptr;
+	VkShaderModule tesEvalShaderModule = nullptr;
 
 	std::vector<char> vertShaderCode = readFile(vertexShader);
 	vertShaderModule = createShaderModule(vertShaderCode, device);
@@ -65,6 +68,34 @@ void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::s
 
 		shaderStages.push_back(fragShaderStageInfo);
 	}
+	
+	if (!tessellationControlShader.empty())
+	{
+		std::vector<char> tesControlShaderCode = readFile(tessellationControlShader);
+		tesControlShaderModule = createShaderModule(tesControlShaderCode, device);
+
+		VkPipelineShaderStageCreateInfo tesControlShaderStageInfo = {};
+		tesControlShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		tesControlShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+		tesControlShaderStageInfo.module = tesControlShaderModule;
+		tesControlShaderStageInfo.pName = "main";
+
+		shaderStages.push_back(tesControlShaderStageInfo);
+	}
+
+	if (!tessellationEvaluationShader.empty())
+	{
+		std::vector<char> tesEvalShaderCode = readFile(tessellationEvaluationShader);
+		tesEvalShaderModule = createShaderModule(tesEvalShaderCode, device);
+
+		VkPipelineShaderStageCreateInfo tesEvalShaderStageInfo = {};
+		tesEvalShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		tesEvalShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+		tesEvalShaderStageInfo.module = tesEvalShaderModule;
+		tesEvalShaderStageInfo.pName = "main";
+
+		shaderStages.push_back(tesEvalShaderStageInfo);
+	}
 
 	/* Input */
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
@@ -77,7 +108,7 @@ void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::s
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = topology;
+	inputAssembly.topology = tessellationControlShader.empty() ? topology : VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
 	/* Viewport */
@@ -105,7 +136,7 @@ void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::s
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
-	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+	rasterizer.polygonMode = polygonMode;
 	rasterizer.lineWidth = 1.0f;
 	rasterizer.cullMode = VK_CULL_MODE_NONE;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
@@ -199,6 +230,16 @@ void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::s
 		conservativeRasterStateCI.extraPrimitiveOverestimationSize = maxExtraPrimitiveOverestimationSize;
 
 		rasterizer.pNext = &conservativeRasterStateCI;
+	}
+
+	// Tesselation
+	if(!tessellationControlShader.empty())
+	{
+		VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo{};
+		tessellationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+		tessellationStateCreateInfo.patchControlPoints = 4;
+
+		pipelineInfo.pTessellationState = &tessellationStateCreateInfo;
 	}
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline) != VK_SUCCESS)
