@@ -6,91 +6,91 @@ using namespace OVR;
 
 Wolf::OVR::OVR(VkDevice device, ovrSession session, ovrGraphicsLuid luid)
 {	
-	m_session = session;
-	m_luid = luid;
-	
-	/*ovrInitParams initParams = { ovrInit_RequestVersion | ovrInit_FocusAware, OVR_MINOR_VERSION, NULL, 0, 0 };
-	ovrResult result = ovr_Initialize(&initParams);
-	if(!OVR_SUCCESS(result))
-	{
-		Debug::sendError("Failed to initialize OVR");
-		return;
-	}
+	//m_session = session;
+	//m_luid = luid;
+	//
+	///*ovrInitParams initParams = { ovrInit_RequestVersion | ovrInit_FocusAware, OVR_MINOR_VERSION, NULL, 0, 0 };
+	//ovrResult result = ovr_Initialize(&initParams);
+	//if(!OVR_SUCCESS(result))
+	//{
+	//	Debug::sendError("Failed to initialize OVR");
+	//	return;
+	//}
 
-	result = ovr_Create(&m_session, &m_luid);
-	if (!OVR_SUCCESS(result))
-	{
-		Debug::sendError("Failed to create OVR");
-		return;
-	}*/
+	//result = ovr_Create(&m_session, &m_luid);
+	//if (!OVR_SUCCESS(result))
+	//{
+	//	Debug::sendError("Failed to create OVR");
+	//	return;
+	//}*/
 
-	ovrHmdDesc hmdDesc = ovr_GetHmdDesc(session);
-	m_size = ovr_GetFovTextureSize(m_session, ovrEye_Left, hmdDesc.DefaultEyeFov[ovrEye_Left], 1);
+	//ovrHmdDesc hmdDesc = ovr_GetHmdDesc(session);
+	//m_size = ovr_GetFovTextureSize(m_session, ovrEye_Left, hmdDesc.DefaultEyeFov[ovrEye_Left], 1);
 
-	{
-		ovrErrorInfo errorInfo;
-		ovr_GetLastErrorInfo(&errorInfo);
-		int a = 0;
-	}
+	//{
+	//	ovrErrorInfo errorInfo;
+	//	ovr_GetLastErrorInfo(&errorInfo);
+	//	int a = 0;
+	//}
 
-	{
-		/*ovrTextureSwapChainDesc depthDesc = {};
-		depthDesc.Type = ovrTexture_2D;
-		depthDesc.ArraySize = 1;
-		depthDesc.Format = OVR_FORMAT_D32_FLOAT;
-		depthDesc.Width = size.w;
-		depthDesc.Height = size.h;
-		depthDesc.MipLevels = 1;
-		depthDesc.SampleCount = 1;
-		depthDesc.MiscFlags = ovrTextureMisc_DX_Typeless;
-		depthDesc.BindFlags = ovrTextureBind_DX_DepthStencil;
-		depthDesc.StaticImage = ovrFalse;
-		ovr_CreateTextureSwapChainVk(session, device, &depthDesc, &m_depthChain);*/
+	//{
+	//	/*ovrTextureSwapChainDesc depthDesc = {};
+	//	depthDesc.Type = ovrTexture_2D;
+	//	depthDesc.ArraySize = 1;
+	//	depthDesc.Format = OVR_FORMAT_D32_FLOAT;
+	//	depthDesc.Width = size.w;
+	//	depthDesc.Height = size.h;
+	//	depthDesc.MipLevels = 1;
+	//	depthDesc.SampleCount = 1;
+	//	depthDesc.MiscFlags = ovrTextureMisc_DX_Typeless;
+	//	depthDesc.BindFlags = ovrTextureBind_DX_DepthStencil;
+	//	depthDesc.StaticImage = ovrFalse;
+	//	ovr_CreateTextureSwapChainVk(session, device, &depthDesc, &m_depthChain);*/
 
-		ovrTextureSwapChainDesc colorDesc = {};
-		colorDesc.Type = ovrTexture_2D;
-		colorDesc.ArraySize = 1;
-		colorDesc.Format = OVR_FORMAT_R8G8B8A8_UNORM_SRGB;
-		colorDesc.Width = m_size.w;
-		colorDesc.Height = m_size.h;
-		colorDesc.MipLevels = 1;
-		colorDesc.SampleCount = 1;
-		colorDesc.MiscFlags = ovrTextureMisc_DX_Typeless;
-		colorDesc.BindFlags = ovrTextureBind_DX_RenderTarget;
-		colorDesc.StaticImage = ovrFalse;
-		ovrResult result = ovr_CreateTextureSwapChainVk(m_session, device, &colorDesc, &m_textureChain);
-		if (!OVR_SUCCESS(result))
-		{
-			ovrErrorInfo errorInfo;
-			ovr_GetLastErrorInfo(&errorInfo);
-			Debug::sendError("Failed to create swapchain OVR");
-			return;
-		}
-	}
+	//	ovrTextureSwapChainDesc colorDesc = {};
+	//	colorDesc.Type = ovrTexture_2D;
+	//	colorDesc.ArraySize = 1;
+	//	colorDesc.Format = OVR_FORMAT_R8G8B8A8_UNORM_SRGB;
+	//	colorDesc.Width = m_size.w;
+	//	colorDesc.Height = m_size.h;
+	//	colorDesc.MipLevels = 1;
+	//	colorDesc.SampleCount = 1;
+	//	colorDesc.MiscFlags = ovrTextureMisc_DX_Typeless;
+	//	colorDesc.BindFlags = ovrTextureBind_DX_RenderTarget;
+	//	colorDesc.StaticImage = ovrFalse;
+	//	ovrResult result = ovr_CreateTextureSwapChainVk(m_session, device, &colorDesc, &m_textureChain);
+	//	if (!OVR_SUCCESS(result))
+	//	{
+	//		ovrErrorInfo errorInfo;
+	//		ovr_GetLastErrorInfo(&errorInfo);
+	//		Debug::sendError("Failed to create swapchain OVR");
+	//		return;
+	//	}
+	//}
 
-	{
-		int textureCount = 0;
-		ovrResult result = ovr_GetTextureSwapChainLength(m_session, m_textureChain, &textureCount);
-		if (!OVR_SUCCESS(result))
-		{
-			ovrErrorInfo errorInfo;
-			ovr_GetLastErrorInfo(&errorInfo);
-			Debug::sendError("Failed to create swapchain OVR");
-			return;
-		}
+	//{
+	//	int textureCount = 0;
+	//	ovrResult result = ovr_GetTextureSwapChainLength(m_session, m_textureChain, &textureCount);
+	//	if (!OVR_SUCCESS(result))
+	//	{
+	//		ovrErrorInfo errorInfo;
+	//		ovr_GetLastErrorInfo(&errorInfo);
+	//		Debug::sendError("Failed to create swapchain OVR");
+	//		return;
+	//	}
 
-		m_swapchainImages.reserve(textureCount);
-		for (int i = 0; i < textureCount; ++i)
-		{
-			VkImage colorImage;
-			ovr_GetTextureSwapChainBufferVk(m_session, m_textureChain, i, &colorImage);
+	//	m_swapchainImages.reserve(textureCount);
+	//	for (int i = 0; i < textureCount; ++i)
+	//	{
+	//		VkImage colorImage;
+	//		ovr_GetTextureSwapChainBufferVk(m_session, m_textureChain, i, &colorImage);
 
-			m_swapchainImages.emplace_back(Image());
-			m_swapchainImages.back().createFromImage(device, colorImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, { (uint32_t)m_size.w, (uint32_t)m_size.h });
-		}
-	}
+	//		m_swapchainImages.emplace_back(Image());
+	//		m_swapchainImages.back().createFromImage(device, colorImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, { (uint32_t)m_size.w, (uint32_t)m_size.h });
+	//	}
+	//}
 
-	double frameTiming = ovr_GetPredictedDisplayTime(m_session, m_frameIndex);
+	//double frameTiming = ovr_GetPredictedDisplayTime(m_session, m_frameIndex);
 }
 
 Wolf::OVR::~OVR()

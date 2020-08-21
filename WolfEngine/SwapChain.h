@@ -30,7 +30,7 @@ namespace Wolf
 
 	private:
 		VkSwapchainKHR m_swapChain;
-		std::vector<Image> m_images;
+		std::vector<std::unique_ptr<Image>> m_images;
 		bool m_invertColors = false;
 
 		Semaphore m_imageAvailableSemaphore;

@@ -9,9 +9,6 @@ namespace Wolf
 	class Framebuffer
 	{
 	public:
-		Framebuffer() {}
-		~Framebuffer();
-
 		bool initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkRenderPass renderPass, VkExtent2D extent, std::vector<Attachment> attachments);
 		bool initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkRenderPass renderPass, Image* image, std::vector<Attachment> attachments);
 
@@ -24,7 +21,7 @@ namespace Wolf
 	private:
 		VkFramebuffer m_framebuffer;
 		VkExtent2D m_extent;
-		std::vector<Image> m_images;
+		std::vector<std::unique_ptr<Image>> m_images;
 	};
 
 

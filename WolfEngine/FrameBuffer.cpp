@@ -1,9 +1,5 @@
 #include "Framebuffer.h"
 
-Wolf::Framebuffer::~Framebuffer()
-{
-}
-
 bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkRenderPass renderPass, VkExtent2D extent, std::vector<Attachment> attachments)
 {
 	m_extent = extent;
@@ -18,8 +14,9 @@ bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDev
 		else
 			aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-		m_images[i].create(device, physicalDevice, { extent.width, extent.height, 1 }, attachments[i].usageType, attachments[i].format, attachments[i].sampleCount, aspect);
-		imageViewAttachments[i] = m_images[i].getImageView();
+		VkExtent3D extent3D = { extent.width, extent.height, 1 };
+		m_images[i] = std::make_unique<Image>(device, physicalDevice, extent3D, attachments[i].usageType, attachments[i].format, attachments[i].sampleCount, aspect);
+		imageViewAttachments[i] = m_images[i]->getImageView();
 	}
 
 	VkFramebufferCreateInfo framebufferInfo = {};
@@ -70,10 +67,11 @@ bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDev
 			else
 				aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-			m_images[currentImage].create(device, physicalDevice, { image->getExtent().width, image->getExtent().height, 1 }, attachments[i].usageType, attachments[i].format, 
+			VkExtent3D extent = { image->getExtent().width, image->getExtent().height, 1 };
+			m_images[currentImage] = std::make_unique<Image>(device, physicalDevice, extent, attachments[i].usageType, attachments[i].format, 
 				attachments[i].sampleCount, aspect);
 
-			imageViewAttachments[i] = m_images[currentImage].getImageView();
+			imageViewAttachments[i] = m_images[currentImage]->getImageView();
 
 			currentImage++;
 		}
@@ -101,15 +99,15 @@ bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDev
 void Wolf::Framebuffer::cleanup(VkDevice device)
 {
 	vkDestroyFramebuffer(device, m_framebuffer, nullptr);
-	for (int i(0); i < m_images.size(); ++i)
-		m_images[i].cleanup(device);
+	/*for (int i(0); i < m_images.size(); ++i)
+		m_images[i].cleanup(device);*/
 }
 
 std::vector<Wolf::Image*> Wolf::Framebuffer::getImages()
 {
 	std::vector<Image*> images(m_images.size());
 	for (int i(0); i < m_images.size(); ++i)
-		images[i] = &m_images[i];
+		images[i] = m_images[i].get();
 
 	return images;
 }

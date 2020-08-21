@@ -2,7 +2,7 @@
 
 #include "Mesh.h"
 #include "Font.h"
-#include "UniformBufferObject.h"
+#include "UniformBuffer.h"
 #include "InputVertexTemplate.h"
 
 namespace Wolf
@@ -19,7 +19,7 @@ namespace Wolf
 		float simulateSizeX(std::wstring text, VkExtent2D outputExtent, Font* font, float maxSize);
 
 		VertexBuffer getVertexBuffer() { return m_mesh.getVertexBuffer(); }
-		UniformBufferObject* getUBO() const { return m_ubo.get(); }
+		UniformBuffer* getUBO() const { return m_ubo.get(); }
 
 		void setColor(VkDevice device, unsigned int ID, glm::vec3 color);
 		void translate(VkDevice device, unsigned int ID, glm::vec2 offset);
@@ -41,7 +41,7 @@ namespace Wolf
 		std::vector<TextStructure> m_texts;
 
 		Mesh<Vertex2DTexturedWithMaterial> m_mesh;
-		std::unique_ptr<UniformBufferObject> m_ubo;
+		std::unique_ptr<UniformBuffer> m_ubo;
 
 		struct TextUBO
 		{

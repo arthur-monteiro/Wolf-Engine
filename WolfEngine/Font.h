@@ -25,7 +25,7 @@ namespace Wolf
 		int getMaxSizeY() const { return m_maxYSize; }
 		unsigned int getMaterialID(const wchar_t character) { return m_characters[character].textureID; }
 		std::vector<Image*> getImages();
-		Wolf::Sampler* getSampler() { return &m_sampler; }
+		Wolf::Sampler* getSampler() { return m_sampler.get(); }
 
 	private:
 		struct Character
@@ -40,7 +40,7 @@ namespace Wolf
 
 		std::map<wchar_t, Character> m_characters;
 		std::vector<Image> m_images;
-		Sampler m_sampler;
+		std::unique_ptr<Sampler> m_sampler;
 		int m_maxYSize;
 	};
 }

@@ -64,11 +64,10 @@ Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scen
 		mergeComputePassCreateInfo.commandBufferID = -1;
 		mergeComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
 
-		ImageLayout directLightingImage{};
-		directLightingImage.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-		directLightingImage.binding = 0;
+		DescriptorSetGenerator mergeDescriptorSetGenerator;
+		mergeDescriptorSetGenerator.addImages({ m_directLighting->getOutputTexture()->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
 
-		mergeComputePassCreateInfo.images = { { m_directLighting->getOutputTexture()->getImage() /*m_lightPropagationVolumes->getVoxelViewerOutput()->getImage()*/, directLightingImage } };
+		mergeComputePassCreateInfo.descriptorSetCreateInfo = mergeDescriptorSetGenerator.getDescritorSetCreateInfo();
 		mergeComputePassCreateInfo.outputBinding = 1;
 
 		m_mergeComputePassID = scene->addComputePass(mergeComputePassCreateInfo);
@@ -81,11 +80,11 @@ void Wolf::Template3D::update(glm::mat4 view, glm::vec3 cameraPosition, glm::vec
 {
 	m_viewMatrix = view;
 	updateMVP();
+	m_cascadedShadowMapping->updateMatrices(m_lightDir, cameraPosition, cameraOrientation, m_modelMatrix, glm::inverse(m_viewMatrix * m_modelMatrix));
 
 	glm::mat4 voxelProjection = glm::ortho(-32.0f, 32.0f, -4.0f, 16.0f, 0.0f, 64.0f) *
 		glm::lookAt(glm::vec3(0.0f, 0.0f, -32.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	
-	m_cascadedShadowMapping->updateMatrices(m_lightDir, cameraPosition, cameraOrientation, m_modelMatrix, glm::inverse( m_viewMatrix * m_modelMatrix));
 	m_directLighting->update(glm::transpose(glm::inverse(m_viewMatrix)) * glm::vec4(m_lightDir, 1.0f),
 		voxelProjection * glm::inverse(m_viewMatrix));
 	m_lightPropagationVolumes->update(view, m_cascadedShadowMapping->getLightSpaceMatrices(), m_modelMatrix);
@@ -111,8 +110,8 @@ std::vector<int> Wolf::Template3D::getCommandBufferToSubmit()
 
 std::vector<std::pair<int, int>> Wolf::Template3D::getCommandBufferSynchronisation()
 {
-	std::vector<std::pair<int, int>> r = 
-		{ {m_gBufferCommandBufferID, m_SSAOCommandBufferID }, { m_directLightingSSRBloomCommandBufferID, -1 } };
+	std::vector<std::pair<int, int>> r =
+			{ {m_gBufferCommandBufferID, m_SSAOCommandBufferID }, { m_directLightingSSRBloomCommandBufferID, -1 } };
 
 	std::vector<std::pair<int, int>> csmSynchronisation = m_cascadedShadowMapping->getCommandBufferSynchronisation();
 	for(auto& sync : csmSynchronisation)

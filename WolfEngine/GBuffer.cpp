@@ -6,13 +6,13 @@ Wolf::GBuffer::GBuffer(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, i
 	m_engineInstance = engineInstance;
 	m_scene = scene;
 	m_sampleCount = sampleCount;
-	
+
+	// Render Pass
 	Scene::RenderPassCreateInfo renderPassCreateInfo{};
 	renderPassCreateInfo.commandBufferID = commandBufferID;
 	renderPassCreateInfo.outputIsSwapChain = false;
 
-	// Attachments -> depth + view pos + albedo + normal + (rougness + metal + ao)
-	// new attachments -> depth + (normal compressed + roughness + metal) + (albedo + alpha)
+	// Attachments -> depth + (normal compressed + roughness + metal) + (albedo + alpha)
 	m_attachments.resize(3);
 	VkImageUsageFlags depthUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	if (useDepthAsStorage)
@@ -30,16 +30,12 @@ Wolf::GBuffer::GBuffer(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, i
 	m_attachments[0] = Attachment(extent, VK_FORMAT_D32_SFLOAT, m_sampleCount, depthFinalLayout, depthStoreOp, depthUsage);
 	m_attachments[1] = Attachment(extent, VK_FORMAT_R8G8B8A8_UNORM, m_sampleCount, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
 	m_attachments[2] = Attachment(extent, VK_FORMAT_R8G8B8A8_UNORM, m_sampleCount, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
-	//m_attachments[3] = Attachment(extent, VK_FORMAT_R16G16B16A16_SFLOAT, m_sampleCount, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
-	//m_attachments[4] = Attachment(extent, VK_FORMAT_R8G8B8A8_UNORM, m_sampleCount, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
-
+	
 	m_clearValues.resize(3);
 	m_clearValues[0] = { 1.0f };
 	m_clearValues[1] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	m_clearValues[2] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	//m_clearValues[3] = { -10.0f, 0.0f, 0.0f, 1.0f };
-	//m_clearValues[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
-
+	
 	int i(0);
 	for(auto& attachment : m_attachments)
 	{
@@ -52,62 +48,46 @@ Wolf::GBuffer::GBuffer(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, i
 
 	m_renderPassID = m_scene->addRenderPass(renderPassCreateInfo);
 
+	// Data
+	m_uboMVP = engineInstance->createUniformBufferObject(&m_mvp, 3 * sizeof(glm::mat4));
+
 	// Renderer
-	Scene::RendererCreateInfo rendererCreateInfo;
-	rendererCreateInfo.vertexShaderPath = "Shaders/GBuffer/vert.spv";
-	rendererCreateInfo.fragmentShaderPath = "Shaders/GBuffer/frag.spv";
+	RendererCreateInfo rendererCreateInfo;
+
+	ShaderCreateInfo vertexShaderCreateInfo{};
+	vertexShaderCreateInfo.filename = "Shaders/GBuffer/vert.spv";
+	vertexShaderCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	rendererCreateInfo.pipelineCreateInfo.shaderCreateInfos.push_back(vertexShaderCreateInfo);
+
+	ShaderCreateInfo fragmentShaderCreateInfo{};
+	fragmentShaderCreateInfo.filename = "Shaders/GBuffer/frag.spv";
+	fragmentShaderCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	rendererCreateInfo.pipelineCreateInfo.shaderCreateInfos.push_back(fragmentShaderCreateInfo);
+	
 	rendererCreateInfo.inputVerticesTemplate = InputVertexTemplate::FULL_3D_MATERIAL;
 	rendererCreateInfo.instanceTemplate = InstanceTemplate::NO;
 	rendererCreateInfo.renderPassID = m_renderPassID;
-	rendererCreateInfo.extent = extent;
+	rendererCreateInfo.pipelineCreateInfo.extent = extent;
 
-	UniformBufferObjectLayout mvpLayout{};
-	mvpLayout.accessibility = VK_SHADER_STAGE_VERTEX_BIT;
-	mvpLayout.binding = 0;
-	rendererCreateInfo.uboLayouts.push_back(mvpLayout);
+	DescriptorSetGenerator descriptorSetGenerator;
+	descriptorSetGenerator.addUniformBuffer(m_uboMVP, VK_SHADER_STAGE_VERTEX_BIT, 0);
+	descriptorSetGenerator.addSampler(model->getSampler(), VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+	descriptorSetGenerator.addImages(model->getImages(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
 
-	SamplerLayout samplerLayout{};
-	samplerLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-	samplerLayout.binding = 1;
-	rendererCreateInfo.samplerLayouts.push_back(samplerLayout);
-
-	for (size_t i(0); i < model->getNumberOfImages(); ++i)
-	{
-		ImageLayout imageLayout{};
-		imageLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-		imageLayout.binding = static_cast<uint32_t>(i + 2);
-		rendererCreateInfo.imageLayouts.push_back(imageLayout);
-	}
-
-	rendererCreateInfo.alphaBlending = { false, false };
+	rendererCreateInfo.descriptorLayouts = descriptorSetGenerator.getDescriptorLayouts();
+	
+	rendererCreateInfo.pipelineCreateInfo.alphaBlending = { false, false };
 
 	m_rendererID = m_scene->addRenderer(rendererCreateInfo);
 
-	Scene::AddModelInfo addModelInfo{};
-	addModelInfo.model = model;
-	addModelInfo.renderPassID = m_renderPassID;
-	addModelInfo.rendererID = m_rendererID;
+	Renderer::AddMeshInfo addMeshInfo{};
+	addMeshInfo.vertexBuffer = model->getVertexBuffers()[0];
+	addMeshInfo.renderPassID = m_renderPassID;
+	addMeshInfo.rendererID = m_rendererID;
 
-	// UBO
-	m_uboMVP = engineInstance->createUniformBufferObject();
-	m_uboMVP->initializeData(&m_mvp, 3 * sizeof(glm::mat4));
-	addModelInfo.ubos.emplace_back(m_uboMVP, mvpLayout);
+	addMeshInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 
-	// Sampler
-	addModelInfo.samplers.emplace_back(model->getSampler(), samplerLayout);
-
-	// Images
-	std::vector<Image*> images = model->getImages();
-	for (size_t i(0); i < images.size(); ++i)
-	{
-		ImageLayout imageLayout{};
-		imageLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-		imageLayout.binding = static_cast<uint32_t>(i + 2);
-
-		addModelInfo.images.emplace_back(images[i], imageLayout);
-	}
-
-	m_scene->addModel(addModelInfo);
+	m_scene->addMesh(addMeshInfo);
 }
 
 void Wolf::GBuffer::updateMVPMatrix(glm::mat4 m, glm::mat4 v, glm::mat4 p)

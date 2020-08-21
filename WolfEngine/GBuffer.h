@@ -2,7 +2,7 @@
 
 #include "WolfEngine.h"
 #include "RenderPass.h"
-#include "UniformBufferObject.h"
+#include "UniformBuffer.h"
 #include "Model.h"
 
 namespace Wolf
@@ -29,7 +29,7 @@ namespace Wolf
 		std::vector<Attachment> m_attachments;
 		std::vector<VkClearValue> m_clearValues;
 
-		UniformBufferObject* m_uboMVP;
+		UniformBuffer* m_uboMVP;
 		std::array<glm::mat4, 3> m_mvp;
 		int m_rendererID;
 

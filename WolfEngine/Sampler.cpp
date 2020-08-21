@@ -1,17 +1,9 @@
 #include "Sampler.h"
 
-Wolf::Sampler::Sampler(VkDevice device)
+Wolf::Sampler::Sampler(VkDevice device, VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy)
 {
 	m_device = device;
-}
 
-Wolf::Sampler::~Sampler()
-{
-	cleanup(m_device);
-}
-
-void Wolf::Sampler::initialize(VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy)
-{
 	VkSamplerCreateInfo samplerInfo = {};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerInfo.magFilter = filter;
@@ -40,7 +32,7 @@ void Wolf::Sampler::initialize(VkSamplerAddressMode addressMode, float mipLevels
 		throw std::runtime_error("Error : create sampler");
 }
 
-void Wolf::Sampler::cleanup(VkDevice device)
+Wolf::Sampler::~Sampler()
 {
-	vkDestroySampler(device, m_textureSampler, nullptr);
+	vkDestroySampler(m_device, m_textureSampler, nullptr);
 }

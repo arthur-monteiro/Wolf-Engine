@@ -8,6 +8,10 @@ Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scen
 
 	// Render Pass Creation
 	m_sampleCount = sampleCount;
+
+	// Data
+	m_mvp = glm::mat4(1.0f);
+	m_uboMVP = engineInstance->createUniformBufferObject(&m_mvp, sizeof(glm::mat4));
 	
 	Scene::RenderPassCreateInfo renderPassCreateInfo{};
 	renderPassCreateInfo.commandBufferID = commandBufferID;
@@ -32,32 +36,33 @@ Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scen
 	m_renderPassID = m_scene->addRenderPass(renderPassCreateInfo);
 
 	// Renderer
-	Scene::RendererCreateInfo rendererCreateInfo;
-	rendererCreateInfo.vertexShaderPath = "Shaders/depthPass/vert.spv";
-	rendererCreateInfo.fragmentShaderPath = ""; // no fragment shader
+	RendererCreateInfo rendererCreateInfo;
+
+	ShaderCreateInfo vertexShaderCreateInfo{};
+	vertexShaderCreateInfo.filename = "Shaders/depthPass/vert.spv";
+	vertexShaderCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	rendererCreateInfo.pipelineCreateInfo.shaderCreateInfos.push_back(vertexShaderCreateInfo);
+	
 	rendererCreateInfo.inputVerticesTemplate = InputVertexTemplate::FULL_3D_MATERIAL;
 	rendererCreateInfo.instanceTemplate = InstanceTemplate::NO;
 	rendererCreateInfo.renderPassID = m_renderPassID;
-	rendererCreateInfo.extent = extent;
+	rendererCreateInfo.pipelineCreateInfo.extent = extent;
 
-	UniformBufferObjectLayout mvpLayout{};
-	mvpLayout.accessibility = VK_SHADER_STAGE_VERTEX_BIT;
-	mvpLayout.binding = 0;
-	rendererCreateInfo.uboLayouts.push_back(mvpLayout);
+	DescriptorSetGenerator descriptorSetGenerator;
+	descriptorSetGenerator.addUniformBuffer(m_uboMVP, VK_SHADER_STAGE_VERTEX_BIT, 0);
+
+	rendererCreateInfo.descriptorLayouts = descriptorSetGenerator.getDescriptorLayouts();
 	
 	m_rendererID = scene->addRenderer(rendererCreateInfo);
 
-	Scene::AddModelInfo addModelInfo{};
-	addModelInfo.model = model;
-	addModelInfo.renderPassID = m_renderPassID;
-	addModelInfo.rendererID = m_rendererID;
+	Renderer::AddMeshInfo addMeshInfo{};
+	addMeshInfo.vertexBuffer = model->getVertexBuffers()[0];
+	addMeshInfo.renderPassID = m_renderPassID;
+	addMeshInfo.rendererID = m_rendererID;
 
-	m_uboMVP = engineInstance->createUniformBufferObject();
-	m_mvp = glm::mat4(1.0f);
-	m_uboMVP->initializeData(&m_mvp, sizeof(glm::mat4));
-	addModelInfo.ubos.emplace_back(m_uboMVP, mvpLayout);
+	addMeshInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 
-	m_scene->addModel(addModelInfo);
+	m_scene->addMesh(addMeshInfo);
 }
 
 void Wolf::DepthPass::update(glm::mat4 mvp)

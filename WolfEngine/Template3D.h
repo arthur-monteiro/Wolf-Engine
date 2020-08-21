@@ -31,7 +31,7 @@ namespace Wolf
 
 		// Data
 		glm::vec3 m_lightDir = glm::vec3(4.0f, -5.0f, -1.5f);
-		UniformBufferObject* m_uboMVP;
+		UniformBuffer* m_uboMVP;
 		glm::mat4 m_projectionMatrix;
 		glm::mat4 m_viewMatrix;
 		glm::mat4 m_modelMatrix;

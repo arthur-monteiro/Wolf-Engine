@@ -15,20 +15,7 @@ namespace Wolf
 			Image* depth, glm::mat4 projection);
 
 		void updateMatrices(glm::vec3 lightDir, glm::vec3 cameraPosition, glm::vec3 cameraOrientation, glm::mat4 model, glm::mat4 invModelView);
-		
-		/*void submit(VkDevice device, VkQueue graphicsQueue, VkCommandPool commandPool, VkPhysicalDevice physicalDevice, VkDescriptorPool descriptorPool, glm::mat4 view, glm::mat4 model, glm::mat4 projection, float cameraNear, float cameraFOV, glm::vec3 m_lightDir,
-			glm::vec3 cameraPosition, glm::vec3 cameraOrientation);
-		void cleanup(VkDevice device, VkCommandPool commandPool, VkDescriptorPool descriptorPool);
 
-		void setSoftShadowsOption(glm::uint softShadowsOption);
-		void setSSIterations(glm::uint nIterations);
-		void setSamplingDivisor(float divisor);
-		void setBlurAmount(int blurAmount);*/
-
-		// Getters
-	public:
-		/*Semaphore* getSemaphore() { return m_blurAmount > 0 ? m_blur.getSemaphore() : m_renderPass.getRenderCompleteSemaphore(); }
-		Texture* getOutputShadowMaskTexture() { return &m_outputTexture; }*/
 		std::vector<int> getCascadeCommandBuffers()
 		{
 			std::vector<int> r(m_cascadeCommandBuffers.begin(), m_cascadeCommandBuffers.end());
@@ -98,7 +85,7 @@ namespace Wolf
 			glm::vec4 cascadeSplits;
 		};
 		ShadowMaskUBO m_uboData;
-		UniformBufferObject* m_ubo;
+		UniformBuffer* m_uniformBuffer;
 		
 		std::vector<float> m_cascadeSplits;
 		std::vector<VkExtent2D> m_shadowMapExtents;

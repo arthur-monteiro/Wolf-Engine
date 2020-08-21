@@ -36,9 +36,9 @@ Wolf::Scene* Wolf::WolfInstance::createScene(Scene::SceneCreateInfo createInfo)
 	return m_scenes[m_scenes.size() - 1].get();
 }
 
-Wolf::UniformBufferObject* Wolf::WolfInstance::createUniformBufferObject()
+Wolf::UniformBuffer* Wolf::WolfInstance::createUniformBufferObject(void* data, VkDeviceSize size)
 {
-	m_uniformBufferObjects.push_back(std::make_unique<UniformBufferObject>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice()));
+	m_uniformBufferObjects.push_back(std::make_unique<UniformBuffer>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), data, size));
 
 	return m_uniformBufferObjects[m_uniformBufferObjects.size() - 1].get();
 }
@@ -48,6 +48,21 @@ Wolf::Texture* Wolf::WolfInstance::createTexture()
 	m_textures.push_back(std::make_unique<Texture>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue()));
 
 	return m_textures[m_textures.size() - 1].get();
+}
+
+Wolf::Image* Wolf::WolfInstance::createImageFromFile(std::string filename)
+{
+	m_images.push_back(std::make_unique<Image>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(), 
+		filename));
+
+	return m_images.back().get();
+}
+
+Wolf::Sampler* Wolf::WolfInstance::createSampler(VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy)
+{
+	m_samplers.push_back(std::make_unique<Sampler>(m_vulkan->getDevice(), addressMode, mipLevels, filter, maxAnisotropy));
+
+	return m_samplers.back().get();
 }
 
 Wolf::Font* Wolf::WolfInstance::createFont()

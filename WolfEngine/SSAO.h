@@ -30,7 +30,7 @@ namespace Wolf
 			std::array<glm::vec4, 16> noise;
 		};
 		UBOData m_uboData;
-		UniformBufferObject* m_ubo;
+		UniformBuffer* m_uniformBuffer;
 
 		std::unique_ptr<Blur> m_blur;
 	};

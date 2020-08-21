@@ -13,27 +13,23 @@
 
 namespace Wolf
 {
-	struct ImageLayout
-	{
-		VkShaderStageFlags accessibility;
-		uint32_t binding;
-		VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	};
-
 	class Image
 	{
-	public:
-		void create(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect);
-		void createFromImage(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkExtent2D extent);
-		void createFromPixels(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format, unsigned char* pixels);
-		void createFromBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format, VkBuffer buffer);
-		void createFromFile(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::string filename);
-		void createCubeMapFromImages(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::array<Image*, 6> images);
+	public:		
+		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect);
+		Image(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkExtent2D extent);
+		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format, unsigned char* pixels);
+		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format, VkBuffer buffer);
+		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::string filename);
+		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::array<Image*, 6> images);
 
-		void setImageLayout(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage);
+		~Image();
+
+		Image(const Image&) = default;
+		Image& operator=(const Image&) = default;
+
+		void setImageLayout(VkCommandPool commandPool, Queue graphicsQueue, VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage);
 		void setImageLayoutWithoutOperation(VkImageLayout newImageLayout) { m_imageLayout = newImageLayout; }
-
-		void cleanup(VkDevice device);
 
 		VkImage getImage() { return m_image; }
 		VkDeviceMemory getImageMemory() { return m_imageMemory; }
@@ -45,6 +41,8 @@ namespace Wolf
 		uint32_t getMipLevels() { return m_mipLevels; }
 
 	private:
+		VkDevice m_device;
+		
 		VkImage m_image;
 		VkDeviceMemory  m_imageMemory;
 		VkImageView m_imageView = VK_NULL_HANDLE;
@@ -66,6 +64,9 @@ namespace Wolf
 		static void copyBufferToImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t baseArrayLayer);
 		static void generateMipmaps(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkImage image, VkFormat imageFormat, int32_t texWidth,
 			int32_t texHeight, uint32_t mipLevels, uint32_t baseArrayLayer);
+
+		void initFromPixels(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
+			VkExtent3D extent, VkFormat format, unsigned char* pixels);
 
 	public:
 		static void transitionImageLayoutUsingCommandBuffer(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,

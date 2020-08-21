@@ -16,9 +16,6 @@ Wolf::RenderPass::RenderPass(VkDevice device, VkPhysicalDevice physicalDevice, V
 
 void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, const std::vector<Attachment>& attachments, std::vector<VkExtent2D> extents)
 {
-	/*if (attachments.empty())
-		throw std::runtime_error("Can't create RenderPass without attachment");*/
-
 	m_renderPass = createRenderPass(device, attachments);
 
 	m_framebuffers.resize(extents.size());
@@ -30,9 +27,6 @@ void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevi
 
 void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, const std::vector<Attachment>& attachments, std::vector<Image*> images)
 {
-	/*if (attachments.empty())
-		throw std::runtime_error("Can't create RenderPass without attachment");*/
-
 	m_renderPass = createRenderPass(device, attachments);
 
 	m_framebuffers.resize(images.size());

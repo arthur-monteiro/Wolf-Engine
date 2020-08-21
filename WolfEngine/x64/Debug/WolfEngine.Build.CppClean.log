@@ -20,7 +20,6 @@ f:\code\wolfengine\wolfengine\x64\debug\commandbuffer.obj
 f:\code\wolfengine\wolfengine\x64\debug\cascadedshadowmapping.obj
 f:\code\wolfengine\wolfengine\x64\debug\blur.obj
 f:\code\wolfengine\wolfengine\x64\debug\attachment.obj
-f:\code\wolfengine\wolfengine\x64\debug\vulkanhelper.obj
 f:\code\wolfengine\wolfengine\x64\debug\vulkanelement.obj
 f:\code\wolfengine\wolfengine\x64\debug\vulkan.obj
 f:\code\wolfengine\wolfengine\x64\debug\uniformbufferobject.obj
@@ -37,12 +36,13 @@ f:\code\wolfengine\wolfengine\x64\debug\renderpass.obj
 f:\code\wolfengine\wolfengine\x64\debug\renderer.obj
 f:\code\wolfengine\wolfengine\x64\debug\pipeline.obj
 f:\code\wolfengine\wolfengine\x64\debug\ovr.obj
+f:\code\wolfengine\wolfengine\x64\debug\modelcustom.obj
 f:\code\wolfengine\wolfengine\x64\debug\model3d.obj
 f:\code\wolfengine\wolfengine\x64\debug\model2dtextured.obj
 f:\code\wolfengine\wolfengine\x64\debug\model2d.obj
 f:\code\wolfengine\wolfengine\x64\debug\wolfengine.obj
 f:\code\wolfengine\wolfengine\x64\debug\window.obj
-f:\code\wolfengine\wolfengine\x64\debug\modelcustom.obj
+f:\code\wolfengine\wolfengine\x64\debug\vulkanhelper.obj
 f:\code\wolfengine\x64\debug\wolfengine.lib
 f:\code\wolfengine\wolfengine\x64\debug\wolfengine.tlog\cl.command.1.tlog
 f:\code\wolfengine\wolfengine\x64\debug\wolfengine.tlog\cl.read.1.tlog

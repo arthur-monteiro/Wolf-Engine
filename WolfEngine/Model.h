@@ -36,7 +36,7 @@ namespace Wolf
 
 		virtual std::vector<VertexBuffer> getVertexBuffers() { return {}; }
 		virtual size_t getNumberOfImages() { return m_images.size(); }
-		virtual Sampler* getSampler() { return &m_sampler; }
+		virtual Sampler* getSampler() { return m_sampler.get(); }
 		virtual std::vector<Image*> getImages();
 		
 	protected:
@@ -47,7 +47,7 @@ namespace Wolf
 
 		InputVertexTemplate m_inputVertexTemplate;
 
-		std::vector<Image> m_images;
-		Sampler m_sampler;
+		std::vector<std::unique_ptr<Image>> m_images;
+		std::unique_ptr<Sampler> m_sampler;
 	};
 }

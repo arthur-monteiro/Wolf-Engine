@@ -100,6 +100,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(TINYOBJ_PATH);$(FREETYPE_PATH)\include\freetype2;$(GLM_PATH);$(STB_IMAGE_PATH)\stb_image;$(GLFW_PATH)\include;C:\VulkanSDK\1.2.141.2\Include;C:\Users\Arthur\Documents\OVR\LibOVR\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -154,6 +155,7 @@
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="DepthPass.cpp" />
     <ClCompile Include="DescriptorPool.cpp" />
+    <ClCompile Include="DescriptorSet.cpp" />
     <ClCompile Include="DirectLightingPBR.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
@@ -182,7 +184,7 @@
     <ClCompile Include="Template3D_VR.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="UniformBufferObject.cpp" />
+    <ClCompile Include="UniformBuffer.cpp" />
     <ClCompile Include="Vulkan.cpp" />
     <ClCompile Include="VulkanElement.cpp" />
     <ClCompile Include="VulkanHelper.cpp" />
@@ -199,6 +201,7 @@
     <ClInclude Include="Debug.h" />
     <ClInclude Include="DepthPass.h" />
     <ClInclude Include="DescriptorPool.h" />
+    <ClInclude Include="DescriptorSet.h" />
     <ClInclude Include="DirectLightingPBR.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="FrameBuffer.h" />
@@ -227,7 +230,7 @@
     <ClInclude Include="Template3D_VR.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="Texture.h" />
-    <ClInclude Include="UniformBufferObject.h" />
+    <ClInclude Include="UniformBuffer.h" />
     <ClInclude Include="Vulkan.h" />
     <ClInclude Include="VulkanElement.h" />
     <ClInclude Include="VulkanHelper.h" />

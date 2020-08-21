@@ -1,7 +1,10 @@
 #include "Image.h"
 
-void Wolf::Image::create(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
+Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent3D extent, VkImageUsageFlags usage,
+	VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
 {
+	m_device = device;
+	
 	m_imageFormat = format;
 	m_extent = extent;
 	m_sampleCount = sampleCount;
@@ -13,12 +16,14 @@ void Wolf::Image::create(VkDevice device, VkPhysicalDevice physicalDevice, VkExt
 
 	if (m_extent.depth == 1) m_imageView = createImageView(device, m_image, format, aspect, 1, VK_IMAGE_VIEW_TYPE_2D);
 	else m_imageView = createImageView(device, m_image, format, aspect, 1, VK_IMAGE_VIEW_TYPE_3D);
-	
+
 	m_mipLevels = 1;
 }
 
-void Wolf::Image::createFromImage(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkExtent2D extent)
+Wolf::Image::Image(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkExtent2D extent)
 {
+	m_device = device;
+	
 	m_image = image;
 	m_imageMemory = VK_NULL_HANDLE;
 	m_imageFormat = format;
@@ -27,9 +32,11 @@ void Wolf::Image::createFromImage(VkDevice device, VkImage image, VkFormat forma
 	m_mipLevels = 1;
 }
 
-void Wolf::Image::createFromPixels(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format,
-                                   unsigned char* pixels)
+inline void Wolf::Image::initFromPixels(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
+	VkExtent3D extent, VkFormat format, unsigned char* pixels)
 {
+	m_device = device;
+
 	//m_imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
 	m_imageFormat = format;
 
@@ -64,9 +71,17 @@ void Wolf::Image::createFromPixels(VkDevice device, VkPhysicalDevice physicalDev
 	m_imageView = createImageView(device, m_image, m_imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, m_mipLevels, VK_IMAGE_VIEW_TYPE_2D);
 }
 
-void Wolf::Image::createFromBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool,
-	Queue graphicsQueue, VkExtent3D extent, VkFormat format, VkBuffer buffer)
+Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
+	VkExtent3D extent, VkFormat format, unsigned char* pixels)
 {
+	initFromPixels(device, physicalDevice, commandPool, graphicsQueue, extent, format, pixels);
+}
+
+Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
+	VkExtent3D extent, VkFormat format, VkBuffer buffer)
+{
+	m_device = device;
+	
 	m_imageFormat = format;
 
 	createImage(device, physicalDevice, extent.width, extent.height, extent.depth, m_mipLevels, VK_SAMPLE_COUNT_1_BIT, m_imageFormat, VK_IMAGE_TILING_OPTIMAL,
@@ -86,7 +101,8 @@ void Wolf::Image::createFromBuffer(VkDevice device, VkPhysicalDevice physicalDev
 	m_imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
-void Wolf::Image::createFromFile(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::string filename)
+Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
+	std::string filename)
 {
 	int texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -95,7 +111,7 @@ void Wolf::Image::createFromFile(VkDevice device, VkPhysicalDevice physicalDevic
 	if (!pixels)
 		throw std::runtime_error("Error : loading image " + filename);
 
-	createFromPixels(device, physicalDevice, commandPool, graphicsQueue, { static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), static_cast<uint32_t>(texChannels) }, VK_FORMAT_R8G8B8A8_UNORM,
+	initFromPixels(device, physicalDevice, commandPool, graphicsQueue, { static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), static_cast<uint32_t>(texChannels) }, VK_FORMAT_R8G8B8A8_UNORM,
 		pixels);
 	stbi_image_free(pixels);
 
@@ -105,8 +121,11 @@ void Wolf::Image::createFromFile(VkDevice device, VkPhysicalDevice physicalDevic
 	m_imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
 }
 
-void Wolf::Image::createCubeMapFromImages(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::array<Image*, 6> images)
+Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
+	std::array<Image*, 6> images)
 {
+	m_device = device;
+	
 	m_mipLevels = images[0]->getMipLevels();
 	m_imageFormat = images[0]->getFormat();
 	m_sampleCount = images[0]->getSampleCount();
@@ -131,17 +150,20 @@ void Wolf::Image::createCubeMapFromImages(VkDevice device, VkPhysicalDevice phys
 	m_imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
-void Wolf::Image::setImageLayout(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage)
+Wolf::Image::~Image()
 {
-	transitionImageLayout(device, commandPool, graphicsQueue, m_image, m_imageFormat, m_imageLayout, newLayout, m_mipLevels, 1, sourceStage, destinationStage);
-	m_imageLayout = newLayout;
+	if (m_imageMemory == VK_NULL_HANDLE)
+		return;
+	
+	vkDestroyImageView(m_device, m_imageView, nullptr);
+	vkDestroyImage(m_device, m_image, nullptr);
+	vkFreeMemory(m_device, m_imageMemory, nullptr);
 }
 
-void Wolf::Image::cleanup(VkDevice device)
+void Wolf::Image::setImageLayout(VkCommandPool commandPool, Queue graphicsQueue, VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage)
 {
-	vkDestroyImageView(device, m_imageView, nullptr);
-	vkDestroyImage(device, m_image, nullptr);
-	vkFreeMemory(device, m_imageMemory, nullptr);
+	transitionImageLayout(m_device, commandPool, graphicsQueue, m_image, m_imageFormat, m_imageLayout, newLayout, m_mipLevels, 1, sourceStage, destinationStage);
+	m_imageLayout = newLayout;
 }
 
 void Wolf::Image::createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipLevels, VkSampleCountFlagBits numSamples,

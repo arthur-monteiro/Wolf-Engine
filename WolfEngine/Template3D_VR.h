@@ -23,7 +23,7 @@ namespace Wolf
 		std::array<int , 2> m_rendererIDs = { -1, -1 };
 
 		// Data
-		std::array<UniformBufferObject*, 2> m_ubosMVP;
+		std::array<UniformBuffer*, 2> m_ubosMVP;
 	};
 }
 

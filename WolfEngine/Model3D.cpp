@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <array>
 
+#include "Debug.h"
+
 Wolf::Model3D::~Model3D()
 {
 	for (auto& m_mesh : m_meshes)
@@ -143,41 +145,21 @@ void Wolf::Model3D::loadObj(ModelLoadingInfo modelLoadingInfo)
 		int indexTexture = 0;
 		for (int i(0); i < materials.size(); ++i)
 		{
-			m_images[indexTexture++].createFromFile(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].diffuse_texname, modelLoadingInfo.mtlFolder));
-			m_images[indexTexture++].createFromFile(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].bump_texname, modelLoadingInfo.mtlFolder));
-			m_images[indexTexture++].createFromFile(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].specular_highlight_texname, modelLoadingInfo.mtlFolder));
-			m_images[indexTexture++].createFromFile(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].ambient_texname, modelLoadingInfo.mtlFolder));
-			m_images[indexTexture++].createFromFile(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].ambient_texname, modelLoadingInfo.mtlFolder));
+			m_images[indexTexture++] = std::make_unique<Image>(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].diffuse_texname, modelLoadingInfo.mtlFolder));
+			m_images[indexTexture++] = std::make_unique<Image>(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].bump_texname, modelLoadingInfo.mtlFolder));
+			m_images[indexTexture++] = std::make_unique<Image>(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].specular_highlight_texname, modelLoadingInfo.mtlFolder));
+			m_images[indexTexture++] = std::make_unique<Image>(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].ambient_texname, modelLoadingInfo.mtlFolder));
+			m_images[indexTexture++] = std::make_unique<Image>(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, getTexName(materials[i].ambient_texname, modelLoadingInfo.mtlFolder));
 		}
 	}
 
-	m_sampler.initialize(VK_SAMPLER_ADDRESS_MODE_REPEAT, static_cast<float>(m_images[0].getMipLevels()), VK_FILTER_LINEAR);
+	m_sampler = std::make_unique<Sampler>(m_device, VK_SAMPLER_ADDRESS_MODE_REPEAT, static_cast<float>(m_images[0]->getMipLevels()), VK_FILTER_LINEAR);
 
-	//graphicsQueueMutex->lock();
 	Mesh<Vertex3D> mesh;
 	mesh.loadFromVertices(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, vertices, indices);
 	m_meshes.push_back(mesh);
-	//graphicsQueueMutex->unlock();
-
-	/*m_images.resize(materials.size() * 5);
-	int indexTexture = 0;
-	for (int i(0); i < materials.size(); ++i)
-	{
-		graphicsQueueMutex->lock();
-
-		m_images[indexTexture++].createFromFile(device, physicalDevice, commandPool, graphicsQueue, getTexName(materials[i].diffuse_texname, mtlFolder));
-		m_images[indexTexture++].createFromFile(device, physicalDevice, commandPool, graphicsQueue, getTexName(materials[i].bump_texname, mtlFolder));
-		m_images[indexTexture++].createFromFile(device, physicalDevice, commandPool, graphicsQueue, getTexName(materials[i].specular_highlight_texname, mtlFolder));
-		m_images[indexTexture++].createFromFile(device, physicalDevice, commandPool, graphicsQueue, getTexName(materials[i].ambient_texname, mtlFolder));
-		m_images[indexTexture++].createFromFile(device, physicalDevice, commandPool, graphicsQueue, getTexName(materials[i].ambient_texname, mtlFolder));
-
-		graphicsQueueMutex->unlock();
-	}
-
-
-	m_sampler.initialize(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, static_cast<float>(m_images[0].getMipLevels()), VK_FILTER_LINEAR);*/
-
-	std::cout << "Model loaded with " << indices.size() / 3 << " triangles" << std::endl;
+	
+	Debug::sendInfo("Model loaded with " + std::to_string(indices.size() / 3) + " triangles");
 }
 
 std::vector<Wolf::VertexBuffer> Wolf::Model3D::getVertexBuffers()

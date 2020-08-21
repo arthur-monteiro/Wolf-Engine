@@ -81,9 +81,6 @@
     <ClCompile Include="Sampler.cpp">
       <Filter>Vulkan Elements</Filter>
     </ClCompile>
-    <ClCompile Include="UniformBufferObject.cpp">
-      <Filter>Vulkan Elements</Filter>
-    </ClCompile>
     <ClCompile Include="Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -156,6 +153,12 @@
     <ClCompile Include="ModelCustom.cpp">
       <Filter>Templates</Filter>
     </ClCompile>
+    <ClCompile Include="DescriptorSet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UniformBuffer.cpp">
+      <Filter>Vulkan Elements</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WolfEngine.h">
@@ -210,9 +213,6 @@
       <Filter>Vulkan Elements</Filter>
     </ClInclude>
     <ClInclude Include="Sampler.h">
-      <Filter>Vulkan Elements</Filter>
-    </ClInclude>
-    <ClInclude Include="UniformBufferObject.h">
       <Filter>Vulkan Elements</Filter>
     </ClInclude>
     <ClInclude Include="Mesh.h">
@@ -286,6 +286,12 @@
     </ClInclude>
     <ClInclude Include="ModelCustom.h">
       <Filter>Templates</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorSet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UniformBuffer.h">
+      <Filter>Vulkan Elements</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

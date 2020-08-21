@@ -29,6 +29,6 @@ namespace Wolf
 			glm::vec4 colorDirectionalLight;
 		};
 		UBOData m_uboData;
-		UniformBufferObject* m_ubo;
+		UniformBuffer* m_ubo;
 	};
 }

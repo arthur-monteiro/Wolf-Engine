@@ -44,8 +44,17 @@ namespace Wolf
 		Model* createModel(Model::ModelCreateInfo createInfo);
 		template<typename T>
 		Instance<T>* createInstanceBuffer();
-		UniformBufferObject* createUniformBufferObject();
+		UniformBuffer* createUniformBufferObject(void* data, VkDeviceSize size);
+		
+		[[deprecated("Use createImage instead")]]
 		Texture* createTexture();
+
+		// Image creation
+		Image* createImageFromFile(std::string filename);
+
+		// Sampler creation
+		Sampler* createSampler(VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy = 16.0f);
+		
 		Font* createFont();
 		Text* createText();
 
@@ -83,8 +92,10 @@ namespace Wolf
 		std::vector<std::unique_ptr<Scene>> m_scenes;
 		std::vector<std::unique_ptr<Model>> m_models;
 		std::vector<std::unique_ptr<InstanceParent>> m_instances;
-		std::vector<std::unique_ptr<UniformBufferObject>> m_uniformBufferObjects;
+		std::vector<std::unique_ptr<UniformBuffer>> m_uniformBufferObjects;
 		std::vector<std::unique_ptr<Texture>> m_textures;
+		std::vector<std::unique_ptr<Image>> m_images;
+		std::vector<std::unique_ptr<Sampler>> m_samplers;
 		std::vector<std::unique_ptr<Font>> m_fonts;
 		std::vector<std::unique_ptr<Text>> m_texts;
 

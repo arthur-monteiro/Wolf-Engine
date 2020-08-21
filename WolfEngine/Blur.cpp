@@ -28,16 +28,13 @@ Wolf::Blur::Blur(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 		downscaleComputePassCreateInfo.computeShaderPath = "Shaders/Blur/downscale.spv";
 		downscaleComputePassCreateInfo.commandBufferID = m_downscaleCommandBufferIDs[i];
 
-		ImageLayout inputImageLayout{};
-		inputImageLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-		inputImageLayout.binding = 0;
+		DescriptorSetGenerator descriptorSetGenerator;
+		descriptorSetGenerator.addImages({ i == 0 ? inputImage : m_downscaledTextures[i - 1]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT,
+			0); // Input
+		descriptorSetGenerator.addImages({ m_downscaledTextures[i]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT,
+			1); // Output
 
-		ImageLayout downscaledImageLayout{};
-		downscaledImageLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-		downscaledImageLayout.binding = 1;
-
-		downscaleComputePassCreateInfo.images = { { i == 0 ? inputImage : m_downscaledTextures[i - 1]->getImage(), inputImageLayout },
-			{ m_downscaledTextures[i]->getImage(), downscaledImageLayout } };
+		downscaleComputePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 
 		m_downscaleComputePasses[i] = scene->addComputePass(downscaleComputePassCreateInfo);
 
@@ -58,42 +55,44 @@ Wolf::Blur::Blur(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 		m_horizontalBlurCommandBuffer = scene->addCommandBuffer(commandBufferCreateInfo);
 
 		// Horizontal
-		Scene::ComputePassCreateInfo horizontalBlurComputePassCreateInfo;
-		horizontalBlurComputePassCreateInfo.extent = { m_downscaledTextures.back()->getImage()->getExtent().width, m_downscaledTextures.back()->getImage()->getExtent().height };
-		horizontalBlurComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
-		horizontalBlurComputePassCreateInfo.computeShaderPath = "Shaders/Blur/horizontal.spv";
-		horizontalBlurComputePassCreateInfo.commandBufferID = m_horizontalBlurCommandBuffer;
+		{
+			Scene::ComputePassCreateInfo horizontalBlurComputePassCreateInfo;
+			horizontalBlurComputePassCreateInfo.extent = { m_downscaledTextures.back()->getImage()->getExtent().width, m_downscaledTextures.back()->getImage()->getExtent().height };
+			horizontalBlurComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
+			horizontalBlurComputePassCreateInfo.computeShaderPath = "Shaders/Blur/horizontal.spv";
+			horizontalBlurComputePassCreateInfo.commandBufferID = m_horizontalBlurCommandBuffer;
 
-		ImageLayout inputImageLayout{};
-		inputImageLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-		inputImageLayout.binding = 0;
+			DescriptorSetGenerator descriptorSetGenerator;
+			descriptorSetGenerator.addImages({ m_downscaledTextures.back()->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
+			descriptorSetGenerator.addImages({ m_downscaledBlurredTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
 
-		ImageLayout outputImageLayout{};
-		outputImageLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-		outputImageLayout.binding = 1;
+			horizontalBlurComputePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 
-		horizontalBlurComputePassCreateInfo.images = { { m_downscaledTextures.back()->getImage(), inputImageLayout },
-			{ m_downscaledBlurredTexture->getImage(), outputImageLayout } };
-
-		m_horizontalBlurComputePass = scene->addComputePass(horizontalBlurComputePassCreateInfo);
+			m_horizontalBlurComputePass = scene->addComputePass(horizontalBlurComputePassCreateInfo);
+		}
 
 		// Vertical
-		m_downscaledBlurredTexture2 = engineInstance->createTexture();
-		m_downscaledBlurredTexture2->create({ m_downscaledTextures.back()->getImage()->getExtent().width, m_downscaledTextures.back()->getImage()->getExtent().height, 1 },
-			VK_IMAGE_USAGE_STORAGE_BIT, inputImage->getFormat(), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-		m_downscaledBlurredTexture2->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		{
+			m_downscaledBlurredTexture2 = engineInstance->createTexture();
+			m_downscaledBlurredTexture2->create({ m_downscaledTextures.back()->getImage()->getExtent().width, m_downscaledTextures.back()->getImage()->getExtent().height, 1 },
+				VK_IMAGE_USAGE_STORAGE_BIT, inputImage->getFormat(), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+			m_downscaledBlurredTexture2->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-		m_verticalBlurCommandBuffer = scene->addCommandBuffer(commandBufferCreateInfo);
-		
-		Scene::ComputePassCreateInfo verticalBlurComputePassCreateInfo;
-		verticalBlurComputePassCreateInfo.extent = { m_downscaledTextures.back()->getImage()->getExtent().width, m_downscaledTextures.back()->getImage()->getExtent().height };
-		verticalBlurComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
-		verticalBlurComputePassCreateInfo.computeShaderPath = "Shaders/Blur/vertical.spv";
-		verticalBlurComputePassCreateInfo.commandBufferID = m_verticalBlurCommandBuffer;
+			m_verticalBlurCommandBuffer = scene->addCommandBuffer(commandBufferCreateInfo);
 
-		verticalBlurComputePassCreateInfo.images = { { m_downscaledBlurredTexture->getImage(), inputImageLayout },
-			{ m_downscaledBlurredTexture2->getImage(), outputImageLayout } };
+			Scene::ComputePassCreateInfo verticalBlurComputePassCreateInfo;
+			verticalBlurComputePassCreateInfo.extent = { m_downscaledTextures.back()->getImage()->getExtent().width, m_downscaledTextures.back()->getImage()->getExtent().height };
+			verticalBlurComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
+			verticalBlurComputePassCreateInfo.computeShaderPath = "Shaders/Blur/vertical.spv";
+			verticalBlurComputePassCreateInfo.commandBufferID = m_verticalBlurCommandBuffer;
 
-		m_verticalBlurComputePass = scene->addComputePass(verticalBlurComputePassCreateInfo);
+			DescriptorSetGenerator descriptorSetGenerator;
+			descriptorSetGenerator.addImages({ m_downscaledBlurredTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
+			descriptorSetGenerator.addImages({ m_downscaledBlurredTexture2->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+
+			verticalBlurComputePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
+
+			m_verticalBlurComputePass = scene->addComputePass(verticalBlurComputePassCreateInfo);
+		}
 	}
 }

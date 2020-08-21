@@ -83,8 +83,8 @@ void Wolf::SwapChain::initialize(VkSurfaceKHR surface,
 
 	for (size_t i(0); i < imageCount; ++i)
 	{
-		m_images[i].createFromImage(m_device, temporarySwapChainImages[i], surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, extent);
-		m_images[i].setImageLayoutWithoutOperation(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		m_images[i] = std::make_unique<Image>(m_device, temporarySwapChainImages[i], surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, extent);
+		m_images[i]->setImageLayoutWithoutOperation(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 	}
 
 	m_imageAvailableSemaphore.initialize(m_device);
@@ -95,7 +95,7 @@ std::vector<Wolf::Image*> Wolf::SwapChain::getImages()
 {
 	std::vector<Image*> r;
 	for (size_t i(0); i < m_images.size(); ++i)
-		r.push_back(&m_images[i]);
+		r.push_back(m_images[i].get());
 
 	return r;
 }

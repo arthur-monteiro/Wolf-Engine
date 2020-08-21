@@ -7,7 +7,7 @@ Wolf::Text::Text(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool
 	m_commandPool = commandPool;
 	m_graphicsQueue = graphicsQueue;
 
-	m_ubo = std::make_unique<UniformBufferObject>(m_device, m_physicalDevice);
+	m_ubo = std::make_unique<UniformBuffer>(m_device, m_physicalDevice, &m_uboData, sizeof(m_uboData));
 }
 
 Wolf::Text::~Text()
@@ -89,7 +89,7 @@ void Wolf::Text::build(VkExtent2D outputExtent, Font* font, float size)
 		m_uboData.color[i] = glm::vec4(m_texts[i].color, 0.0f);
 		m_uboData.posOffset[i] = glm::vec4(0.0f);
 	}
-	m_ubo->initializeData(&m_uboData, sizeof(m_uboData));
+	m_ubo->updateData(&m_uboData);
 }
 
 float Wolf::Text::simulateSizeX(std::wstring text, VkExtent2D outputExtent, Font* font, float maxSize)

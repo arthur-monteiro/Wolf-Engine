@@ -41,8 +41,12 @@ Wolf::SSAO::SSAO(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 	m_uboData.projParams.x = far / (far - near);
 	m_uboData.projParams.y = (-far * near) / (far - near);
 
-	m_ubo = engineInstance->createUniformBufferObject();
-	m_ubo->initializeData(&m_uboData, sizeof(UBOData));
+	m_uniformBuffer = engineInstance->createUniformBufferObject(&m_uboData, sizeof(UBOData));
+
+	m_outputTexture = engineInstance->createTexture();
+	m_outputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, VK_SAMPLE_COUNT_1_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+	m_outputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 	
 	Scene::ComputePassCreateInfo computePassCreateInfo;
 	computePassCreateInfo.extent = engineInstance->getWindowSize();
@@ -50,30 +54,13 @@ Wolf::SSAO::SSAO(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 	computePassCreateInfo.computeShaderPath = "Shaders/SSAO/comp.spv";
 	computePassCreateInfo.commandBufferID = commandBufferID;
 
-	ImageLayout depthLayout{};
-	depthLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	depthLayout.binding = 0;
+	DescriptorSetGenerator descriptorSetGenerator;
+	descriptorSetGenerator.addImages({ depth }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
+	descriptorSetGenerator.addImages({ normal }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+	descriptorSetGenerator.addImages({ m_outputTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 2);
+	descriptorSetGenerator.addUniformBuffer(m_uniformBuffer, VK_SHADER_STAGE_COMPUTE_BIT, 3);
 
-	ImageLayout normalLayout{};
-	normalLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	normalLayout.binding = 1;
-
-	ImageLayout outputLayout{};
-	outputLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	outputLayout.binding = 2;
-
-	m_outputTexture = engineInstance->createTexture();
-	m_outputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, VK_SAMPLE_COUNT_1_BIT, 
-		VK_IMAGE_ASPECT_COLOR_BIT);
-	m_outputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-	computePassCreateInfo.images = { { depth, depthLayout }, { normal, normalLayout }, { m_outputTexture->getImage(), outputLayout} };
-
-	UniformBufferObjectLayout uboLayout{};
-	uboLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	uboLayout.binding = 3;
-	
-	computePassCreateInfo.ubos = { { m_ubo, uboLayout } };
+	computePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 	
 	m_computePassID = scene->addComputePass(computePassCreateInfo);
 

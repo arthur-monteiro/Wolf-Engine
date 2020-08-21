@@ -36,6 +36,23 @@ Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineIns
 		m_cascadeSplits.push_back(glm::mix(d_uni, d_log, 0.5f));
 	}
 
+	// Data
+	m_uboData.cascadeSplits = glm::vec4(m_cascadeSplits[0], m_cascadeSplits[1], m_cascadeSplits[2], m_cascadeSplits[3]);
+	m_uboData.invProjection = glm::inverse(projection);
+	m_uboData.projectionParams.x = cameraFar / (cameraFar - cameraNear);
+	m_uboData.projectionParams.y = (-cameraFar * cameraNear) / (cameraFar - cameraNear);
+	m_uniformBuffer = engineInstance->createUniformBufferObject(&m_uboData, sizeof(ShadowMaskUBO));
+
+	m_shadowMaskOutputTexture = engineInstance->createTexture();
+	m_shadowMaskOutputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT,
+		VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+	m_shadowMaskOutputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+	m_volumetricLightOutputTexture = engineInstance->createTexture();
+	m_volumetricLightOutputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT,
+		VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+	m_volumetricLightOutputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
 	// Shadow Mask
 	Scene::CommandBufferCreateInfo commandBufferCreateInfo;
 	commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
@@ -48,56 +65,18 @@ Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineIns
 	computePassCreateInfo.computeShaderPath = "Shaders/CSM/comp.spv";
 	computePassCreateInfo.commandBufferID = m_shadowMaskCommandBufferID;
 
-	ImageLayout depthLayout{};
-	depthLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	depthLayout.binding = 0;
+	DescriptorSetGenerator descriptorSetGenerator;
+	descriptorSetGenerator.addImages({ depth }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
+	std::vector<Image*> depthPassResults(CASCADE_COUNT);
+	for (int i(0); i < CASCADE_COUNT; ++i)
+		depthPassResults[i] = m_depthPasses[i]->getResult();
+	descriptorSetGenerator.addImages(depthPassResults, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+	descriptorSetGenerator.addImages({ m_shadowMaskOutputTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, CASCADE_COUNT + 1);
+	descriptorSetGenerator.addImages({ m_volumetricLightOutputTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, CASCADE_COUNT + 2);
 
-	std::array<ImageLayout, CASCADE_COUNT> cascadeLayouts{};
-	for(int i(0); i < CASCADE_COUNT; ++i)
-	{
-		cascadeLayouts[i].accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-		cascadeLayouts[i].binding = i + 1;
-	}
+	descriptorSetGenerator.addUniformBuffer(m_uniformBuffer, VK_SHADER_STAGE_COMPUTE_BIT, CASCADE_COUNT + 3);
 
-	ImageLayout shadowMaskOutputLayout{};
-	shadowMaskOutputLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	shadowMaskOutputLayout.binding = CASCADE_COUNT + 1;
-
-	m_shadowMaskOutputTexture = engineInstance->createTexture();
-	m_shadowMaskOutputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, 
-		VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-	m_shadowMaskOutputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-	
-	ImageLayout volumetricLightOutput{};
-	volumetricLightOutput.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	volumetricLightOutput.binding = CASCADE_COUNT + 2;
-
-	m_volumetricLightOutputTexture = engineInstance->createTexture();
-	m_volumetricLightOutputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, 
-		VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-	m_volumetricLightOutputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-	computePassCreateInfo.images = { { depth, depthLayout } };
-	for(int i(0); i < CASCADE_COUNT; ++i)
-	{	
-		computePassCreateInfo.images.emplace_back(m_depthPasses[i]->getResult(), cascadeLayouts[i]);
-	}
-
-	computePassCreateInfo.images.emplace_back(m_shadowMaskOutputTexture->getImage(), shadowMaskOutputLayout);
-	computePassCreateInfo.images.emplace_back(m_volumetricLightOutputTexture->getImage(), volumetricLightOutput);
-
-	UniformBufferObjectLayout uboLayout{};
-	uboLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	uboLayout.binding = CASCADE_COUNT + 3;
-
-	m_ubo = engineInstance->createUniformBufferObject();
-	m_uboData.cascadeSplits = glm::vec4(m_cascadeSplits[0], m_cascadeSplits[1], m_cascadeSplits[2], m_cascadeSplits[3]);
-	m_uboData.invProjection = glm::inverse(projection);
-	m_uboData.projectionParams.x = cameraFar / (cameraFar - cameraNear);
-	m_uboData.projectionParams.y = (-cameraFar * cameraNear) / (cameraFar - cameraNear);
-	m_ubo->initializeData(&m_uboData, sizeof(ShadowMaskUBO));
-
-	computePassCreateInfo.ubos = { { m_ubo, uboLayout } };
+	computePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 
 	m_shadowMaskComputePassID = scene->addComputePass(computePassCreateInfo);
 
@@ -142,5 +121,5 @@ void Wolf::CascadedShadowMapping::updateMatrices(glm::vec3 lightDir,
 	}
 
 	m_uboData.invModelView = invModelView;
-	m_ubo->updateData(&m_uboData);
+	m_uniformBuffer->updateData(&m_uboData);
 }

@@ -11,7 +11,6 @@ Wolf::LightPropagationVolumes::LightPropagationVolumes(Wolf::WolfInstance* engin
 		VK_IMAGE_ASPECT_COLOR_BIT);
 	m_voxelTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-	m_uboVoxelization = engineInstance->createUniformBufferObject();
 	//modelMat = glm::mat4(1.0f);
 	// X
 	m_projections[0] = glm::ortho(-32.0f, 32.0f, -4.0f, 16.0f, 0.0f, 64.0f) *
@@ -47,12 +46,8 @@ Wolf::LightPropagationVolumes::LightPropagationVolumes(Wolf::WolfInstance* engin
 	m_projections[2] = glm::ortho(-32.0f, 32.0f, -4.0f, 16.0f, 0.0f, 64.0f) *
 		glm::lookAt(glm::vec3(0.0f, 0.0f, -32.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
 		modelMat;
-	m_uboVoxelization->initializeData(&m_projections, 3 * sizeof(glm::mat4));
 
-	glm::vec4 t = glm::vec4(-32.0f, 16.0f, -32.0f, 1.0f);
-	glm::vec4 tX = m_projections[0] * t;
-	glm::vec4 tY = m_projections[1] * t;
-	glm::vec4 tZ = m_projections[2] * t;
+	m_uboVoxelization = engineInstance->createUniformBufferObject(&m_projections, 3 * sizeof(glm::mat4));
 
 	Scene::CommandBufferCreateInfo commandBufferCreateInfo;
 	commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
@@ -81,120 +76,108 @@ Wolf::LightPropagationVolumes::LightPropagationVolumes(Wolf::WolfInstance* engin
 
 	m_renderPassID = m_scene->addRenderPass(renderPassCreateInfo);
 
-	Scene::RendererCreateInfo rendererCreateInfo;
-	rendererCreateInfo.vertexShaderPath = "Shaders/LightPropagationVolumes/vert.spv";
-	rendererCreateInfo.fragmentShaderPath = "Shaders/LightPropagationVolumes/frag.spv";
-	rendererCreateInfo.inputVerticesTemplate = InputVertexTemplate::FULL_3D_MATERIAL;
-	rendererCreateInfo.instanceTemplate = InstanceTemplate::NO;
-	rendererCreateInfo.renderPassID = m_renderPassID;
-	rendererCreateInfo.extent = { VOXEL_SIZE, 128 };
-	rendererCreateInfo.enableDepthTesting = false;
-	rendererCreateInfo.enableConservativeRasterization = false;
+	{
+		RendererCreateInfo rendererCreateInfo;
 
-	ImageLayout imageLayout{};
-	imageLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-	imageLayout.binding = 1;
-	imageLayout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	rendererCreateInfo.imageLayouts.push_back(imageLayout);
+		ShaderCreateInfo vertexShaderCreateInfo{};
+		vertexShaderCreateInfo.filename = "Shaders/LightPropagationVolumes/vert.spv";
+		vertexShaderCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		rendererCreateInfo.pipelineCreateInfo.shaderCreateInfos.push_back(vertexShaderCreateInfo);
 
-	UniformBufferObjectLayout uboLayout{};
-	uboLayout.accessibility = VK_SHADER_STAGE_VERTEX_BIT;
-	uboLayout.binding = 0;
-	rendererCreateInfo.uboLayouts.push_back(uboLayout);
+		ShaderCreateInfo fragmentShaderCreateInfo{};
+		fragmentShaderCreateInfo.filename = "Shaders/LightPropagationVolumes/frag.spv";
+		fragmentShaderCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		rendererCreateInfo.pipelineCreateInfo.shaderCreateInfos.push_back(fragmentShaderCreateInfo);
 
-	m_voxelisationRendererID = m_scene->addRenderer(rendererCreateInfo);
+		rendererCreateInfo.inputVerticesTemplate = InputVertexTemplate::FULL_3D_MATERIAL;
+		rendererCreateInfo.instanceTemplate = InstanceTemplate::NO;
+		rendererCreateInfo.renderPassID = m_renderPassID;
+		rendererCreateInfo.pipelineCreateInfo.extent = { VOXEL_SIZE, VOXEL_SIZE };
+		rendererCreateInfo.pipelineCreateInfo.enableDepthTesting = false;
+		rendererCreateInfo.pipelineCreateInfo.enableConservativeRasterization = false;
+		rendererCreateInfo.pipelineCreateInfo.alphaBlending = { false };
 
-	Scene::AddModelInfo addModelInfo{};
-	addModelInfo.model = model;
-	addModelInfo.renderPassID = m_renderPassID;
-	addModelInfo.rendererID = m_voxelisationRendererID;
+		DescriptorSetGenerator descriptorSetGenerator;
+		descriptorSetGenerator.addImages({ m_voxelTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+		descriptorSetGenerator.addUniformBuffer(m_uboVoxelization, VK_SHADER_STAGE_VERTEX_BIT, 0);
 
-	addModelInfo.images.emplace_back(m_voxelTexture->getImage(), imageLayout);
+		rendererCreateInfo.descriptorLayouts = descriptorSetGenerator.getDescriptorLayouts();
 
-	addModelInfo.ubos.emplace_back(m_uboVoxelization, uboLayout);
+		m_voxelisationRendererID = m_scene->addRenderer(rendererCreateInfo);
 
-	m_scene->addModel(addModelInfo);
+		Renderer::AddMeshInfo addMeshInfo{};
+		addMeshInfo.vertexBuffer = model->getVertexBuffers()[0];
+		addMeshInfo.renderPassID = m_renderPassID;
+		addMeshInfo.rendererID = m_voxelisationRendererID;
+
+		addMeshInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
+
+		m_scene->addMesh(addMeshInfo);
+	}
 
 	buildInjection(model, cascadeSplits, depthTextures);
 	buildPropagation();
 
 	// Voxel viewer
-	commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	commandBufferCreateInfo.commandType = Scene::CommandType::COMPUTE;
-	m_viewerBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
-
-	Scene::ComputePassCreateInfo voxelViewerComputePassCreateInfo;
-	voxelViewerComputePassCreateInfo.extent = engineInstance->getWindowSize();
-	voxelViewerComputePassCreateInfo.computeShaderPath = "Shaders/LightPropagationVolumes/comp.spv";
-	voxelViewerComputePassCreateInfo.outputIsSwapChain = false;
-	voxelViewerComputePassCreateInfo.commandBufferID = m_viewerBufferID;
-	voxelViewerComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
-
-	ImageLayout voxelTextureRLayout{};
-	voxelTextureRLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	voxelTextureRLayout.binding = 0;
-
-	ImageLayout voxelTextureGLayout{};
-	voxelTextureGLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	voxelTextureGLayout.binding = 1;
-	
-	ImageLayout voxelTextureBLayout{};
-	voxelTextureBLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	voxelTextureBLayout.binding = 2;
-
-	ImageLayout voxelCountTextureLayout{};
-	voxelCountTextureLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	voxelCountTextureLayout.binding = 3;
-
-	ImageLayout outputTextureLayout{};
-	outputTextureLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	outputTextureLayout.binding = 4;
-
-	m_viewerOutput = engineInstance->createTexture();
-	m_viewerOutput->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_SAMPLE_COUNT_1_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT);
-	m_viewerOutput->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-	voxelViewerComputePassCreateInfo.images = { {m_injectionTextures[0]->getImage(), voxelTextureRLayout},
-		{m_injectionTextures[1]->getImage(), voxelTextureGLayout}, {m_injectionTextures[2]->getImage(), voxelTextureBLayout},
-		{m_injectionTextures.back()->getImage(), voxelCountTextureLayout}, { m_viewerOutput->getImage(), outputTextureLayout }};
-
-	m_uboVoxelViewer = engineInstance->createUniformBufferObject();
-	m_voxelViewerMatrices[2] = glm::ortho(-32.0f, 32.0f, -4.0f, 16.0f, 0.0f, 64.0f) *
-		glm::lookAt(glm::vec3(0.0f, 0.0f, -32.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	m_voxelViewerMatrices[1] = glm::inverse(projection);
-	m_uboVoxelViewer->initializeData(&m_voxelViewerMatrices, 3 * sizeof(glm::mat4));
-
-	UniformBufferObjectLayout uboMatricesLayout{};
-	uboMatricesLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	uboMatricesLayout.binding = 5;
-
-	voxelViewerComputePassCreateInfo.ubos = { { m_uboVoxelViewer, uboMatricesLayout } };
-
-	m_viewerComputePassID = scene->addComputePass(voxelViewerComputePassCreateInfo);
-
-	/* Clear */
-	commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	commandBufferCreateInfo.commandType = Scene::CommandType::COMPUTE;
-	m_clearCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
-
-	Scene::ComputePassCreateInfo clearComputePassCreateInfo;
-	clearComputePassCreateInfo.extent = { VOXEL_SIZE, VOXEL_SIZE };
-	clearComputePassCreateInfo.computeShaderPath = "Shaders/LightPropagationVolumes/clear.spv";
-	clearComputePassCreateInfo.outputIsSwapChain = false;
-	clearComputePassCreateInfo.commandBufferID = m_clearCommandBufferID;
-	clearComputePassCreateInfo.dispatchGroups = { 8, 8, VOXEL_SIZE / 8 };
-
-	for (int i(0); i < m_injectionTextures.size(); ++i)
 	{
-		ImageLayout imageLayout{};
-		imageLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-		imageLayout.binding = i;
+		// Data
+		m_viewerOutput = engineInstance->createTexture();
+		m_viewerOutput->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_SAMPLE_COUNT_1_BIT,
+			VK_IMAGE_ASPECT_COLOR_BIT);
+		m_viewerOutput->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-		clearComputePassCreateInfo.images.emplace_back(m_injectionTextures[i]->getImage(), imageLayout);
+		m_voxelViewerMatrices[2] = glm::ortho(-32.0f, 32.0f, -4.0f, 16.0f, 0.0f, 64.0f) *
+			glm::lookAt(glm::vec3(0.0f, 0.0f, -32.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		m_voxelViewerMatrices[1] = glm::inverse(projection);
+		m_uboVoxelViewer = engineInstance->createUniformBufferObject(&m_voxelViewerMatrices, 3 * sizeof(glm::mat4));
+		
+		commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+		commandBufferCreateInfo.commandType = Scene::CommandType::COMPUTE;
+		m_viewerBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
+
+		Scene::ComputePassCreateInfo voxelViewerComputePassCreateInfo;
+		voxelViewerComputePassCreateInfo.extent = engineInstance->getWindowSize();
+		voxelViewerComputePassCreateInfo.computeShaderPath = "Shaders/LightPropagationVolumes/comp.spv";
+		voxelViewerComputePassCreateInfo.outputIsSwapChain = false;
+		voxelViewerComputePassCreateInfo.commandBufferID = m_viewerBufferID;
+		voxelViewerComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
+
+		DescriptorSetGenerator descriptorSetGenerator;
+		descriptorSetGenerator.addImages({ m_injectionTextures[0]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
+		descriptorSetGenerator.addImages({ m_injectionTextures[1]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+		descriptorSetGenerator.addImages({ m_injectionTextures[2]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 2);
+		descriptorSetGenerator.addImages({ m_injectionTextures.back()->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 3);
+		descriptorSetGenerator.addImages({ m_viewerOutput->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 4);
+		descriptorSetGenerator.addUniformBuffer(m_uboVoxelViewer, VK_SHADER_STAGE_COMPUTE_BIT, 5);
+
+		voxelViewerComputePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
+
+		m_viewerComputePassID = scene->addComputePass(voxelViewerComputePassCreateInfo);
 	}
 
-	m_clearComputePassID = scene->addComputePass(clearComputePassCreateInfo);
+	/* Clear */
+	{
+		commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+		commandBufferCreateInfo.commandType = Scene::CommandType::COMPUTE;
+		m_clearCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
+
+		Scene::ComputePassCreateInfo clearComputePassCreateInfo;
+		clearComputePassCreateInfo.extent = { VOXEL_SIZE, VOXEL_SIZE };
+		clearComputePassCreateInfo.computeShaderPath = "Shaders/LightPropagationVolumes/clear.spv";
+		clearComputePassCreateInfo.outputIsSwapChain = false;
+		clearComputePassCreateInfo.commandBufferID = m_clearCommandBufferID;
+		clearComputePassCreateInfo.dispatchGroups = { 8, 8, VOXEL_SIZE / 8 };
+
+		DescriptorSetGenerator descriptorSetGenerator;
+
+		for (int i(0); i < m_injectionTextures.size(); ++i)
+			descriptorSetGenerator.addImages({ m_injectionTextures[i]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, i);
+
+		clearComputePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
+			
+		m_clearComputePassID = scene->addComputePass(clearComputePassCreateInfo);
+	}
+	
 }
 
 void Wolf::LightPropagationVolumes::update(glm::mat4 view, std::array<glm::mat4, 4> lightSpaceMatrices, glm::mat4 modelMat)
@@ -219,14 +202,12 @@ void Wolf::LightPropagationVolumes::buildInjection(Model* model, glm::vec4 casca
 			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 	}
 	
-	m_uboInjection = m_engineInstance->createUniformBufferObject();
-
 	m_uboInjectionData.projectionX = m_projections[0];
 	m_uboInjectionData.projectionY = m_projections[1];
 	m_uboInjectionData.projectionZ = m_projections[2];
 	m_uboInjectionData.cascadeSplits = cascadeSplits;
-	
-	m_uboInjection->initializeData(&m_uboInjectionData, sizeof(m_uboInjectionData));
+
+	m_uboInjection = m_engineInstance->createUniformBufferObject(&m_uboInjectionData, sizeof(m_uboInjectionData));
 
 	// Command Buffer
 	Scene::CommandBufferCreateInfo commandBufferCreateInfo;
@@ -258,82 +239,61 @@ void Wolf::LightPropagationVolumes::buildInjection(Model* model, glm::vec4 casca
 	m_injectionRenderPassID = m_scene->addRenderPass(renderPassCreateInfo);
 
 	// Renderer
-	Scene::RendererCreateInfo rendererCreateInfo;
-	rendererCreateInfo.vertexShaderPath = "Shaders/LightPropagationVolumes/injectionVert.spv";
-	rendererCreateInfo.fragmentShaderPath = "Shaders/LightPropagationVolumes/injectionFrag.spv";
+	RendererCreateInfo rendererCreateInfo;
+
+	ShaderCreateInfo vertexShaderCreateInfo{};
+	vertexShaderCreateInfo.filename = "Shaders/LightPropagationVolumes/injectionVert.spv";
+	vertexShaderCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	rendererCreateInfo.pipelineCreateInfo.shaderCreateInfos.push_back(vertexShaderCreateInfo);
+
+	ShaderCreateInfo fragmentShaderCreateInfo{};
+	fragmentShaderCreateInfo.filename = "Shaders/LightPropagationVolumes/injectionFrag.spv";
+	fragmentShaderCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	rendererCreateInfo.pipelineCreateInfo.shaderCreateInfos.push_back(fragmentShaderCreateInfo);
+	
 	rendererCreateInfo.inputVerticesTemplate = InputVertexTemplate::FULL_3D_MATERIAL;
 	rendererCreateInfo.instanceTemplate = InstanceTemplate::NO;
 	rendererCreateInfo.renderPassID = m_injectionRenderPassID;
-	rendererCreateInfo.extent = { VOXEL_SIZE, VOXEL_SIZE };
-	rendererCreateInfo.enableDepthTesting = false;
-	rendererCreateInfo.enableConservativeRasterization = false;
+	rendererCreateInfo.pipelineCreateInfo.extent = { VOXEL_SIZE, VOXEL_SIZE };
+	rendererCreateInfo.pipelineCreateInfo.enableDepthTesting = false;
+	rendererCreateInfo.pipelineCreateInfo.enableConservativeRasterization = false;
+	rendererCreateInfo.pipelineCreateInfo.alphaBlending = { false };
 
+	DescriptorSetGenerator descriptorSetGenerator;
+	
+	std::vector<Image*> voxelImages(m_injectionTextures.size());
 	for (int i(0); i < m_injectionTextures.size(); ++i)
+		voxelImages[i] = m_injectionTextures[i]->getImage();
+	descriptorSetGenerator.addImages(voxelImages, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
+	
+	descriptorSetGenerator.addSampler(model->getSampler(), VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+	
+	std::vector<Image*> depthAndMaterialImages(model->getNumberOfImages() + 4);
+	std::vector<Image*> materialImages = model->getImages();
+	for(int i(0); i < depthAndMaterialImages.size(); ++i)
 	{
-		ImageLayout voxelDataImageLayout{};
-		voxelDataImageLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-		voxelDataImageLayout.binding = i + 2;
-		voxelDataImageLayout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		rendererCreateInfo.imageLayouts.push_back(voxelDataImageLayout);
+		if (i < 4)
+			depthAndMaterialImages[i] = depthTextures[i];
+		else
+			depthAndMaterialImages[i] = materialImages[i - 4];
 	}
+	descriptorSetGenerator.addImages(depthAndMaterialImages, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 9);
+	
+	descriptorSetGenerator.addUniformBuffer(m_uboInjection, VK_SHADER_STAGE_VERTEX_BIT, 0);
 
-	SamplerLayout samplerLayout{};
-	samplerLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-	samplerLayout.binding = 1;
-	rendererCreateInfo.samplerLayouts.push_back(samplerLayout);
-
-	for (size_t j(0); j < model->getNumberOfImages() + 4 /* depth textures */; ++j)
-	{
-		ImageLayout imageLayout{};
-		imageLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-		imageLayout.binding = static_cast<uint32_t>(j + 9);
-		rendererCreateInfo.imageLayouts.push_back(imageLayout);
-	}
-
-	UniformBufferObjectLayout uboLayout{};
-	uboLayout.accessibility = VK_SHADER_STAGE_VERTEX_BIT;
-	uboLayout.binding = 0;
-	rendererCreateInfo.uboLayouts.push_back(uboLayout);
+	rendererCreateInfo.descriptorLayouts = descriptorSetGenerator.getDescriptorLayouts();
 
 	m_voxelisationRendererID = m_scene->addRenderer(rendererCreateInfo);
 
 	// Add Model
-	Scene::AddModelInfo addModelInfo{};
-	addModelInfo.model = model;
-	addModelInfo.renderPassID = m_injectionRenderPassID;
-	addModelInfo.rendererID = m_voxelisationRendererID;
+	Renderer::AddMeshInfo addMeshInfo{};
+	addMeshInfo.vertexBuffer = model->getVertexBuffers()[0];
+	addMeshInfo.renderPassID = m_injectionRenderPassID;
+	addMeshInfo.rendererID = m_voxelisationRendererID;
 
-	for(int j(0); j < m_injectionTextures.size(); ++j)
-	{
-		ImageLayout imageLayout{};
-		imageLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-		imageLayout.binding = static_cast<uint32_t>(j + 2);
-		imageLayout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		addModelInfo.images.emplace_back(m_injectionTextures[j]->getImage(), imageLayout);
-	}
-	
-	for(int j(0); j < 4; ++j)
-	{
-		ImageLayout imageLayout{};
-		imageLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-		imageLayout.binding = static_cast<uint32_t>(j + 9);
+	addMeshInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 
-		addModelInfo.images.emplace_back(depthTextures[j], imageLayout);
-	}
-	std::vector<Image*> images = model->getImages();
-	for (size_t j(0); j < images.size(); ++j)
-	{
-		ImageLayout imageLayout{};
-		imageLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-		imageLayout.binding = static_cast<uint32_t>(j + 13);
-
-		addModelInfo.images.emplace_back(images[j], imageLayout);
-	}
-
-	addModelInfo.ubos.emplace_back(m_uboInjection, uboLayout);
-	addModelInfo.samplers.emplace_back(model->getSampler(), samplerLayout);
-
-	m_scene->addModel(addModelInfo);
+	m_scene->addMesh(addMeshInfo);
 }
 
 void Wolf::LightPropagationVolumes::buildPropagation()
@@ -358,20 +318,15 @@ void Wolf::LightPropagationVolumes::buildPropagation()
 	propagationComputePassCreateInfo.commandBufferID = m_propagationCommandBufferID;
 	propagationComputePassCreateInfo.dispatchGroups = { 8, 8, VOXEL_SIZE / 8 };
 
+	DescriptorSetGenerator descriptorSetGenerator;
+
 	for(int i(0);  i < m_injectionTextures.size(); ++i)
-	{
-		ImageLayout imageLayout{};
-		imageLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-		imageLayout.binding = i;
+		descriptorSetGenerator.addImages({ m_injectionTextures[i]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, i);
 
-		propagationComputePassCreateInfo.images.emplace_back(m_injectionTextures[i]->getImage(), imageLayout);
-	}
-	
-	ImageLayout outputLayout{};
-	outputLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
-	outputLayout.binding = m_injectionTextures.size();
+	descriptorSetGenerator.addImages({ m_lightVolumesPropagationTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 
+		static_cast<uint32_t>(m_injectionTextures.size()));
 
-	propagationComputePassCreateInfo.images.emplace_back(m_lightVolumesPropagationTexture->getImage(), outputLayout);
+	propagationComputePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 
 	m_propagationComputePassID = m_scene->addComputePass(propagationComputePassCreateInfo);
 }

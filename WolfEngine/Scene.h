@@ -58,11 +58,7 @@ namespace Wolf
 			
 			std::string computeShaderPath;
 
-			std::vector<std::pair<UniformBufferObject*, UniformBufferObjectLayout>> ubos;
-			//std::vector<std::pair<Texture*, TextureLayout>> textures;
-			std::vector<std::pair<Image*, ImageLayout>> images;
-			std::vector<std::pair<Sampler*, SamplerLayout>> samplers;
-			std::vector<std::pair<VkBuffer, BufferLayout>> buffers;
+			DescriptorSetCreateInfo descriptorSetCreateInfo;
 
 			std::function<void(void*, VkCommandBuffer)> beforeRecord = nullptr; void* dataForBeforeRecordCallback = nullptr;
 			std::function<void(void*, VkCommandBuffer)> afterRecord = nullptr; void* dataForAfterRecordCallback = nullptr;
@@ -76,54 +72,9 @@ namespace Wolf
 		};
 		int addCommandBuffer(CommandBufferCreateInfo createInfo);
 
-		struct RendererCreateInfo
-		{
-			int renderPassID;
-
-			std::string vertexShaderPath;
-			std::string fragmentShaderPath = "";
-			std::string tessellationControlShaderPath = "";
-			std::string tessellationEvaluationShaderPath = "";
-
-			InputVertexTemplate inputVerticesTemplate = InputVertexTemplate::NO;
-			InstanceTemplate instanceTemplate = InstanceTemplate::NO;
-			std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions;
-			std::vector<VkVertexInputBindingDescription> inputBindingDescriptions;
-			std::vector<bool> alphaBlending = { true };
-			bool enableDepthTesting = true;
-			bool enableConservativeRasterization = false;
-			VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL;
-
-			// Descriptor set layout
-			std::vector<UniformBufferObjectLayout> uboLayouts;
-			std::vector<TextureLayout> textureLayouts;
-			std::vector<ImageLayout> imageLayouts;
-			std::vector<SamplerLayout> samplerLayouts;
-			std::vector<BufferLayout> bufferLayouts;
-
-			// Viewport
-			VkExtent2D extent = { 0, 0 };
-			std::array<float, 2> viewportScale = { 1.0f, 1.0f };
-			std::array<float, 2> viewportOffset = { 0.0f, 0.0f };
-		};
 		int addRenderer(RendererCreateInfo createInfo);
 
-		struct AddModelInfo
-		{
-			Model* model;
-			int renderPassID;
-			int rendererID;
-
-			std::vector<std::pair<UniformBufferObject*, UniformBufferObjectLayout>> ubos;
-			std::vector<std::pair<Texture*, TextureLayout>> textures;
-			std::vector<std::pair<Image*, ImageLayout>> images;
-			std::vector<std::pair<Sampler*, SamplerLayout>> samplers;
-			std::vector<std::pair<VkBuffer, BufferLayout>> buffers;
-		};
-		void addModel(AddModelInfo addModelInfo);
-
-		template<typename T>
-		void addModelInstancied(AddModelInfo addModelInfo, Instance<T>* instanceBuffer);
+		void addMesh(Renderer::AddMeshInfo addMeshInfo);
 
 		struct AddTextInfo
 		{
@@ -134,11 +85,7 @@ namespace Wolf
 			int rendererID;
 
 			// Info to add
-			std::vector<std::pair<UniformBufferObject*, UniformBufferObjectLayout>> ubos;
-			std::vector<std::pair<Texture*, TextureLayout>> textures;
-			std::vector<std::pair<Image*, ImageLayout>> images;
-			std::vector<std::pair<Sampler*, SamplerLayout>> samplers;
-			std::vector<std::pair<VkBuffer, BufferLayout>> buffers;
+			DescriptorSetCreateInfo descriptorSetCreateInfo;
 		};
 		void addText(AddTextInfo addTextInfo);
 		
@@ -148,7 +95,7 @@ namespace Wolf
 		           const std::vector<std::pair<int, int>>&);
 
 		VkSemaphore getSwapChainSemaphore() const { return m_swapChainCompleteSemaphore->getSemaphore(); }
-		Image* getRenderPassOutput(int renderPassID, int textureID) { return m_sceneRenderPasses[renderPassID].renderPass->getImages(0)[textureID]; }
+		Image* getRenderPassOutput(int renderPassID, int textureID) { return m_sceneRenderPasses[renderPassID].renderPass->getImages(0)[textureID]; }		
 
 	private:
 		// Command Pools
@@ -227,23 +174,7 @@ namespace Wolf
 		bool m_useOVR = false;
 
 	private:
+		inline void updateDescriptorPool(DescriptorSetCreateInfo& descriptorSetCreateInfo);
 		inline void recordRenderPass(SceneRenderPass& sceneRenderPasse);
 	};
-
-	template <typename T>
-	void Scene::addModelInstancied(AddModelInfo addModelInfo, Instance<T>* instanceBuffer)
-	{
-		m_descriptorPool.addUniformBuffer(static_cast<unsigned int>(addModelInfo.ubos.size()));
-		m_descriptorPool.addCombinedImageSampler(static_cast<unsigned int>(addModelInfo.textures.size()));
-		m_descriptorPool.addSampledImage(static_cast<unsigned int>(addModelInfo.images.size()));
-		m_descriptorPool.addSampler(static_cast<unsigned int>(addModelInfo.samplers.size()));
-		m_descriptorPool.addStorageBuffer(static_cast<unsigned int>(addModelInfo.buffers.size()));
-
-		std::vector<VertexBuffer> vertexBuffers = addModelInfo.model->getVertexBuffers();
-		for (VertexBuffer& vertexBuffer : vertexBuffers)
-		{
-			m_sceneRenderPasses[addModelInfo.renderPassID].renderers[addModelInfo.rendererID]->addMeshInstancied(vertexBuffer, instanceBuffer->getInstanceBuffer(), std::move(addModelInfo.ubos), std::move(addModelInfo.textures), 
-				std::move(addModelInfo.images), std::move(addModelInfo.samplers), std::move(addModelInfo.buffers));
-		}
-	}
 }

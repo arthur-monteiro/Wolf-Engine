@@ -31,21 +31,6 @@ Wolf::Scene::Scene(SceneCreateInfo createInfo, VkDevice device, VkPhysicalDevice
 
 int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo)
 {
-	/*std::vector<VkClearValue> clearValues;
-	VkExtent2D extent;
-	if(createInfo.commandBufferID == -1)
-	{
-		clearValues.resize(2);
-		clearValues[0] = { 1.0f };
-		clearValues[1] = { 1.0f, 0.0f, 0.0f, 1.0f };
-
-		extent = m_swapChainImages[0]->getExtent();
-	}
-	else
-	{
-		extent = createInfo.extent;
-	}*/
-
 	if(createInfo.outputIsSwapChain)
 	{
 		createInfo.outputs.resize(2);
@@ -78,14 +63,6 @@ int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo)
 				output.attachment.extent = { m_swapChainImages[0]->getExtent().width, m_swapChainImages[0]->getExtent().height };
 
 		}
-		if (!depthAttachmentPresent)
-		{
-			/*RenderPassOutput depthOutput;
-			depthOutput.clearValue = { 1.0f };
-			depthOutput.attachment = Attachment(createInfo.outputs[0].attachment.extent, findDepthFormat(m_physicalDevice), VK_SAMPLE_COUNT_1_BIT, 
-				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-			createInfo.outputs.push_back(depthOutput);*/
-		}
 	}
 	
 	m_sceneRenderPasses.emplace_back(createInfo.commandBufferID, createInfo.outputs, createInfo.outputIsSwapChain);
@@ -108,36 +85,48 @@ int Wolf::Scene::addComputePass(ComputePassCreateInfo createInfo)
 {
 	m_sceneComputePasses.emplace_back(createInfo.commandBufferID, createInfo.outputIsSwapChain);
 
-	m_descriptorPool.addStorageImage(createInfo.images.size());
-	m_descriptorPool.addUniformBuffer(createInfo.ubos.size());
-
 	if(!createInfo.outputIsSwapChain)
 	{
 		m_sceneComputePasses.back().computePasses.resize(1);
-		m_sceneComputePasses.back().computePasses[0] = std::make_unique<ComputePass>(m_device, m_physicalDevice, m_computeCommandPool, createInfo.computeShaderPath, createInfo.ubos,
-			createInfo.images);
+		m_sceneComputePasses.back().computePasses[0] = std::make_unique<ComputePass>(m_device, m_physicalDevice, m_computeCommandPool, createInfo.computeShaderPath, 
+			createInfo.descriptorSetCreateInfo);
+
+		updateDescriptorPool(createInfo.descriptorSetCreateInfo);
 	}
 	else
 	{
+		m_descriptorPool.addStorageImage(static_cast<uint32_t>(m_swapChainImages.size()));
+		
 		m_sceneComputePasses.back().computePasses.resize(m_swapChainImages.size());
 		for(size_t i(0); i < m_swapChainImages.size(); ++i)
 		{
-			std::vector<std::pair<Image*, ImageLayout>> images;
-			for(size_t j(0); j < createInfo.images.size(); ++j)
-				images.push_back(createInfo.images[j]);
+			std::vector<std::pair<std::vector<DescriptorSetCreateInfo::ImageData>, DescriptorLayout>> images;
+			for (size_t j(0); j < createInfo.descriptorSetCreateInfo.descriptorImages.size(); ++j)
+				images.push_back(createInfo.descriptorSetCreateInfo.descriptorImages[j]);
 
-			ImageLayout swapChainImageLayout;
+			DescriptorLayout swapChainImageLayout;
+			swapChainImageLayout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 			swapChainImageLayout.accessibility = VK_SHADER_STAGE_COMPUTE_BIT;
+			swapChainImageLayout.count = 1;
 			swapChainImageLayout.binding = createInfo.outputBinding;
-			
-			images.emplace_back(m_swapChainImages[i], swapChainImageLayout);
 
-			m_sceneComputePasses.back().computePasses[i] = std::make_unique<ComputePass>(m_device, m_physicalDevice, m_computeCommandPool, createInfo.computeShaderPath, createInfo.ubos,
-				images);
+			DescriptorSetCreateInfo::ImageData swapChainImageData{};
+			swapChainImageData.image = m_swapChainImages[i];
+			
+			images.push_back({ { swapChainImageData }, swapChainImageLayout });
+
+			auto tempDescriptorSetCreateInfo = createInfo.descriptorSetCreateInfo;
+			tempDescriptorSetCreateInfo.descriptorImages = images;
+
+			m_sceneComputePasses.back().computePasses[i] = std::make_unique<ComputePass>(m_device, m_physicalDevice, m_computeCommandPool, createInfo.computeShaderPath,
+				tempDescriptorSetCreateInfo);
+			
+			updateDescriptorPool(createInfo.descriptorSetCreateInfo);
 		}
 
 		createInfo.extent = { m_swapChainImages[0]->getExtent().width, m_swapChainImages[0]->getExtent().height };
 	}
+	
 	m_sceneComputePasses.back().extent = createInfo.extent;
 	m_sceneComputePasses.back().dispatchGroups = createInfo.dispatchGroups;
 
@@ -181,20 +170,20 @@ int Wolf::Scene::addRenderer(RendererCreateInfo createInfo)
 	switch (createInfo.inputVerticesTemplate)
 	{
 	case InputVertexTemplate::POSITION_2D :
-		createInfo.inputAttributeDescriptions = Vertex2D::getAttributeDescriptions(0);
-		createInfo.inputBindingDescriptions = { Vertex2D::getBindingDescription(0) };
+		createInfo.pipelineCreateInfo.vertexInputAttributeDescriptions = Vertex2D::getAttributeDescriptions(0);
+		createInfo.pipelineCreateInfo.vertexInputBindingDescriptions = { Vertex2D::getBindingDescription(0) };
 		break;
 	case InputVertexTemplate::POSITION_TEXTURECOORD_2D:
-		createInfo.inputAttributeDescriptions = Vertex2DTextured::getAttributeDescriptions(0);
-		createInfo.inputBindingDescriptions = { Vertex2DTextured::getBindingDescription(0) };
+		createInfo.pipelineCreateInfo.vertexInputAttributeDescriptions = Vertex2DTextured::getAttributeDescriptions(0);
+		createInfo.pipelineCreateInfo.vertexInputBindingDescriptions = { Vertex2DTextured::getBindingDescription(0) };
 		break;
 	case InputVertexTemplate::POSITION_TEXTURECOORD_ID_2D:
-		createInfo.inputAttributeDescriptions = Vertex2DTexturedWithMaterial::getAttributeDescriptions(0);
-		createInfo.inputBindingDescriptions = { Vertex2DTexturedWithMaterial::getBindingDescription(0) };
+		createInfo.pipelineCreateInfo.vertexInputAttributeDescriptions = Vertex2DTexturedWithMaterial::getAttributeDescriptions(0);
+		createInfo.pipelineCreateInfo.vertexInputBindingDescriptions = { Vertex2DTexturedWithMaterial::getBindingDescription(0) };
 		break;
 	case InputVertexTemplate::FULL_3D_MATERIAL:
-		createInfo.inputAttributeDescriptions = Vertex3D::getAttributeDescriptions(0);
-		createInfo.inputBindingDescriptions = { Vertex3D::getBindingDescription(0) };
+		createInfo.pipelineCreateInfo.vertexInputAttributeDescriptions = Vertex3D::getAttributeDescriptions(0);
+		createInfo.pipelineCreateInfo.vertexInputBindingDescriptions = { Vertex3D::getBindingDescription(0) };
 		break;		
 	case InputVertexTemplate::NO:
 		break;
@@ -210,42 +199,30 @@ int Wolf::Scene::addRenderer(RendererCreateInfo createInfo)
 		std::vector<VkVertexInputBindingDescription> inputBindingDescriptions = { InstanceSingleID::getBindingDescription(1) };
 
 		for (VkVertexInputAttributeDescription& inputAttributeDescription : inputAttributeDescriptions)
-			createInfo.inputAttributeDescriptions.push_back(inputAttributeDescription);
+			createInfo.pipelineCreateInfo.vertexInputAttributeDescriptions.push_back(inputAttributeDescription);
 		for (VkVertexInputBindingDescription& inputBindingDescription : inputBindingDescriptions)
-			createInfo.inputBindingDescriptions.push_back(inputBindingDescription);
+			createInfo.pipelineCreateInfo.vertexInputBindingDescriptions.push_back(inputBindingDescription);
 		break;
 	}
 
-	if (createInfo.extent.width == 0)
-		createInfo.extent = { m_swapChainImages[0]->getExtent().width, m_swapChainImages[0]->getExtent().height };
-	
-	const auto r = new Renderer(m_device, createInfo.extent, createInfo.vertexShaderPath, createInfo.fragmentShaderPath, createInfo.tessellationControlShaderPath,
-		createInfo.tessellationEvaluationShaderPath, createInfo.inputBindingDescriptions,
-		std::move(createInfo.inputAttributeDescriptions), std::move(createInfo.uboLayouts), std::move(createInfo.textureLayouts), std::move(createInfo.imageLayouts),
-		std::move(createInfo.samplerLayouts), std::move(createInfo.bufferLayouts), createInfo.alphaBlending, createInfo.enableDepthTesting,
-		createInfo.enableConservativeRasterization, createInfo.polygonMode);
+	if (createInfo.pipelineCreateInfo.extent.width == 0)
+		createInfo.pipelineCreateInfo.extent = { m_swapChainImages[0]->getExtent().width, m_swapChainImages[0]->getExtent().height };
+
+	createInfo.pipelineCreateInfo.renderPass = m_sceneRenderPasses[createInfo.renderPassID].renderPass->getRenderPass();
+
+	auto* const r = new Renderer(m_device, createInfo);
 	
 	m_sceneRenderPasses[createInfo.renderPassID].renderers.push_back(std::unique_ptr<Renderer>(r));
-	m_sceneRenderPasses[createInfo.renderPassID].renderers.back()->setViewport(createInfo.viewportScale, createInfo.viewportOffset);
+	//m_sceneRenderPasses[createInfo.renderPassID].renderers.back()->setViewport(createInfo.pipelineCreateInfo.viewportScale, createInfo.pipelineCreateInfo.viewportOffset);
 
 	return static_cast<int>(m_sceneRenderPasses[createInfo.renderPassID].renderers.size() - 1);
 }
 
-void Wolf::Scene::addModel(AddModelInfo addModelInfo)
+void Wolf::Scene::addMesh(Renderer::AddMeshInfo addMeshInfo)
 {
-	m_descriptorPool.addUniformBuffer(static_cast<unsigned int>(addModelInfo.ubos.size()));
-	m_descriptorPool.addCombinedImageSampler(static_cast<unsigned int>(addModelInfo.textures.size()));
-	m_descriptorPool.addSampledImage(static_cast<unsigned int>(addModelInfo.images.size()));
-	m_descriptorPool.addSampler(static_cast<unsigned int>(addModelInfo.samplers.size()));
-	m_descriptorPool.addStorageBuffer(static_cast<unsigned int>(addModelInfo.buffers.size()));
-	m_descriptorPool.addStorageImage(1);
-	
-	std::vector<VertexBuffer> vertexBuffers = addModelInfo.model->getVertexBuffers();
-	for(VertexBuffer& vertexBuffer : vertexBuffers)
-	{		
-		m_sceneRenderPasses[addModelInfo.renderPassID].renderers[addModelInfo.rendererID]->addMesh(vertexBuffer, std::move(addModelInfo.ubos), std::move(addModelInfo.textures), std::move(addModelInfo.images), std::move(addModelInfo.samplers), 
-			std::move(addModelInfo.buffers));
-	}
+	updateDescriptorPool(addMeshInfo.descriptorSetCreateInfo);
+
+	m_sceneRenderPasses[addMeshInfo.renderPassID].renderers[addMeshInfo.rendererID]->addMesh(addMeshInfo);
 }
 
 void Wolf::Scene::addText(AddTextInfo addTextInfo)
@@ -254,49 +231,33 @@ void Wolf::Scene::addText(AddTextInfo addTextInfo)
 	const VkExtent2D outputExtent = m_sceneRenderPasses[addTextInfo.renderPassID].outputs[0].attachment.extent;
 	addTextInfo.text->build(outputExtent, addTextInfo.font, addTextInfo.size);
 
+	DescriptorSetGenerator descriptorSetGenerator;
+
 	// Uniform Buffer Objects
-	UniformBufferObjectLayout uboLayout{};
-	uboLayout.accessibility = VK_SHADER_STAGE_VERTEX_BIT;
-	uboLayout.binding = 0;
-	std::vector<std::pair<UniformBufferObject*, UniformBufferObjectLayout>> ubos = { {addTextInfo.text->getUBO(), uboLayout} };
-	for (std::pair<UniformBufferObject*, UniformBufferObjectLayout>& ubo : addTextInfo.ubos)
-		ubos.push_back(ubo);
+	descriptorSetGenerator.addUniformBuffer(addTextInfo.text->getUBO(), VK_SHADER_STAGE_VERTEX_BIT, 0);
 
 	// Images
-	std::vector<Image*> images = addTextInfo.font->getImages();
-	std::vector<ImageLayout> imageLayouts(images.size());
-	for (int i(0); i < imageLayouts.size(); ++i)
-	{
-		imageLayouts[i].accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-		imageLayouts[i].binding = i + 2;
-	}
-	std::vector<std::pair<Image*, ImageLayout>> rendererImages(images.size());
-	for (int j(0); j < rendererImages.size(); ++j)
-	{
-		rendererImages[j].first = images[j];
-		rendererImages[j].second = imageLayouts[j];
-	}
-	for (std::pair<Image*, ImageLayout>& image : addTextInfo.images)
-		rendererImages.push_back(image);
+	descriptorSetGenerator.addImages(addTextInfo.font->getImages(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
 
 	// Samplers
-	Sampler* sampler = addTextInfo.font->getSampler();
-	SamplerLayout samplerLayout;
-	samplerLayout.accessibility = VK_SHADER_STAGE_FRAGMENT_BIT;
-	samplerLayout.binding = 1;
-	std::vector<std::pair<Sampler*, SamplerLayout>> samplers = { { sampler, samplerLayout }};
-	for (std::pair<Sampler*, SamplerLayout>& sampler : addTextInfo.samplers)
-		samplers.push_back(sampler);
+	descriptorSetGenerator.addSampler(addTextInfo.font->getSampler(), VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 
-	m_sceneRenderPasses[addTextInfo.renderPassID].renderers[addTextInfo.rendererID]->addMesh(addTextInfo.text->getVertexBuffer(), std::move(ubos), std::move(addTextInfo.textures), std::move(rendererImages), std::move(samplers),
-		std::move(addTextInfo.buffers));
+	// Info to add
+	DescriptorSetCreateInfo descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
+	for (auto& buffer : addTextInfo.descriptorSetCreateInfo.descriptorBuffers)
+		descriptorSetCreateInfo.descriptorBuffers.push_back(buffer);
+	
+	for (auto& image : addTextInfo.descriptorSetCreateInfo.descriptorImages)
+		descriptorSetCreateInfo.descriptorImages.push_back(image);
+
+	Renderer::AddMeshInfo addMeshInfo{};
+	addMeshInfo.descriptorSetCreateInfo = descriptorSetCreateInfo;
+	addMeshInfo.vertexBuffer = addTextInfo.text->getVertexBuffer();
+	
+	m_sceneRenderPasses[addTextInfo.renderPassID].renderers[addTextInfo.rendererID]->addMesh(addMeshInfo);
 
 	// Update descriptor pools needs
-	m_descriptorPool.addUniformBuffer(static_cast<unsigned int>(addTextInfo.ubos.size()) + 1);
-	m_descriptorPool.addCombinedImageSampler(static_cast<unsigned int>(addTextInfo.textures.size()));
-	m_descriptorPool.addSampledImage(static_cast<unsigned int>(addTextInfo.images.size() + images.size()));
-	m_descriptorPool.addSampler(static_cast<unsigned int>(addTextInfo.samplers.size()) + 1);
-	m_descriptorPool.addStorageBuffer(static_cast<unsigned int>(addTextInfo.buffers.size()));
+	updateDescriptorPool(descriptorSetCreateInfo);
 }
 
 void Wolf::Scene::record()
@@ -307,7 +268,7 @@ void Wolf::Scene::record()
 	{
 		// Renderers creation
 		for (std::unique_ptr<Renderer>& renderer : sceneRenderPass.renderers)
-			renderer->create(m_device, sceneRenderPass.renderPass->getRenderPass(), VK_SAMPLE_COUNT_1_BIT, m_descriptorPool.getDescriptorPool());
+			renderer->create(m_descriptorPool.getDescriptorPool());
 	}
 
 	for (SceneComputePass& sceneComputePass : m_sceneComputePasses)
@@ -554,4 +515,47 @@ void Wolf::Scene::frame(Queue graphicsQueue, Queue computeQueue, uint32_t swapCh
 		m_swapChainCommandBuffers[swapChainImageIndex]->submit(m_device, graphicsQueue, waitSemaphoreSwapChain, signalSemaphoreSwapChain);
 	else
 		m_swapChainCommandBuffers[swapChainImageIndex]->submit(m_device, computeQueue, waitSemaphoreSwapChain, signalSemaphoreSwapChain);
+}
+
+inline void Wolf::Scene::updateDescriptorPool(Wolf::DescriptorSetCreateInfo& descriptorSetCreateInfo)
+{
+	for (auto& descriptorBuffer : descriptorSetCreateInfo.descriptorBuffers)
+	{
+		switch (descriptorBuffer.second.descriptorType)
+		{
+		case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+			m_descriptorPool.addUniformBuffer(descriptorBuffer.second.count);
+			break;
+
+		case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+			m_descriptorPool.addStorageBuffer(descriptorBuffer.second.count);
+			break;
+
+		default: Debug::sendWarning("Unsupported descriptor buffer type");
+		}
+	}
+
+	for (auto& descriptorImage : descriptorSetCreateInfo.descriptorImages)
+	{
+		switch (descriptorImage.second.descriptorType)
+		{
+		case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+			m_descriptorPool.addStorageImage(descriptorImage.second.count);
+			break;
+
+		case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+			m_descriptorPool.addCombinedImageSampler(descriptorImage.second.count);
+			break;
+
+		case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+			m_descriptorPool.addSampledImage(descriptorImage.second.count);
+			break;
+
+		case VK_DESCRIPTOR_TYPE_SAMPLER:
+			m_descriptorPool.addSampler(descriptorImage.second.count);
+			break;
+
+		default: Debug::sendWarning("Unsupported descriptor image type");
+		}
+	}
 }

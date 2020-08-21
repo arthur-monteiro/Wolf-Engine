@@ -2,127 +2,76 @@
 
 #include <fstream>
 
-Wolf::Pipeline::~Pipeline()
-= default;
+#include "Debug.h"
 
-void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::string vertexShader, std::string geometryShader, std::string fragmentShader, 
-	std::string tessellationControlShader, std::string tessellationEvaluationShader, std::vector<VkVertexInputBindingDescription> vertexInputDescription,
-	std::vector<VkVertexInputAttributeDescription> attributeInputDescription, VkExtent2D extent, VkSampleCountFlagBits msaaSamples, std::vector<bool> alphaBlending,
-	VkDescriptorSetLayout * descriptorSetLayout, std::array<float, 2> viewportScale, std::array<float, 2> viewportOffset, VkPrimitiveTopology topology, VkBool32 enableDepthTesting, bool addColors,
-	bool enableConservativeRasterization, float maxExtraPrimitiveOverestimationSize, VkPolygonMode polygonMode)
+Wolf::Pipeline::Pipeline(VkDevice device, RenderingPipelineCreateInfo renderingPipelineCreateInfo)
 {
+	m_device = device;
+	
 	/* Pipeline layout */
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1;
-	pipelineLayoutInfo.pSetLayouts = descriptorSetLayout;
+	pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(renderingPipelineCreateInfo.descriptorSetLayouts.size());
+	pipelineLayoutInfo.pSetLayouts = renderingPipelineCreateInfo.descriptorSetLayouts.data();
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
 		throw std::runtime_error("Error : create pipeline layout");
 
 	/* Shaders */
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
-	VkShaderModule vertShaderModule = nullptr;
-	VkShaderModule fragShaderModule = nullptr;
-	VkShaderModule geomShaderModule = nullptr;
-	VkShaderModule tesControlShaderModule = nullptr;
-	VkShaderModule tesEvalShaderModule = nullptr;
-
-	std::vector<char> vertShaderCode = readFile(vertexShader);
-	vertShaderModule = createShaderModule(vertShaderCode, device);
-
-	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertShaderStageInfo.module = vertShaderModule;
-	vertShaderStageInfo.pName = "main";
-
-	shaderStages.push_back(vertShaderStageInfo);
-
-	if (!geometryShader.empty())
+	std::vector<VkShaderModule> shaderModules;
+	for(auto& shaderCreateInfo : renderingPipelineCreateInfo.shaderCreateInfos)
 	{
-		std::vector<char> geomShaderCode = readFile(geometryShader);
-		geomShaderModule = createShaderModule(geomShaderCode, device);
+		// Read code
+		std::vector<char> shaderCode;
+		if (!shaderCreateInfo.filename.empty())
+			shaderCode = readFile(shaderCreateInfo.filename);
+		else if (!shaderCreateInfo.fileContent.empty())
+			std::copy(shaderCreateInfo.fileContent.begin(), shaderCreateInfo.fileContent.end(), std::back_inserter(shaderCode));
+		else
+			continue;
 
-		VkPipelineShaderStageCreateInfo geomShaderStageInfo = {};
-		geomShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		geomShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-		geomShaderStageInfo.module = geomShaderModule;
-		geomShaderStageInfo.pName = "main";
+		// Create shader module
+		shaderModules.push_back(createShaderModule(shaderCode, m_device));
 
-		shaderStages.push_back(geomShaderStageInfo);
-	}
+		// Add stage
+		VkPipelineShaderStageCreateInfo shaderStageInfo = {};
+		shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderStageInfo.stage = shaderCreateInfo.stage;
+		shaderStageInfo.module = shaderModules.back();
+		shaderStageInfo.pName = shaderCreateInfo.entryPointName.data();
 
-	if (!fragmentShader.empty())
-	{
-		std::vector<char> fragShaderCode = readFile(fragmentShader);
-		fragShaderModule = createShaderModule(fragShaderCode, device);
-
-		VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		fragShaderStageInfo.module = fragShaderModule;
-		fragShaderStageInfo.pName = "main";
-
-		shaderStages.push_back(fragShaderStageInfo);
-	}
-	
-	if (!tessellationControlShader.empty())
-	{
-		std::vector<char> tesControlShaderCode = readFile(tessellationControlShader);
-		tesControlShaderModule = createShaderModule(tesControlShaderCode, device);
-
-		VkPipelineShaderStageCreateInfo tesControlShaderStageInfo = {};
-		tesControlShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		tesControlShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-		tesControlShaderStageInfo.module = tesControlShaderModule;
-		tesControlShaderStageInfo.pName = "main";
-
-		shaderStages.push_back(tesControlShaderStageInfo);
-	}
-
-	if (!tessellationEvaluationShader.empty())
-	{
-		std::vector<char> tesEvalShaderCode = readFile(tessellationEvaluationShader);
-		tesEvalShaderModule = createShaderModule(tesEvalShaderCode, device);
-
-		VkPipelineShaderStageCreateInfo tesEvalShaderStageInfo = {};
-		tesEvalShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		tesEvalShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-		tesEvalShaderStageInfo.module = tesEvalShaderModule;
-		tesEvalShaderStageInfo.pName = "main";
-
-		shaderStages.push_back(tesEvalShaderStageInfo);
+		shaderStages.push_back(shaderStageInfo);
 	}
 
 	/* Input */
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-	vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexInputDescription.size());
-	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeInputDescription.size());
-	vertexInputInfo.pVertexBindingDescriptions = vertexInputDescription.data();
-	vertexInputInfo.pVertexAttributeDescriptions = attributeInputDescription.data();
+	vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(renderingPipelineCreateInfo.vertexInputBindingDescriptions.size());
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(renderingPipelineCreateInfo.vertexInputAttributeDescriptions.size());
+	vertexInputInfo.pVertexBindingDescriptions = renderingPipelineCreateInfo.vertexInputBindingDescriptions.data();
+	vertexInputInfo.pVertexAttributeDescriptions = renderingPipelineCreateInfo.vertexInputAttributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = tessellationControlShader.empty() ? topology : VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+	inputAssembly.topology = renderingPipelineCreateInfo.topology;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
 	/* Viewport */
 	VkViewport viewport = {};
-	viewport.x = extent.width * viewportOffset[0];
-	viewport.y = extent.height * viewportOffset[1];
-	viewport.width = extent.width * viewportScale[0];
-	viewport.height = extent.height * viewportScale[1];
+	viewport.x = renderingPipelineCreateInfo.extent.width * renderingPipelineCreateInfo.viewportOffset[0];
+	viewport.y = renderingPipelineCreateInfo.extent.height * renderingPipelineCreateInfo.viewportOffset[1];
+	viewport.width = renderingPipelineCreateInfo.extent.width * renderingPipelineCreateInfo.viewportScale[0];
+	viewport.height = renderingPipelineCreateInfo.extent.height * renderingPipelineCreateInfo.viewportScale[1];
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor = {};
 	scissor.offset = { 0, 0 };
-	scissor.extent = extent;
+	scissor.extent = renderingPipelineCreateInfo.extent;
 
 	VkPipelineViewportStateCreateInfo viewportState = {};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -131,12 +80,12 @@ void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::s
 	viewportState.scissorCount = 1;
 	viewportState.pScissors = &scissor;
 
-	/* Rasterizarion */
+	/* Rasterization */
 	VkPipelineRasterizationStateCreateInfo rasterizer = {};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
-	rasterizer.polygonMode = polygonMode;
+	rasterizer.polygonMode = renderingPipelineCreateInfo.polygonMode;
 	rasterizer.lineWidth = 1.0f;
 	rasterizer.cullMode = VK_CULL_MODE_NONE;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
@@ -146,15 +95,15 @@ void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::s
 	VkPipelineMultisampleStateCreateInfo multisampling = {};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multisampling.sampleShadingEnable = VK_FALSE;
-	multisampling.rasterizationSamples = msaaSamples;
+	multisampling.rasterizationSamples = renderingPipelineCreateInfo.msaaSamples;
 
 	/* Color blend */
-	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(alphaBlending.size());
-	for (int i(0); i < alphaBlending.size(); ++i)
+	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(renderingPipelineCreateInfo.alphaBlending.size());
+	for (int i(0); i < renderingPipelineCreateInfo.alphaBlending.size(); ++i)
 	{
-		if (alphaBlending[i])
+		if (renderingPipelineCreateInfo.alphaBlending[i])
 		{
-			if (addColors)
+			if (renderingPipelineCreateInfo.addColors)
 			{
 				colorBlendAttachments[i].colorWriteMask = 0xf;
 				colorBlendAttachments[i].blendEnable = VK_TRUE;
@@ -207,13 +156,13 @@ void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::s
 	pipelineInfo.pMultisampleState = &multisampling;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.layout = m_pipelineLayout;
-	pipelineInfo.renderPass = renderPass;
+	pipelineInfo.renderPass = renderingPipelineCreateInfo.renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
 	VkPipelineDepthStencilStateCreateInfo depthStencil = {};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	depthStencil.depthTestEnable = enableDepthTesting;
+	depthStencil.depthTestEnable = renderingPipelineCreateInfo.enableDepthTesting;
 	depthStencil.depthWriteEnable = VK_TRUE;
 	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 	depthStencil.depthBoundsTestEnable = VK_FALSE;
@@ -222,38 +171,37 @@ void Wolf::Pipeline::initialize(VkDevice device, VkRenderPass renderPass, std::s
 	pipelineInfo.pDepthStencilState = &depthStencil;
 
 	// Conservative rasterization
-	if (enableConservativeRasterization)
+	if (renderingPipelineCreateInfo.enableConservativeRasterization)
 	{
 		VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRasterStateCI{};
 		conservativeRasterStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
 		conservativeRasterStateCI.conservativeRasterizationMode = VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT;
-		conservativeRasterStateCI.extraPrimitiveOverestimationSize = maxExtraPrimitiveOverestimationSize;
+		conservativeRasterStateCI.extraPrimitiveOverestimationSize = renderingPipelineCreateInfo.maxExtraPrimitiveOverestimationSize;
 
 		rasterizer.pNext = &conservativeRasterStateCI;
 	}
 
 	// Tesselation
-	if(!tessellationControlShader.empty())
+	if(renderingPipelineCreateInfo.patchControlPoint > 0)
 	{
 		VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo{};
 		tessellationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-		tessellationStateCreateInfo.patchControlPoints = 4;
+		tessellationStateCreateInfo.patchControlPoints = renderingPipelineCreateInfo.patchControlPoint;
 
 		pipelineInfo.pTessellationState = &tessellationStateCreateInfo;
 	}
 
-	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline) != VK_SUCCESS)
 		throw std::runtime_error("Error : graphic pipeline creation");
 
-	vkDestroyShaderModule(device, vertShaderModule, nullptr);
-	if (!geometryShader.empty())
-		vkDestroyShaderModule(device, geomShaderModule, nullptr);
-	if (!fragmentShader.empty())
-		vkDestroyShaderModule(device, fragShaderModule, nullptr);
+	for(auto& shaderModule : shaderModules)
+		vkDestroyShaderModule(m_device, shaderModule, nullptr);
 }
 
-void Wolf::Pipeline::initialize(VkDevice device, std::string computeShader, VkDescriptorSetLayout* descriptorSetLayout)
+Wolf::Pipeline::Pipeline(VkDevice device, std::string computeShader, VkDescriptorSetLayout* descriptorSetLayout)
 {
+	m_device = device;
+	
 	/* Pipeline layout */
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -261,12 +209,12 @@ void Wolf::Pipeline::initialize(VkDevice device, std::string computeShader, VkDe
 	pipelineLayoutInfo.pSetLayouts = descriptorSetLayout;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
 		throw std::runtime_error("Error : create pipeline layout");
 
 	/* Shader */
 	std::vector<char> computeShaderCode = readFile(computeShader);
-	VkShaderModule computeShaderModule = createShaderModule(computeShaderCode, device);
+	VkShaderModule computeShaderModule = createShaderModule(computeShaderCode, m_device);
 
 	VkPipelineShaderStageCreateInfo compShaderStageInfo = {};
 	compShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -283,14 +231,15 @@ void Wolf::Pipeline::initialize(VkDevice device, std::string computeShader, VkDe
 	pipelineInfo.pNext = nullptr;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline) != VK_SUCCESS)
+	if (vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline) != VK_SUCCESS)
 		throw std::runtime_error("Error : create compute pipeline");
 }
 
-void Wolf::Pipeline::cleanup(VkDevice device)
+
+Wolf::Pipeline::~Pipeline()
 {
-	vkDestroyPipeline(device, m_pipeline, nullptr);
-	vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
+	vkDestroyPipeline(m_device, m_pipeline, nullptr);
+	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 }
 
 std::vector<char> Wolf::Pipeline::readFile(const std::string& filename)
@@ -298,7 +247,7 @@ std::vector<char> Wolf::Pipeline::readFile(const std::string& filename)
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
 	if (!file.is_open())
-		throw std::runtime_error("Error opening file : " + filename);
+		Debug::sendError("Error opening file : " + filename);
 
 	size_t fileSize = (size_t)file.tellg();
 	std::vector<char> buffer(fileSize);

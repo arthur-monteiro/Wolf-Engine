@@ -4,28 +4,29 @@
 #include "Attachment.h"
 #include "Semaphore.h"
 #include "Image.h"
-#include "UniformBufferObject.h"
+#include "UniformBuffer.h"
 #include "Texture.h"
 #include "Pipeline.h"
 #include "VulkanElement.h"
+#include "DescriptorSet.h"
 
 namespace Wolf
 {
+
 	class ComputePass : public VulkanElement
 	{
 	public:
 		ComputePass(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, std::string computeShader,
-			std::vector<std::pair<UniformBufferObject*, UniformBufferObjectLayout>> ubos, std::vector<std::pair<Image*, ImageLayout>> images);
+			DescriptorSetCreateInfo descriptorSetCreateInfo);
 
 		void create(VkDescriptorPool descriptorPool);
 		void record(VkCommandBuffer commandBuffer, VkExtent2D extent, VkExtent3D dispatchGroups);
 		
 	private:
-		Pipeline m_pipeline;
+		std::unique_ptr<Pipeline> m_pipeline;
 
 		// Data
-		std::vector<std::pair<UniformBufferObject*, UniformBufferObjectLayout>> m_ubos;
-		std::vector<std::pair<Image*, ImageLayout>> m_images;
+		DescriptorSetCreateInfo m_descriptorSetCreateInfo;
 
 		VkDescriptorSet m_descriptorSet;
 		VkDescriptorSetLayout m_descriptorSetLayout;
