@@ -13,10 +13,7 @@ namespace Wolf
 	class Font : public VulkanElement
 	{
 	public:
-		Font(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue);
-		~Font();
-
-		void setFont(int ySize, std::string path);
+		Font(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, int ySize, std::string path);
 
 		unsigned int getXSize(const wchar_t character) { return m_characters[character].xSize; }
 		unsigned int getYSize(const wchar_t character) { return m_characters[character].ySize; }
@@ -39,7 +36,7 @@ namespace Wolf
 		};
 
 		std::map<wchar_t, Character> m_characters;
-		std::vector<Image> m_images;
+		std::vector<std::unique_ptr<Image>> m_images;
 		std::unique_ptr<Sampler> m_sampler;
 		int m_maxYSize;
 	};

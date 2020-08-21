@@ -55,7 +55,7 @@ namespace Wolf
 		// Sampler creation
 		Sampler* createSampler(VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy = 16.0f);
 		
-		Font* createFont();
+		Font* createFont(int ySize, std::string path);
 		Text* createText();
 
 		void updateOVR();

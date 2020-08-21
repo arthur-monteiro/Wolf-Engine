@@ -65,9 +65,10 @@ Wolf::Sampler* Wolf::WolfInstance::createSampler(VkSamplerAddressMode addressMod
 	return m_samplers.back().get();
 }
 
-Wolf::Font* Wolf::WolfInstance::createFont()
+Wolf::Font* Wolf::WolfInstance::createFont(int ySize, std::string path)
 {
-	m_fonts.push_back(std::make_unique<Font>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue()));
+	m_fonts.push_back(std::make_unique<Font>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(),
+		ySize, path));
 
 	return m_fonts[m_fonts.size() - 1].get();
 }
