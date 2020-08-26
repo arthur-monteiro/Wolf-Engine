@@ -1,4 +1,6 @@
 #include "Scene.h"
+
+#include <utility>
 #include "InputVertexTemplate.h"
 #include "Debug.h"
 
@@ -29,7 +31,7 @@ Wolf::Scene::Scene(SceneCreateInfo createInfo, VkDevice device, VkPhysicalDevice
 	m_windowSwapChainImages = std::move(windowSwapChainImages);
 }
 
-int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo)
+int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo, int forceID)
 {
 	if(createInfo.outputIsSwapChain)
 	{
@@ -64,21 +66,25 @@ int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo)
 
 		}
 	}
-	
-	m_sceneRenderPasses.emplace_back(createInfo.commandBufferID, createInfo.outputs, createInfo.outputIsSwapChain);
+
+	if (forceID < 0)
+		m_sceneRenderPasses.emplace_back(createInfo.commandBufferID, createInfo.outputs, createInfo.outputIsSwapChain);
+	else
+		m_sceneRenderPasses[forceID] = SceneRenderPass(createInfo.commandBufferID, createInfo.outputs, createInfo.outputIsSwapChain);
 
 	std::vector<Attachment> attachments(0);
 	for (RenderPassOutput& output : m_sceneRenderPasses[m_sceneRenderPasses.size() - 1].outputs)
 		attachments.push_back(output.attachment);
 
 	// Render pass creation
-	if (m_sceneRenderPasses[m_sceneRenderPasses.size() - 1].outputIsSwapChain)
-		m_sceneRenderPasses[m_sceneRenderPasses.size() - 1].renderPass = std::make_unique<RenderPass>(m_device, m_physicalDevice, m_graphicsCommandPool, attachments, m_swapChainImages);
+	if (forceID < 0 ? m_sceneRenderPasses.back().outputIsSwapChain : m_sceneRenderPasses[forceID].outputIsSwapChain)
+		(forceID < 0 ? m_sceneRenderPasses.back().renderPass : m_sceneRenderPasses[forceID].renderPass) = std::make_unique<RenderPass>(m_device, m_physicalDevice, 
+			m_graphicsCommandPool, attachments, m_swapChainImages);
 	else
-		m_sceneRenderPasses[m_sceneRenderPasses.size() - 1].renderPass = std::make_unique<RenderPass>(m_device, m_physicalDevice, m_graphicsCommandPool, attachments, 
-			std::vector<VkExtent2D>(1, createInfo.extent));
+		(forceID < 0 ? m_sceneRenderPasses.back().renderPass : m_sceneRenderPasses[forceID].renderPass) = std::make_unique<RenderPass>(m_device, 
+			m_physicalDevice, m_graphicsCommandPool, attachments, std::vector<VkExtent2D>(1, createInfo.extent));
 
-	return static_cast<int>(m_sceneRenderPasses.size() - 1);
+	return forceID < 0 ? static_cast<int>(m_sceneRenderPasses.size() - 1) : forceID;
 }
 
 int Wolf::Scene::addComputePass(ComputePassCreateInfo createInfo)
@@ -136,6 +142,60 @@ int Wolf::Scene::addComputePass(ComputePassCreateInfo createInfo)
 	m_sceneComputePasses.back().dataForAfterRecordCallback = createInfo.dataForAfterRecordCallback;
 
 	return static_cast<int>(m_sceneComputePasses.size() - 1);
+}
+
+int Wolf::Scene::addRayTracingPass(RayTracingPassAddInfo rayTracingPassAddInfo)
+{
+	m_sceneRayTracingPasses.emplace_back(rayTracingPassAddInfo.commandBufferID, rayTracingPassAddInfo.outputIsSwapChain);
+
+	if (!rayTracingPassAddInfo.outputIsSwapChain)
+	{
+		m_sceneRayTracingPasses.back().rayTracingPasses.resize(1);
+		m_sceneRayTracingPasses.back().rayTracingPasses[0] = std::make_unique<RayTracingPass>(m_device, m_physicalDevice, m_computeCommandPool, rayTracingPassAddInfo.rayTracingPassCreateInfo);
+		
+		updateDescriptorPool(rayTracingPassAddInfo.rayTracingPassCreateInfo.descriptorSetCreateInfo);
+	}
+	else
+	{
+		m_descriptorPool.addStorageImage(static_cast<uint32_t>(m_swapChainImages.size()));
+
+		m_sceneRayTracingPasses.back().rayTracingPasses.resize(m_swapChainImages.size());
+		for (size_t i(0); i < m_swapChainImages.size(); ++i)
+		{
+			std::vector<std::pair<std::vector<DescriptorSetCreateInfo::ImageData>, DescriptorLayout>> images;
+			for (size_t j(0); j < rayTracingPassAddInfo.rayTracingPassCreateInfo.descriptorSetCreateInfo.descriptorImages.size(); ++j)
+				images.push_back(rayTracingPassAddInfo.rayTracingPassCreateInfo.descriptorSetCreateInfo.descriptorImages[j]);
+
+			DescriptorLayout swapChainImageLayout;
+			swapChainImageLayout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			swapChainImageLayout.accessibility = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+			swapChainImageLayout.count = 1;
+			swapChainImageLayout.binding = rayTracingPassAddInfo.outputBinding;
+
+			DescriptorSetCreateInfo::ImageData swapChainImageData{};
+			swapChainImageData.image = m_swapChainImages[i];
+
+			images.push_back({ { swapChainImageData }, swapChainImageLayout });
+
+			auto tempRayTracingCreateInfo = rayTracingPassAddInfo.rayTracingPassCreateInfo;
+			tempRayTracingCreateInfo.descriptorSetCreateInfo.descriptorImages = images;
+
+			m_sceneRayTracingPasses.back().rayTracingPasses[i] = std::make_unique<RayTracingPass>(m_device, m_physicalDevice, m_computeCommandPool, tempRayTracingCreateInfo);
+
+			updateDescriptorPool(rayTracingPassAddInfo.rayTracingPassCreateInfo.descriptorSetCreateInfo);
+		}
+
+		rayTracingPassAddInfo.extent = { m_swapChainImages[0]->getExtent().width, m_swapChainImages[0]->getExtent().height };
+	}
+
+	m_sceneRayTracingPasses.back().extent = rayTracingPassAddInfo.extent;
+
+	m_sceneRayTracingPasses.back().beforeRecord = rayTracingPassAddInfo.beforeRecord;
+	m_sceneRayTracingPasses.back().dataForBeforeRecordCallback = rayTracingPassAddInfo.dataForBeforeRecordCallback;
+	m_sceneRayTracingPasses.back().afterRecord = rayTracingPassAddInfo.afterRecord;
+	m_sceneRayTracingPasses.back().dataForAfterRecordCallback = rayTracingPassAddInfo.dataForAfterRecordCallback;
+
+	return static_cast<int>(m_sceneRayTracingPasses.size() - 1);
 }
 
 int Wolf::Scene::addCommandBuffer(CommandBufferCreateInfo createInfo)
@@ -276,6 +336,12 @@ void Wolf::Scene::record()
 		for(size_t i(0); i < sceneComputePass.computePasses.size(); ++i)
 			sceneComputePass.computePasses[i]->create(m_descriptorPool.getDescriptorPool());
 	}
+
+	for(SceneRayTracingPass& sceneRayTracingPass : m_sceneRayTracingPasses)
+	{
+		for (size_t i(0); i < sceneRayTracingPass.rayTracingPasses.size(); ++i)
+			sceneRayTracingPass.rayTracingPasses[i]->create(m_descriptorPool.getDescriptorPool());
+	}
 	
 	// As a scene is designed to be renderer on a screen, we need to create a command buffer for each swapchain image
 	m_swapChainCommandBuffers.resize(m_swapChainImages.size());
@@ -369,7 +435,7 @@ void Wolf::Scene::record()
 				}
 			}
 		}
-		else
+		else if(m_swapChainCommandType == CommandType::COMPUTE)
 		{
 			for (size_t j(0); j < m_sceneComputePasses.size(); ++j)
 			{
@@ -381,6 +447,25 @@ void Wolf::Scene::record()
 
 					m_sceneComputePasses[j].computePasses[i]->record(m_swapChainCommandBuffers[i]->getCommandBuffer(), 
 						{ m_swapChainImages[i]->getExtent().width, m_swapChainImages[i]->getExtent().height }, m_sceneComputePasses[j].dispatchGroups);
+
+					Image::transitionImageLayoutUsingCommandBuffer(m_swapChainCommandBuffers[i]->getCommandBuffer(), m_swapChainImages[i]->getImage(), m_swapChainImages[i]->getFormat(),
+						VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+						1, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
+				}
+			}
+		}
+		else
+		{
+			for(int j(0); j < m_sceneRayTracingPasses.size(); ++j)
+			{
+				if (m_sceneRayTracingPasses[j].commandBufferID == -1)
+				{
+					Image::transitionImageLayoutUsingCommandBuffer(m_swapChainCommandBuffers[i]->getCommandBuffer(), m_swapChainImages[i]->getImage(), m_swapChainImages[i]->getFormat(),
+						VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_GENERAL,
+						1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0);
+
+					m_sceneRayTracingPasses[j].rayTracingPasses[i]->record(m_swapChainCommandBuffers[i]->getCommandBuffer(),
+						{ m_swapChainImages[i]->getExtent().width, m_swapChainImages[i]->getExtent().height });
 
 					Image::transitionImageLayoutUsingCommandBuffer(m_swapChainCommandBuffers[i]->getCommandBuffer(), m_swapChainImages[i]->getImage(), m_swapChainImages[i]->getFormat(),
 						VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
@@ -421,6 +506,21 @@ void Wolf::Scene::record()
 
 				if (sceneComputePass.afterRecord)
 					sceneComputePass.afterRecord(sceneComputePass.dataForAfterRecordCallback, m_sceneCommandBuffers[sceneComputePass.commandBufferID].commandBuffer->getCommandBuffer());
+			}
+		}
+
+		for (auto& sceneRayTracingPass : m_sceneRayTracingPasses)
+		{
+			if (sceneRayTracingPass.commandBufferID == static_cast<int>(i))
+			{
+				if (sceneRayTracingPass.beforeRecord)
+					sceneRayTracingPass.beforeRecord(sceneRayTracingPass.dataForBeforeRecordCallback, m_sceneCommandBuffers[sceneRayTracingPass.commandBufferID].commandBuffer->getCommandBuffer());
+
+				for (size_t j(0); j < sceneRayTracingPass.rayTracingPasses.size(); ++j)
+					sceneRayTracingPass.rayTracingPasses[j]->record(m_sceneCommandBuffers[sceneRayTracingPass.commandBufferID].commandBuffer->getCommandBuffer(), sceneRayTracingPass.extent);
+
+				if (sceneRayTracingPass.afterRecord)
+					sceneRayTracingPass.afterRecord(sceneRayTracingPass.dataForAfterRecordCallback, m_sceneCommandBuffers[sceneRayTracingPass.commandBufferID].commandBuffer->getCommandBuffer());
 			}
 		}
 		
@@ -483,7 +583,7 @@ void Wolf::Scene::frame(Queue graphicsQueue, Queue computeQueue, uint32_t swapCh
 			}
 		}
 
-		if (m_sceneCommandBuffers[commandBufferID].type == CommandType::GRAPHICS)
+		if (m_sceneCommandBuffers[commandBufferID].type == CommandType::GRAPHICS || m_sceneCommandBuffers[commandBufferID].type == CommandType::RAY_TRACING)
 			m_sceneCommandBuffers[commandBufferID].commandBuffer->submit(m_device, graphicsQueue, waitSemaphores, { m_sceneCommandBuffers[commandBufferID].semaphore->getSemaphore() });
 		else if (m_sceneCommandBuffers[commandBufferID].type == CommandType::COMPUTE)
 			m_sceneCommandBuffers[commandBufferID].commandBuffer->submit(m_device, computeQueue, waitSemaphores, { m_sceneCommandBuffers[commandBufferID].semaphore->getSemaphore() });
@@ -515,6 +615,57 @@ void Wolf::Scene::frame(Queue graphicsQueue, Queue computeQueue, uint32_t swapCh
 		m_swapChainCommandBuffers[swapChainImageIndex]->submit(m_device, graphicsQueue, waitSemaphoreSwapChain, signalSemaphoreSwapChain);
 	else
 		m_swapChainCommandBuffers[swapChainImageIndex]->submit(m_device, computeQueue, waitSemaphoreSwapChain, signalSemaphoreSwapChain);
+}
+
+void Wolf::Scene::resize(std::vector<Image*> swapChainImages)
+{
+	m_swapChainImages = std::move(swapChainImages);
+	
+	for(int i(0); i < m_sceneRenderPasses.size(); ++i)
+	{
+		if(m_sceneRenderPasses[i].outputIsSwapChain)
+		{
+			RenderPassCreateInfo renderPassCreateInfo;
+			renderPassCreateInfo.outputIsSwapChain = true;
+			renderPassCreateInfo.commandBufferID = m_sceneRenderPasses[i].commandBufferID;
+
+			m_sceneRenderPasses[i].renderPass.reset();
+
+			// Renderers
+			std::vector<RendererCreateInfo> rendererCreateInfos(m_sceneRenderPasses[i].renderers.size());
+			for (int j(0); j < m_sceneRenderPasses[i].renderers.size(); ++j)
+			{
+				rendererCreateInfos[j] = m_sceneRenderPasses[i].renderers[j]->getRendererCreateInfoStructure();
+				rendererCreateInfos[j].renderPassID = i;
+				rendererCreateInfos[i].pipelineCreateInfo.extent = { 0, 0 };
+			}
+
+			// Mesh
+			std::vector<std::vector<Renderer::AddMeshInfo>> addMeshInfos(m_sceneRenderPasses[i].renderers.size());
+			for(int j(0); j < m_sceneRenderPasses[i].renderers.size(); ++j)
+			{
+				addMeshInfos[j] = m_sceneRenderPasses[i].renderers[j]->getMeshInfos();
+				for (auto& addMeshInfo : addMeshInfos[j])
+					addMeshInfo.descriptorSet = VK_NULL_HANDLE;
+			}
+
+			addRenderPass(renderPassCreateInfo, i);
+
+			for (auto& renderer : rendererCreateInfos)
+				addRenderer(renderer);
+			
+			for (auto& renderer : addMeshInfos)
+				for (auto& addMeshInfo : renderer)
+					addMesh(addMeshInfo);
+		}
+	}
+
+	for(auto& commandBuffer : m_sceneCommandBuffers)
+	{
+		commandBuffer.commandBuffer.reset();
+	}
+
+	record();
 }
 
 inline void Wolf::Scene::updateDescriptorPool(Wolf::DescriptorSetCreateInfo& descriptorSetCreateInfo)
@@ -556,6 +707,17 @@ inline void Wolf::Scene::updateDescriptorPool(Wolf::DescriptorSetCreateInfo& des
 			break;
 
 		default: Debug::sendWarning("Unsupported descriptor image type");
+		}
+	}
+	for(auto& descriptorDefault : descriptorSetCreateInfo.descriptorDefault)
+	{
+		switch (descriptorDefault.second.descriptorType)
+		{
+		case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+			m_descriptorPool.addAccelerationStructure(descriptorDefault.second.count);
+			break;
+
+		default: Debug::sendWarning("Unsupported descriptor default type");
 		}
 	}
 }

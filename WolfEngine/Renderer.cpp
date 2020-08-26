@@ -7,6 +7,7 @@
 Wolf::Renderer::Renderer(VkDevice device, RendererCreateInfo rendererCreateInfo)
 {
 	m_device = device;
+	m_descriptorLayouts = rendererCreateInfo.descriptorLayouts;
 	createDescriptorSetLayout(rendererCreateInfo.descriptorLayouts);
 
 	rendererCreateInfo.pipelineCreateInfo.descriptorSetLayouts = { m_descriptorSetLayout };
@@ -61,6 +62,15 @@ std::vector<std::tuple<Wolf::VertexBuffer, Wolf::InstanceBuffer, VkDescriptorSet
 	{
 		r[i] = std::make_tuple(m_meshes[i].vertexBuffer, m_meshes[i].instanceBuffer, m_meshes[i].descriptorSet);
 	}
+
+	return r;
+}
+
+Wolf::RendererCreateInfo Wolf::Renderer::getRendererCreateInfoStructure()
+{
+	RendererCreateInfo r;
+	r.descriptorLayouts = m_descriptorLayouts;
+	r.pipelineCreateInfo = m_renderingPipelineCreate;
 
 	return r;
 }

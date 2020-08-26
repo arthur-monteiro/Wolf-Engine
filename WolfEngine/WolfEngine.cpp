@@ -80,6 +80,14 @@ Wolf::Text* Wolf::WolfInstance::createText()
 	return m_texts[m_texts.size() - 1].get();
 }
 
+Wolf::AccelerationStructure* Wolf::WolfInstance::createAccelerationStructure(std::vector<BottomLevelAccelerationStructure::GeometryInfo> geometryInfos)
+{
+	m_accelerationStructures.push_back(std::make_unique<AccelerationStructure>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(),
+		m_vulkan->getGraphicsQueue(), std::move(geometryInfos)));
+
+	return m_accelerationStructures.back().get();
+}
+
 void Wolf::WolfInstance::updateOVR()
 {
 	m_ovr->update();
@@ -87,6 +95,15 @@ void Wolf::WolfInstance::updateOVR()
 
 void Wolf::WolfInstance::frame(Scene* scene, std::vector<int> commandBufferIDs, std::vector<std::pair<int, int>> commandBufferSynchronisation)
 {
+	if(m_needResize)
+	{
+		m_swapChain->recreate(m_vulkan->getSurface(), m_window->getWindow());
+		for (auto& scene : m_scenes)
+			scene->resize(m_swapChain->getImages());
+
+		m_needResize = false;
+	}
+	
 	glfwPollEvents();
 
 	if(m_useOVR)
@@ -117,4 +134,9 @@ bool Wolf::WolfInstance::windowShouldClose()
 void Wolf::WolfInstance::waitIdle()
 {
 	vkDeviceWaitIdle(m_vulkan->getDevice());
+}
+
+void Wolf::WolfInstance::resize(int width, int height)
+{
+	m_needResize = true;
 }

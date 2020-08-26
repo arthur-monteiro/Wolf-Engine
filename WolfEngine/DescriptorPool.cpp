@@ -14,6 +14,7 @@ void Wolf::DescriptorPool::allocate(VkDevice device)
 	addDescriptorPoolSize(VK_DESCRIPTOR_TYPE_SAMPLER, m_samplerCount, poolSizes);
 	addDescriptorPoolSize(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, m_sampledImageCount, poolSizes);
 	addDescriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, m_storageBufferCount, poolSizes);
+	addDescriptorPoolSize(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, m_accelerationStructureCount, poolSizes);
 	
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

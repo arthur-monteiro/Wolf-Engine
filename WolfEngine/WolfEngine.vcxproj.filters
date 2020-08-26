@@ -25,6 +25,9 @@
     <Filter Include="Rendering Algorithms">
       <UniqueIdentifier>{f9774f90-ac51-4187-b2c4-1f41d498a61c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Ray tracing">
+      <UniqueIdentifier>{0909da0d-d231-4419-8b2e-7ea6b0f7eedb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WolfEngine.cpp">
@@ -159,6 +162,24 @@
     <ClCompile Include="UniformBuffer.cpp">
       <Filter>Vulkan Elements</Filter>
     </ClCompile>
+    <ClCompile Include="BottomLevelAccelerationStructure.cpp">
+      <Filter>Ray tracing</Filter>
+    </ClCompile>
+    <ClCompile Include="AccelerationStructure.cpp">
+      <Filter>Ray tracing</Filter>
+    </ClCompile>
+    <ClCompile Include="TopLevelAccelerationStructure.cpp">
+      <Filter>Ray tracing</Filter>
+    </ClCompile>
+    <ClCompile Include="vulkan_raytracing.cpp">
+      <Filter>Ray tracing</Filter>
+    </ClCompile>
+    <ClCompile Include="RayTracingPass.cpp">
+      <Filter>Ray tracing</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderBindingTable.cpp">
+      <Filter>Ray tracing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WolfEngine.h">
@@ -292,6 +313,21 @@
     </ClInclude>
     <ClInclude Include="UniformBuffer.h">
       <Filter>Vulkan Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="BottomLevelAccelerationStructure.h">
+      <Filter>Ray tracing</Filter>
+    </ClInclude>
+    <ClInclude Include="AccelerationStructure.h">
+      <Filter>Ray tracing</Filter>
+    </ClInclude>
+    <ClInclude Include="TopLevelAccelerationStructure.h">
+      <Filter>Ray tracing</Filter>
+    </ClInclude>
+    <ClInclude Include="RayTracingPass.h">
+      <Filter>Ray tracing</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderBindingTable.h">
+      <Filter>Ray tracing</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

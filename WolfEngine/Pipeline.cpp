@@ -202,15 +202,7 @@ Wolf::Pipeline::Pipeline(VkDevice device, std::string computeShader, VkDescripto
 {
 	m_device = device;
 	
-	/* Pipeline layout */
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1;
-	pipelineLayoutInfo.pSetLayouts = descriptorSetLayout;
-	pipelineLayoutInfo.pushConstantRangeCount = 0;
-
-	if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
-		throw std::runtime_error("Error : create pipeline layout");
+	createPipelineLayout(descriptorSetLayout);
 
 	/* Shader */
 	std::vector<char> computeShaderCode = readFile(computeShader);
@@ -235,11 +227,22 @@ Wolf::Pipeline::Pipeline(VkDevice device, std::string computeShader, VkDescripto
 		throw std::runtime_error("Error : create compute pipeline");
 }
 
-
 Wolf::Pipeline::~Pipeline()
 {
 	vkDestroyPipeline(m_device, m_pipeline, nullptr);
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+}
+
+void Wolf::Pipeline::createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayout)
+{
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = descriptorSetLayout;
+	pipelineLayoutInfo.pushConstantRangeCount = 0;
+
+	if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
+		Debug::sendError("Error : create pipeline layout");
 }
 
 std::vector<char> Wolf::Pipeline::readFile(const std::string& filename)

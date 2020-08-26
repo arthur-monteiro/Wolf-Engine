@@ -6,6 +6,8 @@
 #include <ostream>
 #include <iostream>
 
+#include "Debug.h"
+
 std::vector<const char*> getRequiredExtensions()
 {
 	std::vector<const char*> extensions;
@@ -356,4 +358,27 @@ void copyImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, 
 		&copyRegion);
 
 	endSingleTimeCommands(device, graphicsQueue, commandBuffer, commandPool);
+}
+
+VkAccelerationStructureNV createAccelerationStructure(VkDevice device, std::vector<VkGeometryNV> geometry, VkAccelerationStructureTypeNV accelerationStructureType, uint32_t instanceCount)
+{
+	VkAccelerationStructureInfoNV accelerationStructureInfo{
+	 VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
+	accelerationStructureInfo.type = accelerationStructureType;
+	accelerationStructureInfo.flags = 0;
+	accelerationStructureInfo.instanceCount = instanceCount;
+	accelerationStructureInfo.geometryCount = static_cast<uint32_t>(geometry.size());
+	accelerationStructureInfo.pGeometries = geometry.data();
+
+	VkAccelerationStructureCreateInfoNV accelerationStructureCreateInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV };
+	accelerationStructureCreateInfo.pNext = nullptr;
+	accelerationStructureCreateInfo.info = accelerationStructureInfo;
+	accelerationStructureCreateInfo.compactedSize = 0;
+
+	VkAccelerationStructureNV accelerationStructure;
+	VkResult code = vkCreateAccelerationStructureNV(device, &accelerationStructureCreateInfo, nullptr, &accelerationStructure);
+	if (code != VK_SUCCESS)
+		Wolf::Debug::sendError("vkCreateAccelerationStructureNV failed");
+
+	return  accelerationStructure;
 }

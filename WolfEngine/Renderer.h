@@ -63,7 +63,9 @@ namespace Wolf
 
 		VkPipeline getPipeline() { return m_pipeline->getPipeline(); }
 		std::vector<std::tuple<VertexBuffer, InstanceBuffer, VkDescriptorSet>> getMeshes();
+		std::vector<AddMeshInfo> getMeshInfos() { return m_meshes; }
 		VkPipelineLayout getPipelineLayout() { return m_pipeline->getPipelineLayout(); }
+		RendererCreateInfo getRendererCreateInfoStructure();
 
 		//void setPipelineCreated(bool status) { m_pipelineCreated = status; }
 
@@ -75,6 +77,7 @@ namespace Wolf
 		RenderingPipelineCreateInfo m_renderingPipelineCreate;
 
 		// Descriptor set layout
+		std::vector<DescriptorLayout> m_descriptorLayouts;
 		VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
 
 		// Meshes

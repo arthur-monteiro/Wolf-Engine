@@ -62,6 +62,9 @@ namespace Wolf
 		VkPipelineLayout getPipelineLayout() const { return m_pipelineLayout; }
 
 	private:
+		void createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayout);
+		
+	private:
 		VkDevice m_device;
 		
 		VkPipelineLayout m_pipelineLayout;

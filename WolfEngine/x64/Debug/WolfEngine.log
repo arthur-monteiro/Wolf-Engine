@@ -1,15 +1,2 @@
-﻿  Blur.cpp
-  CascadedShadowMapping.cpp
-  DepthPass.cpp
-  DirectLightingPBR.cpp
-  Font.cpp
-  GBuffer.cpp
-  LightPropagationVolumes.cpp
-  SSAO.cpp
-  Scene.cpp
-  Template3D.cpp
-  Template3D_VR.cpp
-  Text.cpp
-  WolfEngine.cpp
-  Generating Code...
+﻿  ShaderBindingTable.cpp
   WolfEngine.vcxproj -> F:\Code\WolfEngine\x64\Debug\WolfEngine.lib

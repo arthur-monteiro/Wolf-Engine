@@ -15,6 +15,7 @@ namespace Wolf
 		void addSampler(unsigned int count) { m_samplerCount += count; }
 		void addSampledImage(unsigned int count) { m_sampledImageCount += count; }
 		void addStorageBuffer(unsigned int count) { m_storageBufferCount += count; }
+		void addAccelerationStructure(unsigned int count) { m_accelerationStructureCount += count; }
 		
 		void allocate(VkDevice device);
 
@@ -32,6 +33,7 @@ namespace Wolf
 		unsigned int m_samplerCount = 0;
 		unsigned int m_sampledImageCount = 0;
 		unsigned int m_storageBufferCount = 0;
+		unsigned int m_accelerationStructureCount = 0;
 		
 		VkDescriptorPool m_descriptorPool;
 	};

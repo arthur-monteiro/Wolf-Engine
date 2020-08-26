@@ -146,8 +146,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AccelerationStructure.cpp" />
     <ClCompile Include="Attachment.cpp" />
     <ClCompile Include="Blur.cpp" />
+    <ClCompile Include="BottomLevelAccelerationStructure.cpp" />
     <ClCompile Include="CascadedShadowMapping.cpp" />
     <ClCompile Include="CommandBuffer.cpp" />
     <ClCompile Include="CommandPool.cpp" />
@@ -173,27 +175,33 @@
     <ClCompile Include="ModelCustom.cpp" />
     <ClCompile Include="OVR.cpp" />
     <ClCompile Include="Pipeline.cpp" />
+    <ClCompile Include="RayTracingPass.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="Sampler.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Semaphore.cpp" />
+    <ClCompile Include="ShaderBindingTable.cpp" />
     <ClCompile Include="SSAO.cpp" />
     <ClCompile Include="SwapChain.cpp" />
     <ClCompile Include="Template3D.cpp" />
     <ClCompile Include="Template3D_VR.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TopLevelAccelerationStructure.cpp" />
     <ClCompile Include="UniformBuffer.cpp" />
     <ClCompile Include="Vulkan.cpp" />
     <ClCompile Include="VulkanElement.cpp" />
     <ClCompile Include="VulkanHelper.cpp" />
+    <ClCompile Include="vulkan_raytracing.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WolfEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AccelerationStructure.h" />
     <ClInclude Include="Attachment.h" />
     <ClInclude Include="Blur.h" />
+    <ClInclude Include="BottomLevelAccelerationStructure.h" />
     <ClInclude Include="CascadedShadowMapping.h" />
     <ClInclude Include="CommandBuffer.h" />
     <ClInclude Include="CommandPool.h" />
@@ -219,17 +227,20 @@
     <ClInclude Include="ModelCustom.h" />
     <ClInclude Include="OVR.h" />
     <ClInclude Include="Pipeline.h" />
+    <ClInclude Include="RayTracingPass.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="Sampler.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Semaphore.h" />
+    <ClInclude Include="ShaderBindingTable.h" />
     <ClInclude Include="SSAO.h" />
     <ClInclude Include="SwapChain.h" />
     <ClInclude Include="Template3D.h" />
     <ClInclude Include="Template3D_VR.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="TopLevelAccelerationStructure.h" />
     <ClInclude Include="UniformBuffer.h" />
     <ClInclude Include="Vulkan.h" />
     <ClInclude Include="VulkanElement.h" />

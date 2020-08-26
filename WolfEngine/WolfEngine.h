@@ -11,6 +11,7 @@
 #include "Font.h"
 #include "Text.h"
 #include "OVR.h"
+#include "AccelerationStructure.h"
 
 #include "Model2D.h"
 #include "Model2DTextured.h"
@@ -58,11 +59,15 @@ namespace Wolf
 		Font* createFont(int ySize, std::string path);
 		Text* createText();
 
+		AccelerationStructure* createAccelerationStructure(std::vector<BottomLevelAccelerationStructure::GeometryInfo> geometryInfos);
+
 		void updateOVR();
 		void frame(Scene* scene, std::vector<int> commandBufferIDs, std::vector<std::pair<int, int>> commandBufferSynchronisation);
 		bool windowShouldClose();
 
 		void waitIdle();
+
+		void resize(int width, int height);
 
 		// Getters
 	public:
@@ -76,7 +81,7 @@ namespace Wolf
 	private:
 		static void windowResizeCallback(void* systemManagerInstance, int width, int height)
 		{
-			//reinterpret_cast<WolfInstance*>(systemManagerInstance)->resize(width, height);
+			reinterpret_cast<WolfInstance*>(systemManagerInstance)->resize(width, height);
 		}
 
 	private:
@@ -98,6 +103,9 @@ namespace Wolf
 		std::vector<std::unique_ptr<Sampler>> m_samplers;
 		std::vector<std::unique_ptr<Font>> m_fonts;
 		std::vector<std::unique_ptr<Text>> m_texts;
+		std::vector<std::unique_ptr<AccelerationStructure>> m_accelerationStructures;
+
+		bool m_needResize = false;
 
 	private:
 		uint32_t MAX_HEIGHT = 2160;
