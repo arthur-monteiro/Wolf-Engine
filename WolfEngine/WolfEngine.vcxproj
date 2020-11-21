@@ -99,7 +99,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(TINYOBJ_PATH);$(FREETYPE_PATH)\include\freetype2;$(GLM_PATH);$(STB_IMAGE_PATH)\stb_image;$(GLFW_PATH)\include;C:\VulkanSDK\1.2.141.2\Include;C:\Users\Arthur\Documents\OVR\LibOVR\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Third Party\OVR\Include;..\Third Party\tiny_obj;..\Third Party\freetype-2.8.1\include\freetype2;..\Third Party\glm;..\Third Party\stb_image;..\Third Party\vulkan\Include;..\Third Party\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -107,7 +107,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalLibraryDirectories>$(FREETYPE_PATH)\lib\x64;$(GLFW_PATH)\lib-vc2019;C:\VulkanSDK\1.2.141.2\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\Third Party\OVR\Lib\Windows\x64\Debug\VS2017;..\Third Party\freetype-2.8.1\lib\x64;..\Third Party\GLFW\lib-vc2019;..\Third Party\vulkan\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>

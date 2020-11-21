@@ -58,6 +58,13 @@ Wolf::Image* Wolf::WolfInstance::createImageFromFile(std::string filename)
 	return m_images.back().get();
 }
 
+Wolf::Image* Wolf::WolfInstance::createImage(VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
+{
+	m_images.push_back(std::make_unique<Image>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), extent, usage, format, sampleCount, aspect));
+
+	return m_images.back().get();
+}
+
 Wolf::Sampler* Wolf::WolfInstance::createSampler(VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy)
 {
 	m_samplers.push_back(std::make_unique<Sampler>(m_vulkan->getDevice(), addressMode, mipLevels, filter, maxAnisotropy));

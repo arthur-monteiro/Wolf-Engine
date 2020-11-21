@@ -14,9 +14,17 @@ bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDev
 		else
 			aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-		VkExtent3D extent3D = { extent.width, extent.height, 1 };
-		m_images[i] = std::make_unique<Image>(device, physicalDevice, extent3D, attachments[i].usageType, attachments[i].format, attachments[i].sampleCount, aspect);
-		imageViewAttachments[i] = m_images[i]->getImageView();
+		if (attachments[i].image)
+		{
+			m_images[i] = std::unique_ptr<Image>(attachments[i].image);
+			imageViewAttachments[i] = m_images[i]->getImageView();
+		}
+		else
+		{
+			VkExtent3D extent3D = { extent.width, extent.height, 1 };
+			m_images[i] = std::make_unique<Image>(device, physicalDevice, extent3D, attachments[i].usageType, attachments[i].format, attachments[i].sampleCount, aspect);
+			imageViewAttachments[i] = m_images[i]->getImageView();
+		}
 	}
 
 	VkFramebufferCreateInfo framebufferInfo = {};

@@ -60,6 +60,7 @@ Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineIns
 	m_shadowMaskCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
 
 	Scene::ComputePassCreateInfo computePassCreateInfo;
+	computePassCreateInfo.name = "Cascaded shadow mapping";
 	computePassCreateInfo.extent = engineInstance->getWindowSize();
 	computePassCreateInfo.dispatchGroups = { 16, 16, 1 };
 	computePassCreateInfo.computeShaderPath = "Shaders/CSM/comp.spv";
@@ -110,7 +111,7 @@ void Wolf::CascadedShadowMapping::updateMatrices(glm::vec3 lightDir,
 		frustumCenter.y = static_cast<float>(floor(frustumCenter.y));
 		frustumCenter = lookAtInv * glm::vec4(frustumCenter, 1.0f);
 
-		glm::mat4 lightViewMatrix = glm::lookAt(frustumCenter - glm::normalize(lightDir), frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 lightViewMatrix = glm::lookAt(frustumCenter - 50.0f * glm::normalize(lightDir), frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
 
 		glm::mat4 proj = glm::ortho(-radius, radius, -radius, radius, -30.0f * 6.0f, 30.0f * 6.0f);
 		m_lightSpaceMatrices[cascade] = proj * lightViewMatrix * model;

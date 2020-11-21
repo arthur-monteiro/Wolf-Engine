@@ -52,6 +52,7 @@ namespace Wolf
 
 		// Image creation
 		Image* createImageFromFile(std::string filename);
+		Image* createImage(VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect);
 
 		// Sampler creation
 		Sampler* createSampler(VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy = 16.0f);

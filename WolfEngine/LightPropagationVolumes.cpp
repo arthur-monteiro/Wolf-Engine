@@ -55,6 +55,7 @@ Wolf::LightPropagationVolumes::LightPropagationVolumes(Wolf::WolfInstance* engin
 	m_commandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
 
 	Scene::RenderPassCreateInfo renderPassCreateInfo{};
+	renderPassCreateInfo.name = "Light Propagation Volumes";
 	renderPassCreateInfo.commandBufferID = m_commandBufferID;
 	renderPassCreateInfo.outputIsSwapChain = false;
 	renderPassCreateInfo.extent = { VOXEL_SIZE, VOXEL_SIZE };
@@ -217,6 +218,7 @@ void Wolf::LightPropagationVolumes::buildInjection(Model* model, glm::vec4 casca
 
 	// Render Pass
 	Scene::RenderPassCreateInfo renderPassCreateInfo{};
+	renderPassCreateInfo.name = "Light Propagation Volumes injection";
 	renderPassCreateInfo.commandBufferID = m_injectionCommandBufferID;
 	renderPassCreateInfo.outputIsSwapChain = false;
 	renderPassCreateInfo.extent = { VOXEL_SIZE, VOXEL_SIZE };

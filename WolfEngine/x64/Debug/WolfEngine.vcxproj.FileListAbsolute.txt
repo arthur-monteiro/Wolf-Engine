@@ -1,2 +1,4 @@
 F:\Code\WolfEngine\x64\Debug\WolfEngine.pdb
 F:\Code\WolfEngine\WolfEngine\x64\Debug\WolfEngine.pdb
+D:\Wolf-Engine\WolfEngine\x64\Debug\WolfEngine.pdb
+D:\Wolf-Engine\x64\Debug\WolfEngine.pdb

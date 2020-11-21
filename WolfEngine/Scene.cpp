@@ -68,28 +68,34 @@ int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo, int
 	}
 
 	if (forceID < 0)
-		m_sceneRenderPasses.emplace_back(createInfo.commandBufferID, createInfo.outputs, createInfo.outputIsSwapChain);
+		m_sceneRenderPasses.emplace_back(createInfo.commandBufferID, createInfo.outputs, createInfo.outputIsSwapChain, createInfo.name);
 	else
-		m_sceneRenderPasses[forceID] = SceneRenderPass(createInfo.commandBufferID, createInfo.outputs, createInfo.outputIsSwapChain);
+		m_sceneRenderPasses[forceID] = SceneRenderPass(createInfo.commandBufferID, createInfo.outputs, createInfo.outputIsSwapChain, createInfo.name);
 
 	std::vector<Attachment> attachments(0);
 	for (RenderPassOutput& output : m_sceneRenderPasses[m_sceneRenderPasses.size() - 1].outputs)
 		attachments.push_back(output.attachment);
 
-	// Render pass creation
-	if (forceID < 0 ? m_sceneRenderPasses.back().outputIsSwapChain : m_sceneRenderPasses[forceID].outputIsSwapChain)
-		(forceID < 0 ? m_sceneRenderPasses.back().renderPass : m_sceneRenderPasses[forceID].renderPass) = std::make_unique<RenderPass>(m_device, m_physicalDevice, 
+	SceneRenderPass& sceneRenderPass = forceID < 0 ? m_sceneRenderPasses.back() : m_sceneRenderPasses[forceID];
+
+	if (sceneRenderPass.outputIsSwapChain)
+		(sceneRenderPass.renderPass) = std::make_unique<RenderPass>(m_device, m_physicalDevice,
 			m_graphicsCommandPool, attachments, m_swapChainImages);
 	else
-		(forceID < 0 ? m_sceneRenderPasses.back().renderPass : m_sceneRenderPasses[forceID].renderPass) = std::make_unique<RenderPass>(m_device, 
+		(sceneRenderPass.renderPass) = std::make_unique<RenderPass>(m_device,
 			m_physicalDevice, m_graphicsCommandPool, attachments, std::vector<VkExtent2D>(1, createInfo.extent));
+
+	sceneRenderPass.beforeRecord = createInfo.beforeRecord;
+	sceneRenderPass.dataForBeforeRecordCallback = createInfo.dataForBeforeRecordCallback;
+	sceneRenderPass.afterRecord = createInfo.afterRecord;
+	sceneRenderPass.dataForAfterRecordCallback = createInfo.dataForAfterRecordCallback;
 
 	return forceID < 0 ? static_cast<int>(m_sceneRenderPasses.size() - 1) : forceID;
 }
 
 int Wolf::Scene::addComputePass(ComputePassCreateInfo createInfo)
 {
-	m_sceneComputePasses.emplace_back(createInfo.commandBufferID, createInfo.outputIsSwapChain);
+	m_sceneComputePasses.emplace_back(createInfo.commandBufferID, createInfo.outputIsSwapChain, createInfo.name);
 
 	if(!createInfo.outputIsSwapChain)
 	{
@@ -202,7 +208,7 @@ int Wolf::Scene::addCommandBuffer(CommandBufferCreateInfo createInfo)
 {
 	m_sceneCommandBuffers.emplace_back(createInfo.commandType);
 	
-	if (createInfo.commandType == CommandType::GRAPHICS)
+	if (createInfo.commandType == CommandType::GRAPHICS || createInfo.commandType == CommandType::RAY_TRACING)
 		m_sceneCommandBuffers.back().commandBuffer = std::make_unique<CommandBuffer>(m_device, m_graphicsCommandPool);
 	else if (createInfo.commandType == CommandType::COMPUTE)
 		m_sceneCommandBuffers.back().commandBuffer = std::make_unique<CommandBuffer>(m_device, m_computeCommandPool);
@@ -326,6 +332,10 @@ void Wolf::Scene::record()
 	
 	for(SceneRenderPass& sceneRenderPass : m_sceneRenderPasses)
 	{
+#ifndef NDEBUG
+		Debug::sendInfo("Creating renderer for render pass: " + sceneRenderPass.name);
+#endif // DEBUG
+
 		// Renderers creation
 		for (std::unique_ptr<Renderer>& renderer : sceneRenderPass.renderers)
 			renderer->create(m_descriptorPool.getDescriptorPool());
@@ -333,6 +343,10 @@ void Wolf::Scene::record()
 
 	for (SceneComputePass& sceneComputePass : m_sceneComputePasses)
 	{
+#ifndef NDEBUG
+		Debug::sendInfo("Creating compute pass: " + sceneComputePass.name);
+#endif // DEBUG
+
 		for(size_t i(0); i < sceneComputePass.computePasses.size(); ++i)
 			sceneComputePass.computePasses[i]->create(m_descriptorPool.getDescriptorPool());
 	}
@@ -528,17 +542,21 @@ void Wolf::Scene::record()
 	}
 }
 
-inline void Wolf::Scene::recordRenderPass(SceneRenderPass& sceneRenderPasse)
+inline void Wolf::Scene::recordRenderPass(SceneRenderPass& sceneRenderPass)
 {
+	if (sceneRenderPass.beforeRecord)
+		sceneRenderPass.beforeRecord(sceneRenderPass.dataForBeforeRecordCallback, m_sceneCommandBuffers[sceneRenderPass.commandBufferID].commandBuffer->getCommandBuffer());
+
 	std::vector<VkClearValue> clearValues(0);
-	for (RenderPassOutput& output : sceneRenderPasse.outputs)
-		clearValues.push_back(output.clearValue);
+	for (RenderPassOutput& output : sceneRenderPass.outputs)
+		if(output.clearValue.color.float32[0] >= 0.0f)
+			clearValues.push_back(output.clearValue);
 
-	sceneRenderPasse.renderPass->beginRenderPass(0, clearValues, m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer());
+	sceneRenderPass.renderPass->beginRenderPass(0, clearValues, m_sceneCommandBuffers[sceneRenderPass.commandBufferID].commandBuffer->getCommandBuffer());
 
-	for (std::unique_ptr<Renderer>& renderer : sceneRenderPasse.renderers)
+	for (std::unique_ptr<Renderer>& renderer : sceneRenderPass.renderers)
 	{
-		vkCmdBindPipeline(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer->getPipeline());
+		vkCmdBindPipeline(m_sceneCommandBuffers[sceneRenderPass.commandBufferID].commandBuffer->getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer->getPipeline());
 		const VkDeviceSize offsets[1] = { 0 };
 
 		std::vector<std::tuple<VertexBuffer, InstanceBuffer, VkDescriptorSet>> meshesToRender = renderer->getMeshes();
@@ -546,24 +564,27 @@ inline void Wolf::Scene::recordRenderPass(SceneRenderPass& sceneRenderPasse)
 		{
 			bool isInstancied = std::get<1>(mesh).nInstances > 0 && std::get<1>(mesh).instanceBuffer;
 
-			vkCmdBindVertexBuffers(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), 0, 1, &std::get<0>(mesh).vertexBuffer, offsets);
-			vkCmdBindIndexBuffer(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), std::get<0>(mesh).indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindVertexBuffers(m_sceneCommandBuffers[sceneRenderPass.commandBufferID].commandBuffer->getCommandBuffer(), 0, 1, &std::get<0>(mesh).vertexBuffer, offsets);
+			vkCmdBindIndexBuffer(m_sceneCommandBuffers[sceneRenderPass.commandBufferID].commandBuffer->getCommandBuffer(), std::get<0>(mesh).indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 			if (isInstancied)
-				vkCmdBindVertexBuffers(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), 1, 1, &std::get<1>(mesh).instanceBuffer, offsets);
+				vkCmdBindVertexBuffers(m_sceneCommandBuffers[sceneRenderPass.commandBufferID].commandBuffer->getCommandBuffer(), 1, 1, &std::get<1>(mesh).instanceBuffer, offsets);
 
 			if (std::get<2>(mesh) != VK_NULL_HANDLE) // render can be done without descriptor set
-				vkCmdBindDescriptorSets(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+				vkCmdBindDescriptorSets(m_sceneCommandBuffers[sceneRenderPass.commandBufferID].commandBuffer->getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
 					renderer->getPipelineLayout(), 0, 1, &std::get<2>(mesh), 0, nullptr);
 
 			if (!isInstancied)
-				vkCmdDrawIndexed(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), std::get<0>(mesh).nbIndices, 1, 0, 0, 0);
+				vkCmdDrawIndexed(m_sceneCommandBuffers[sceneRenderPass.commandBufferID].commandBuffer->getCommandBuffer(), std::get<0>(mesh).nbIndices, 1, 0, 0, 0);
 			else
-				vkCmdDrawIndexed(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer(), std::get<0>(mesh).nbIndices, std::get<1>(mesh).nInstances, 0, 0, 0);
+				vkCmdDrawIndexed(m_sceneCommandBuffers[sceneRenderPass.commandBufferID].commandBuffer->getCommandBuffer(), std::get<0>(mesh).nbIndices, std::get<1>(mesh).nInstances, 0, 0, 0);
 		}
 	}
 
-	sceneRenderPasse.renderPass->endRenderPass(m_sceneCommandBuffers[sceneRenderPasse.commandBufferID].commandBuffer->getCommandBuffer());
+	sceneRenderPass.renderPass->endRenderPass(m_sceneCommandBuffers[sceneRenderPass.commandBufferID].commandBuffer->getCommandBuffer());
+
+	if (sceneRenderPass.afterRecord)
+		sceneRenderPass.afterRecord(sceneRenderPass.dataForAfterRecordCallback, m_sceneCommandBuffers[sceneRenderPass.commandBufferID].commandBuffer->getCommandBuffer());
 }
 
 void Wolf::Scene::frame(Queue graphicsQueue, Queue computeQueue, uint32_t swapChainImageIndex, Semaphore* imageAvailableSemaphore, std::vector<int> commandBufferIDs,

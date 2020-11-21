@@ -45,7 +45,7 @@ void Wolf::RayTracingPass::create(VkDescriptorPool descriptorPool)
 	m_descriptorSet = createDescriptorSet(m_device, m_descriptorSetLayout, descriptorPool, m_descriptorSetCreateInfo);
 }
 
-void Wolf::RayTracingPass::record(VkCommandBuffer commandBuffer, VkExtent2D extent)
+void Wolf::RayTracingPass::record(VkCommandBuffer commandBuffer, VkExtent3D extent)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, m_pipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, m_pipelineLayout, 0, 1, &m_descriptorSet, 0, nullptr);
@@ -59,7 +59,7 @@ void Wolf::RayTracingPass::record(VkCommandBuffer commandBuffer, VkExtent2D exte
 	vkCmdTraceRaysNV(commandBuffer, m_shaderBindingTable->getBuffer(), rayGenOffset,
 		m_shaderBindingTable->getBuffer(), missOffset, missStride,
 		m_shaderBindingTable->getBuffer(), hitGroupOffset, hitGroupStride,
-		VK_NULL_HANDLE, 0, 0, extent.width, extent.height, 1);
+		VK_NULL_HANDLE, 0, 0, extent.width, extent.height, extent.depth);
 }
 
 void Wolf::RayTracingPass::createRayGenShaderStage(std::string raygenShader)

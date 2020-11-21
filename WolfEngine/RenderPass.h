@@ -20,7 +20,7 @@ namespace Wolf
 		void initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, const std::vector<Attachment>& attachments, std::vector<VkExtent2D> extents);
 		void initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, const std::vector<Attachment>& attachments, std::vector<Wolf::Image*> images);
 
-		void beginRenderPass(size_t framebufferID, std::vector<VkClearValue> clearValues, VkCommandBuffer commandBuffer);
+		void beginRenderPass(size_t framebufferID, std::vector<VkClearValue>& clearValues, VkCommandBuffer commandBuffer);
 		void endRenderPass(VkCommandBuffer commandBuffer);
 
 		void resize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, const std::vector<Attachment>& attachments, std::vector<Wolf::Image*> images);

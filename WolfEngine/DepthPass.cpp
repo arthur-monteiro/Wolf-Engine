@@ -14,6 +14,7 @@ Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scen
 	m_uboMVP = engineInstance->createUniformBufferObject(&m_mvp, sizeof(glm::mat4));
 	
 	Scene::RenderPassCreateInfo renderPassCreateInfo{};
+	renderPassCreateInfo.name = "Depth Pass";
 	renderPassCreateInfo.commandBufferID = commandBufferID;
 	renderPassCreateInfo.outputIsSwapChain = outputIsSwapChain; // should be equal to "no"
 
@@ -47,6 +48,7 @@ Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scen
 	rendererCreateInfo.instanceTemplate = InstanceTemplate::NO;
 	rendererCreateInfo.renderPassID = m_renderPassID;
 	rendererCreateInfo.pipelineCreateInfo.extent = extent;
+	rendererCreateInfo.pipelineCreateInfo.alphaBlending = { false };
 
 	DescriptorSetGenerator descriptorSetGenerator;
 	descriptorSetGenerator.addUniformBuffer(m_uboMVP, VK_SHADER_STAGE_VERTEX_BIT, 0);

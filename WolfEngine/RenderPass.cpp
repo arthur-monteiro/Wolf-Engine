@@ -34,7 +34,7 @@ void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevi
 		m_framebuffers[i].initialize(device, physicalDevice, m_renderPass, images[i], attachments);
 }
 
-void Wolf::RenderPass::beginRenderPass(size_t framebufferID, std::vector<VkClearValue> clearValues, VkCommandBuffer commandBuffer)
+void Wolf::RenderPass::beginRenderPass(size_t framebufferID, std::vector<VkClearValue>& clearValues, VkCommandBuffer commandBuffer)
 {
 	VkRenderPassBeginInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

@@ -153,7 +153,8 @@ void Wolf::Model3D::loadObj(ModelLoadingInfo modelLoadingInfo)
 		}
 	}
 
-	m_sampler = std::make_unique<Sampler>(m_device, VK_SAMPLER_ADDRESS_MODE_REPEAT, static_cast<float>(m_images[0]->getMipLevels()), VK_FILTER_LINEAR);
+	if(!m_images.empty())
+		m_sampler = std::make_unique<Sampler>(m_device, VK_SAMPLER_ADDRESS_MODE_REPEAT, static_cast<float>(m_images[0]->getMipLevels()), VK_FILTER_LINEAR);
 
 	Mesh<Vertex3D> mesh;
 	mesh.loadFromVertices(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, vertices, indices);

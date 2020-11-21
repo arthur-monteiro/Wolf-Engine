@@ -9,6 +9,7 @@ Wolf::GBuffer::GBuffer(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, i
 
 	// Render Pass
 	Scene::RenderPassCreateInfo renderPassCreateInfo{};
+	renderPassCreateInfo.name = "GBuffer";
 	renderPassCreateInfo.commandBufferID = commandBufferID;
 	renderPassCreateInfo.outputIsSwapChain = false;
 

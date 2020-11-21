@@ -44,7 +44,7 @@ namespace Wolf
 		VkDevice m_device;
 		
 		VkImage m_image;
-		VkDeviceMemory  m_imageMemory;
+		VkDeviceMemory  m_imageMemory = VK_NULL_HANDLE;
 		VkImageView m_imageView = VK_NULL_HANDLE;
 
 		VkImageLayout m_imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;

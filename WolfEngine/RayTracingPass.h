@@ -30,7 +30,7 @@ namespace Wolf
 			RayTracingPassCreateInfo rayTracingPassCreateInfo);
 
 		void create(VkDescriptorPool descriptorPool);
-		void record(VkCommandBuffer commandBuffer, VkExtent2D extent);
+		void record(VkCommandBuffer commandBuffer, VkExtent3D extent);
 
 	private:
 		void createRayGenShaderStage(std::string raygenShader);
