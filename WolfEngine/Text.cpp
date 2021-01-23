@@ -1,4 +1,5 @@
 #include "Text.h"
+#include "Debug.h"
 
 Wolf::Text::Text(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue)
 {
@@ -20,6 +21,17 @@ int Wolf::Text::addWString(std::wstring text, glm::vec2 position, glm::vec3 colo
 	m_texts.emplace_back(position, text, color);
 
 	return static_cast<int>(m_texts.size() - 1);
+}
+
+void Wolf::Text::updateWString(int textID, std::wstring text)
+{
+#ifdef _DEBUG
+	if (textID < 0 || textID > m_texts.size())
+	{
+		Debug::sendError("Wrong text ID");
+	}
+#endif
+	m_texts[textID].textValue = text;
 }
 
 void Wolf::Text::build(VkExtent2D outputExtent, Font* font, float size)

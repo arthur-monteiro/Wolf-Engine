@@ -180,6 +180,9 @@
     <ClCompile Include="ShaderBindingTable.cpp">
       <Filter>Ray tracing</Filter>
     </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>Vulkan Elements</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WolfEngine.h">
@@ -328,6 +331,9 @@
     </ClInclude>
     <ClInclude Include="ShaderBindingTable.h">
       <Filter>Ray tracing</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>Vulkan Elements</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

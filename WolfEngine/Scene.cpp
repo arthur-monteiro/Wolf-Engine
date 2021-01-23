@@ -233,29 +233,39 @@ int Wolf::Scene::addRenderer(RendererCreateInfo createInfo)
 #endif
 
 	// Set input attribut and binding descriptions from template
-	switch (createInfo.inputVerticesTemplate)
 	{
-	case InputVertexTemplate::POSITION_2D :
-		createInfo.pipelineCreateInfo.vertexInputAttributeDescriptions = Vertex2D::getAttributeDescriptions(0);
-		createInfo.pipelineCreateInfo.vertexInputBindingDescriptions = { Vertex2D::getBindingDescription(0) };
-		break;
-	case InputVertexTemplate::POSITION_TEXTURECOORD_2D:
-		createInfo.pipelineCreateInfo.vertexInputAttributeDescriptions = Vertex2DTextured::getAttributeDescriptions(0);
-		createInfo.pipelineCreateInfo.vertexInputBindingDescriptions = { Vertex2DTextured::getBindingDescription(0) };
-		break;
-	case InputVertexTemplate::POSITION_TEXTURECOORD_ID_2D:
-		createInfo.pipelineCreateInfo.vertexInputAttributeDescriptions = Vertex2DTexturedWithMaterial::getAttributeDescriptions(0);
-		createInfo.pipelineCreateInfo.vertexInputBindingDescriptions = { Vertex2DTexturedWithMaterial::getBindingDescription(0) };
-		break;
-	case InputVertexTemplate::FULL_3D_MATERIAL:
-		createInfo.pipelineCreateInfo.vertexInputAttributeDescriptions = Vertex3D::getAttributeDescriptions(0);
-		createInfo.pipelineCreateInfo.vertexInputBindingDescriptions = { Vertex3D::getBindingDescription(0) };
-		break;		
-	case InputVertexTemplate::NO:
-		break;
-	default:
-		Debug::sendError("Unknown inputVerticesTemplate while creating renderer");
-		break;
+		std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptionsToAdd;
+		std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptionsToAdd;
+
+		switch (createInfo.inputVerticesTemplate)
+		{
+		case InputVertexTemplate::POSITION_2D:
+			vertexInputAttributeDescriptionsToAdd = Vertex2D::getAttributeDescriptions(0);
+			vertexInputBindingDescriptionsToAdd = { Vertex2D::getBindingDescription(0) };
+			break;
+		case InputVertexTemplate::POSITION_TEXTURECOORD_2D:
+			vertexInputAttributeDescriptionsToAdd = Vertex2DTextured::getAttributeDescriptions(0);
+			vertexInputBindingDescriptionsToAdd = { Vertex2DTextured::getBindingDescription(0) };
+			break;
+		case InputVertexTemplate::POSITION_TEXTURECOORD_ID_2D:
+			vertexInputAttributeDescriptionsToAdd = Vertex2DTexturedWithMaterial::getAttributeDescriptions(0);
+			vertexInputBindingDescriptionsToAdd = { Vertex2DTexturedWithMaterial::getBindingDescription(0) };
+			break;
+		case InputVertexTemplate::FULL_3D_MATERIAL:
+			vertexInputAttributeDescriptionsToAdd = Vertex3D::getAttributeDescriptions(0);
+			vertexInputBindingDescriptionsToAdd = { Vertex3D::getBindingDescription(0) };
+			break;
+		case InputVertexTemplate::NO:
+			break;
+		default:
+			Debug::sendError("Unknown inputVerticesTemplate while creating renderer");
+			break;
+		}
+
+		for (auto& vertexInputBindingDescription : vertexInputBindingDescriptionsToAdd)
+			createInfo.pipelineCreateInfo.vertexInputBindingDescriptions.push_back(vertexInputBindingDescription);
+		for (auto& vertexInputAttributeDescription : vertexInputAttributeDescriptionsToAdd)
+			createInfo.pipelineCreateInfo.vertexInputAttributeDescriptions.push_back(vertexInputAttributeDescription);
 	}
 
 	switch (createInfo.instanceTemplate)
@@ -278,7 +288,15 @@ int Wolf::Scene::addRenderer(RendererCreateInfo createInfo)
 
 	auto* const r = new Renderer(m_device, createInfo);
 	
-	m_sceneRenderPasses[createInfo.renderPassID].renderers.push_back(std::unique_ptr<Renderer>(r));
+	if(createInfo.forceRendererID < 0)
+		m_sceneRenderPasses[createInfo.renderPassID].renderers.push_back(std::unique_ptr<Renderer>(r));
+	else
+	{
+		if (m_sceneRenderPasses[createInfo.renderPassID].renderers[createInfo.forceRendererID].get())
+			m_sceneRenderPasses[createInfo.renderPassID].renderers[createInfo.forceRendererID].reset();
+		m_sceneRenderPasses[createInfo.renderPassID].renderers[createInfo.forceRendererID] = std::unique_ptr<Renderer>(r);
+		return createInfo.forceRendererID;
+	}
 	//m_sceneRenderPasses[createInfo.renderPassID].renderers.back()->setViewport(createInfo.pipelineCreateInfo.viewportScale, createInfo.pipelineCreateInfo.viewportOffset);
 
 	return static_cast<int>(m_sceneRenderPasses[createInfo.renderPassID].renderers.size() - 1);
@@ -338,7 +356,7 @@ void Wolf::Scene::record()
 
 		// Renderers creation
 		for (std::unique_ptr<Renderer>& renderer : sceneRenderPass.renderers)
-			renderer->create(m_descriptorPool.getDescriptorPool());
+			if(renderer.get()) renderer->create(m_descriptorPool.getDescriptorPool());
 	}
 
 	for (SceneComputePass& sceneComputePass : m_sceneComputePasses)
@@ -385,6 +403,9 @@ void Wolf::Scene::record()
 
 					for (std::unique_ptr<Renderer>& renderer : m_sceneRenderPasses[j].renderers)
 					{
+						if (!renderer.get())
+							return;
+
 						vkCmdBindPipeline(m_swapChainCommandBuffers[i]->getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer->getPipeline());
 						const VkDeviceSize offsets[1] = { 0 };
 

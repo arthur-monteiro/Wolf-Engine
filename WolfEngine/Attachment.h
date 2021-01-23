@@ -11,6 +11,7 @@ namespace Wolf
 		VkFormat format;
 		VkSampleCountFlagBits sampleCount;
 		VkImageLayout finalLayout;
+		VkAttachmentLoadOp loadOperation = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		VkAttachmentStoreOp storeOperation;
 
 		VkImageUsageFlags usageType{};

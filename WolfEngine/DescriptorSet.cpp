@@ -212,6 +212,23 @@ void Wolf::DescriptorSetGenerator::addAccelerationStructure(AccelerationStructur
 		});
 }
 
+void Wolf::DescriptorSetGenerator::addBuffer(Buffer* buffer, VkShaderStageFlags accessibility, uint32_t binding)
+{
+	DescriptorSetCreateInfo::BufferData bufferData;
+	bufferData.buffer = buffer->getBuffer();
+	bufferData.size = buffer->getSize();
+
+	DescriptorLayout descriptorLayout;
+	descriptorLayout.accessibility = accessibility;
+	descriptorLayout.binding = binding;
+	descriptorLayout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
+	m_descriptorSetCreateInfo.descriptorBuffers.push_back({
+			{ bufferData },
+			descriptorLayout
+		});
+}
+
 void Wolf::DescriptorSetGenerator::addBuffer(VkBuffer buffer, VkDeviceSize range, VkShaderStageFlags accessibility, uint32_t binding)
 {
 	DescriptorSetCreateInfo::BufferData bufferData;

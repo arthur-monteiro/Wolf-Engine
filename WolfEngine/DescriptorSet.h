@@ -5,6 +5,7 @@
 #include "UniformBuffer.h"
 #include "VulkanHelper.h"
 #include "AccelerationStructure.h"
+#include "Buffer.h"
 
 namespace Wolf
 {
@@ -46,6 +47,7 @@ namespace Wolf
 		void addCombinedImageSampler(Image* image, Sampler* sampler, VkShaderStageFlags accessibility, uint32_t binding);
 		void addSampler(Sampler* sampler, VkShaderStageFlags accessibility, uint32_t binding);
 		void addAccelerationStructure(AccelerationStructure* accelerationStructure, VkShaderStageFlags accessibility, uint32_t binding);
+		void addBuffer(Buffer* buffer, VkShaderStageFlags accessibility, uint32_t binding);
 		void addBuffer(VkBuffer buffer, VkDeviceSize range, VkShaderStageFlags accessibility, uint32_t binding);
 		
 		DescriptorSetCreateInfo getDescritorSetCreateInfo() { return m_descriptorSetCreateInfo; }

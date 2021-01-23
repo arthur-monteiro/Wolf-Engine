@@ -14,6 +14,7 @@ namespace Wolf
 		~Text();
 
 		int addWString(std::wstring text, glm::vec2 position, glm::vec3 color);
+		void updateWString(int textID, std::wstring text);
 		void build(VkExtent2D outputExtent, Font* font, float size);
 
 		float simulateSizeX(std::wstring text, VkExtent2D outputExtent, Font* font, float maxSize);

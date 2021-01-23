@@ -18,6 +18,7 @@ namespace Wolf
 	struct RendererCreateInfo
 	{
 		int renderPassID;
+		int forceRendererID = -1;
 
 		// Pipeline
 		RenderingPipelineCreateInfo pipelineCreateInfo;

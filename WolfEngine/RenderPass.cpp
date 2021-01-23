@@ -82,7 +82,7 @@ VkRenderPass Wolf::RenderPass::createRenderPass(VkDevice device, std::vector<Att
 	{
 		attachmentDescriptions[i].format = attachments[i].format;
 		attachmentDescriptions[i].samples = attachments[i].sampleCount;
-		attachmentDescriptions[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attachmentDescriptions[i].loadOp = attachments[i].loadOperation;
 		attachmentDescriptions[i].storeOp = attachments[i].storeOperation;
 		attachmentDescriptions[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachmentDescriptions[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

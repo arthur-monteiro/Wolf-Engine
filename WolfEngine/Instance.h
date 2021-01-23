@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Buffer.h"
 #include "VulkanElement.h"
 
 namespace Wolf
@@ -32,6 +33,7 @@ namespace Wolf
 		~Instance() = default;
 
 		void loadFromVector(std::vector<T> data);
+		void createFromBuffer(Buffer* buffer);
 
 		void cleanup(VkDevice device);
 
@@ -73,6 +75,12 @@ namespace Wolf
 
 		vkDestroyBuffer(m_device, stagingBuffer, nullptr);
 		vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+	}
+
+	template<typename T>
+	void Instance<T>::createFromBuffer(Buffer* buffer)
+	{
+		m_instanceBuffer = buffer->getBuffer();
 	}
 
 	template <typename T>

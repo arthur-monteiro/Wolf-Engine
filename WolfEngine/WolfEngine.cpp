@@ -43,6 +43,13 @@ Wolf::UniformBuffer* Wolf::WolfInstance::createUniformBufferObject(void* data, V
 	return m_uniformBufferObjects[m_uniformBufferObjects.size() - 1].get();
 }
 
+Wolf::Buffer* Wolf::WolfInstance::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage)
+{
+	m_buffers.push_back(std::make_unique<Buffer>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), size, usage));
+
+	return m_buffers.back().get();
+}
+
 Wolf::Texture* Wolf::WolfInstance::createTexture()
 {
 	m_textures.push_back(std::make_unique<Texture>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue()));

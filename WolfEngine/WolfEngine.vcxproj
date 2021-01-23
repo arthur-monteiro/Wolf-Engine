@@ -101,6 +101,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\Third Party\OVR\Include;..\Third Party\tiny_obj;..\Third Party\freetype-2.8.1\include\freetype2;..\Third Party\glm;..\Third Party\stb_image;..\Third Party\vulkan\Include;..\Third Party\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -150,6 +151,7 @@
     <ClCompile Include="Attachment.cpp" />
     <ClCompile Include="Blur.cpp" />
     <ClCompile Include="BottomLevelAccelerationStructure.cpp" />
+    <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="CascadedShadowMapping.cpp" />
     <ClCompile Include="CommandBuffer.cpp" />
     <ClCompile Include="CommandPool.cpp" />
@@ -202,6 +204,7 @@
     <ClInclude Include="Attachment.h" />
     <ClInclude Include="Blur.h" />
     <ClInclude Include="BottomLevelAccelerationStructure.h" />
+    <ClInclude Include="Buffer.h" />
     <ClInclude Include="CascadedShadowMapping.h" />
     <ClInclude Include="CommandBuffer.h" />
     <ClInclude Include="CommandPool.h" />

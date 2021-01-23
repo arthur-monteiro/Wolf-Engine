@@ -12,6 +12,7 @@
 #include "Text.h"
 #include "OVR.h"
 #include "AccelerationStructure.h"
+#include "Buffer.h"
 
 #include "Model2D.h"
 #include "Model2DTextured.h"
@@ -46,7 +47,7 @@ namespace Wolf
 		template<typename T>
 		Instance<T>* createInstanceBuffer();
 		UniformBuffer* createUniformBufferObject(void* data, VkDeviceSize size);
-		
+		Buffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usage);
 		[[deprecated("Use createImage instead")]]
 		Texture* createTexture();
 
@@ -105,6 +106,7 @@ namespace Wolf
 		std::vector<std::unique_ptr<Font>> m_fonts;
 		std::vector<std::unique_ptr<Text>> m_texts;
 		std::vector<std::unique_ptr<AccelerationStructure>> m_accelerationStructures;
+		std::vector<std::unique_ptr<Buffer>> m_buffers;
 
 		bool m_needResize = false;
 

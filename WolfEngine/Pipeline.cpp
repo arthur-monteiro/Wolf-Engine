@@ -1,6 +1,7 @@
 #include "Pipeline.h"
 
 #include <fstream>
+#include <filesystem>
 
 #include "Debug.h"
 
@@ -252,7 +253,7 @@ std::vector<char> Wolf::Pipeline::readFile(const std::string& filename)
 	if (!file.is_open())
 		Debug::sendError("Error opening file : " + filename);
 
-	size_t fileSize = (size_t)file.tellg();
+	size_t fileSize = std::filesystem::file_size(filename);
 	std::vector<char> buffer(fileSize);
 
 	file.seekg(0);
