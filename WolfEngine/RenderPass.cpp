@@ -2,36 +2,38 @@
 
 #include <utility>
 
-Wolf::RenderPass::RenderPass(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool,
+Wolf::RenderPass::RenderPass(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
                              const std::vector<Attachment>& attachments, std::vector<VkExtent2D> extents)
 {
-	initialize(device, physicalDevice, commandPool, attachments, std::move(extents));
+	initialize(device, physicalDevice, commandPool, graphicsQueue, attachments, std::move(extents));
 }
 
-Wolf::RenderPass::RenderPass(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool,
+Wolf::RenderPass::RenderPass(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
 	const std::vector<Attachment>& attachments, std::vector<Wolf::Image*> images)
 {
-	initialize(device, physicalDevice, commandPool, attachments, std::move(images));
+	initialize(device, physicalDevice, commandPool, graphicsQueue, attachments, std::move(images));
 }
 
-void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, const std::vector<Attachment>& attachments, std::vector<VkExtent2D> extents)
+void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
+	const std::vector<Attachment>& attachments, std::vector<VkExtent2D> extents)
 {
 	m_renderPass = createRenderPass(device, attachments);
 
 	m_framebuffers.resize(extents.size());
 	for (size_t i(0); i < m_framebuffers.size(); ++i)
 	{
-		m_framebuffers[i].initialize(device, physicalDevice, m_renderPass, extents[i], attachments);
+		m_framebuffers[i].initialize(device, physicalDevice, commandPool, graphicsQueue, m_renderPass, extents[i], attachments);
 	}
 }
 
-void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, const std::vector<Attachment>& attachments, std::vector<Image*> images)
+void Wolf::RenderPass::initialize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, 
+	const std::vector<Attachment>& attachments, std::vector<Image*> images)
 {
 	m_renderPass = createRenderPass(device, attachments);
 
 	m_framebuffers.resize(images.size());
 	for (size_t i(0); i < images.size(); ++i)
-		m_framebuffers[i].initialize(device, physicalDevice, m_renderPass, images[i], attachments);
+		m_framebuffers[i].initialize(device, physicalDevice, commandPool, graphicsQueue, m_renderPass, images[i], attachments);
 }
 
 void Wolf::RenderPass::beginRenderPass(size_t framebufferID, std::vector<VkClearValue>& clearValues, VkCommandBuffer commandBuffer)
@@ -54,13 +56,13 @@ void Wolf::RenderPass::endRenderPass(VkCommandBuffer commandBuffer)
 	vkCmdEndRenderPass(commandBuffer);
 }
 
-void Wolf::RenderPass::resize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, const std::vector<Attachment>& attachments, std::vector<Image*> images)
+void Wolf::RenderPass::resize(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, const std::vector<Attachment>& attachments, std::vector<Image*> images)
 {
 	for (int i(0); i < m_framebuffers.size(); ++i)
 		m_framebuffers[i].cleanup(device);
 
 	for (int i(0); i < m_framebuffers.size(); ++i)
-		m_framebuffers[i].initialize(device, physicalDevice, m_renderPass, images[i], attachments);
+		m_framebuffers[i].initialize(device, physicalDevice, commandPool, graphicsQueue, m_renderPass, images[i], attachments);
 }
 
 void Wolf::RenderPass::cleanup(VkDevice device, VkCommandPool commandPool)

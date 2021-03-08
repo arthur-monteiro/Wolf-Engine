@@ -10,7 +10,7 @@ Wolf::Texture::Texture(VkDevice device, VkPhysicalDevice physicalDevice, VkComma
 
 void Wolf::Texture::create(VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
 {
-	m_image = std::make_unique<Image>(m_device, m_physicalDevice, extent, usage, format, sampleCount, aspect);
+	m_image = std::make_unique<Image>(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, extent, usage, format, sampleCount, aspect);
 }
 
 void Wolf::Texture::createFromImage(Image* image)
@@ -39,8 +39,8 @@ void Wolf::Texture::createSampler(VkSamplerAddressMode addressMode, float mipLev
 void Wolf::Texture::setImageLayout(VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage)
 {
 	m_imagePtr == nullptr ?
-		m_image->setImageLayout(m_commandPool, m_graphicsQueue, newLayout, sourceStage, destinationStage) :
-		m_imagePtr->setImageLayout(m_commandPool, m_graphicsQueue, newLayout, sourceStage, destinationStage);
+		m_image->setImageLayout(newLayout, sourceStage, destinationStage) :
+		m_imagePtr->setImageLayout(newLayout, sourceStage, destinationStage);
 }
 
 void Wolf::Texture::cleanup(VkDevice device)

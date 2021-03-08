@@ -1,9 +1,12 @@
 #include "Image.h"
+#include "Debug.h"
 
-Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent3D extent, VkImageUsageFlags usage,
+Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkImageUsageFlags usage,
 	VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
 {
 	m_device = device;
+	m_commandPool = commandPool;
+	m_graphicsQueue = graphicsQueue;
 	
 	m_imageFormat = format;
 	m_extent = extent;
@@ -20,9 +23,11 @@ Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent3D 
 	m_mipLevels = 1;
 }
 
-Wolf::Image::Image(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkExtent2D extent)
+Wolf::Image::Image(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkExtent2D extent)
 {
 	m_device = device;
+	m_commandPool = commandPool;
+	m_graphicsQueue = graphicsQueue;
 	
 	m_image = image;
 	m_imageMemory = VK_NULL_HANDLE;
@@ -36,6 +41,8 @@ inline void Wolf::Image::initFromPixels(VkDevice device, VkPhysicalDevice physic
 	VkExtent3D extent, VkFormat format, unsigned char* pixels)
 {
 	m_device = device;
+	m_commandPool = commandPool;
+	m_graphicsQueue = graphicsQueue;
 
 	//m_imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
 	m_imageFormat = format;
@@ -81,7 +88,9 @@ Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPo
 	VkExtent3D extent, VkFormat format, VkBuffer buffer)
 {
 	m_device = device;
-	
+	m_commandPool = commandPool;
+	m_graphicsQueue = graphicsQueue;
+
 	m_imageFormat = format;
 
 	createImage(device, physicalDevice, extent.width, extent.height, extent.depth, m_mipLevels, VK_SAMPLE_COUNT_1_BIT, m_imageFormat, VK_IMAGE_TILING_OPTIMAL,
@@ -104,28 +113,83 @@ Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPo
 Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
 	std::string filename)
 {
-	int texWidth, texHeight, texChannels;
-	stbi_uc* pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-	texChannels = 4;
+	m_device = device;
+	m_commandPool = commandPool;
+	m_graphicsQueue = graphicsQueue;
 
-	if (!pixels)
-		throw std::runtime_error("Error : loading image " + filename);
+	if (filename[filename.size() - 4] == '.' && filename[filename.size() - 3] == 'h' && filename[filename.size() - 2] == 'd' && filename[filename.size() - 1] == 'r')
+	{
+		int texWidth, texHeight, texChannels;
+		float* pixels = stbi_loadf(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		VkDeviceSize imageSize = static_cast<uint64_t>(texWidth * texHeight * 4 * sizeof(float));
+		m_mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 
-	initFromPixels(device, physicalDevice, commandPool, graphicsQueue, { static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), static_cast<uint32_t>(texChannels) }, VK_FORMAT_R8G8B8A8_UNORM,
-		pixels);
-	stbi_image_free(pixels);
+		if (!pixels)
+		{
+			Debug::sendError("Error loading file " + filename + " !");
+			return;
+		}
 
-	m_extent.width = texWidth;
-	m_extent.height = texHeight;
-	m_sampleCount = VK_SAMPLE_COUNT_1_BIT;
-	m_imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		createBuffer(m_device, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+		uint8_t* data;
+		vkMapMemory(m_device, stagingBufferMemory, 0, imageSize, 0, (void**)&data);
+		memcpy(data, pixels, static_cast<size_t>(imageSize));
+		vkUnmapMemory(m_device, stagingBufferMemory);
+
+		stbi_image_free(pixels);
+
+		m_imageFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+		createImage(device, physicalDevice, texWidth, texHeight, 1, m_mipLevels, VK_SAMPLE_COUNT_1_BIT, m_imageFormat, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 1, 0,
+			VK_IMAGE_LAYOUT_PREINITIALIZED, m_image, m_imageMemory);
+
+		transitionImageLayout(device, commandPool, graphicsQueue, m_image, m_imageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_mipLevels, 1,
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+		copyBufferToImage(device, commandPool, graphicsQueue, stagingBuffer, m_image, texWidth, texHeight, 0);
+
+		generateMipmaps(device, physicalDevice, commandPool, graphicsQueue, m_image, m_imageFormat, texWidth, texHeight, m_mipLevels, 0);
+		m_imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+		vkDestroyBuffer(device, stagingBuffer, nullptr);
+		vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+		m_imageView = createImageView(device, m_image, m_imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, m_mipLevels, VK_IMAGE_VIEW_TYPE_2D);
+
+		m_extent.width = texWidth;
+		m_extent.height = texHeight;
+		m_sampleCount = VK_SAMPLE_COUNT_1_BIT;
+	}
+	else
+	{
+		int texWidth, texHeight, texChannels;
+		stbi_uc* pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		texChannels = 4;
+
+		if (!pixels)
+			throw std::runtime_error("Error : loading image " + filename);
+
+		initFromPixels(device, physicalDevice, commandPool, graphicsQueue, { static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), static_cast<uint32_t>(texChannels) }, VK_FORMAT_R8G8B8A8_UNORM,
+			pixels);
+		stbi_image_free(pixels);
+
+		m_extent.width = texWidth;
+		m_extent.height = texHeight;
+		m_sampleCount = VK_SAMPLE_COUNT_1_BIT;
+		m_imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
+	}
 }
 
 Wolf::Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
 	std::array<Image*, 6> images)
 {
 	m_device = device;
-	
+	m_commandPool = commandPool;
+	m_graphicsQueue = graphicsQueue;
+
 	m_mipLevels = images[0]->getMipLevels();
 	m_imageFormat = images[0]->getFormat();
 	m_sampleCount = images[0]->getSampleCount();
@@ -160,9 +224,9 @@ Wolf::Image::~Image()
 	vkFreeMemory(m_device, m_imageMemory, nullptr);
 }
 
-void Wolf::Image::setImageLayout(VkCommandPool commandPool, Queue graphicsQueue, VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage)
+void Wolf::Image::setImageLayout(VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage)
 {
-	transitionImageLayout(m_device, commandPool, graphicsQueue, m_image, m_imageFormat, m_imageLayout, newLayout, m_mipLevels, 1, sourceStage, destinationStage);
+	transitionImageLayout(m_device, m_commandPool, m_graphicsQueue, m_image, m_imageFormat, m_imageLayout, newLayout, m_mipLevels, 1, sourceStage, destinationStage);
 	m_imageLayout = newLayout;
 }
 
@@ -222,7 +286,7 @@ VkImageView Wolf::Image::createImageView(VkDevice device, VkImage image, VkForma
 	viewInfo.subresourceRange.baseMipLevel = 0;
 	viewInfo.subresourceRange.levelCount = mipLevels;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
-	viewInfo.subresourceRange.layerCount = 1;
+	viewInfo.subresourceRange.layerCount = viewType == VK_IMAGE_VIEW_TYPE_CUBE ? 6 : 1;
 
 	VkImageView imageView;
 	if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)

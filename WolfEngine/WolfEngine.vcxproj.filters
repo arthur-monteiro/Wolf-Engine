@@ -183,6 +183,15 @@
     <ClCompile Include="Buffer.cpp">
       <Filter>Vulkan Elements</Filter>
     </ClCompile>
+    <ClCompile Include="GBufferStereoscopic.cpp">
+      <Filter>Rendering Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="CascadedShadowMappingStereoscopic.cpp">
+      <Filter>Rendering Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectLightingStereoscopic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WolfEngine.h">
@@ -334,6 +343,15 @@
     </ClInclude>
     <ClInclude Include="Buffer.h">
       <Filter>Vulkan Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="GBufferStereoscopic.h">
+      <Filter>Rendering Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="CascadedShadowMappingStereoscopic.h">
+      <Filter>Rendering Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectLightingStereoscopic.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

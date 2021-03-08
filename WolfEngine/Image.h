@@ -10,14 +10,15 @@
 #include <stb_image.h>
 
 #include "VulkanHelper.h"
+#include "VulkanElement.h"
 
 namespace Wolf
 {
-	class Image
+	class Image : public VulkanElement
 	{
 	public:		
-		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect);
-		Image(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkExtent2D extent);
+		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect);
+		Image(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkExtent2D extent);
 		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format, unsigned char* pixels);
 		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format, VkBuffer buffer);
 		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::string filename);
@@ -28,7 +29,7 @@ namespace Wolf
 		Image(const Image&) = default;
 		Image& operator=(const Image&) = default;
 
-		void setImageLayout(VkCommandPool commandPool, Queue graphicsQueue, VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage);
+		void setImageLayout(VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage);
 		void setImageLayoutWithoutOperation(VkImageLayout newImageLayout) { m_imageLayout = newImageLayout; }
 
 		VkImage getImage() { return m_image; }
@@ -40,9 +41,7 @@ namespace Wolf
 		VkImageLayout getImageLayout() { return m_imageLayout; }
 		uint32_t getMipLevels() { return m_mipLevels; }
 
-	private:
-		VkDevice m_device;
-		
+	private:		
 		VkImage m_image;
 		VkDeviceMemory  m_imageMemory = VK_NULL_HANDLE;
 		VkImageView m_imageView = VK_NULL_HANDLE;

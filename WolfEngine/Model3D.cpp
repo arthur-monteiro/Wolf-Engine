@@ -165,7 +165,6 @@ void Wolf::Model3D::loadObj(ModelLoadingInfo modelLoadingInfo)
 
 std::vector<Wolf::VertexBuffer> Wolf::Model3D::getVertexBuffers()
 {
-	
 	std::vector<VertexBuffer> vertexBuffers;
 
 	for (auto& m_mesh : m_meshes)

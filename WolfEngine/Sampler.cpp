@@ -1,6 +1,7 @@
 #include "Sampler.h"
+#include "Debug.h"
 
-Wolf::Sampler::Sampler(VkDevice device, VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy)
+Wolf::Sampler::Sampler(VkDevice device, VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy, float minLod, float mipLodBias)
 {
 	m_device = device;
 
@@ -22,14 +23,14 @@ Wolf::Sampler::Sampler(VkDevice device, VkSamplerAddressMode addressMode, float 
 	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
 
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	samplerInfo.mipLodBias = 0.0f;
-	samplerInfo.minLod = 0.0f;
+	samplerInfo.mipLodBias = mipLodBias;
+	samplerInfo.minLod = minLod;
 	samplerInfo.maxLod = mipLevels;
 
 	samplerInfo.pNext = VK_NULL_HANDLE;
 
 	if (vkCreateSampler(m_device, &samplerInfo, nullptr, &m_textureSampler) != VK_SUCCESS)
-		throw std::runtime_error("Error : create sampler");
+		Debug::sendError("Sampler creation");
 }
 
 Wolf::Sampler::~Sampler()

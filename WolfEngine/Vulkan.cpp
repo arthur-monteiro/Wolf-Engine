@@ -19,8 +19,8 @@ Wolf::Vulkan::Vulkan(GLFWwindow* glfwWindowPointer, bool useOVR)
 			Debug::sendError("Failed to create OVR");
 			return;
 		}
-	}	
-	
+	}
+
 #ifndef NDEBUG
 	m_validationLayers = { "VK_LAYER_KHRONOS_validation" };
 #endif
@@ -32,7 +32,7 @@ Wolf::Vulkan::Vulkan(GLFWwindow* glfwWindowPointer, bool useOVR)
 		throw std::runtime_error("Error : window surface creation");
 
 	m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, "VK_KHR_external_memory_win32", VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
-		"VK_KHR_external_semaphore_win32", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, VK_KHR_MULTIVIEW_EXTENSION_NAME, VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME };
+		"VK_KHR_external_semaphore_win32", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, "VK_KHR_external_fence", "VK_KHR_external_fence_win32" };
 	m_raytracingDeviceExtensions = { VK_NV_RAY_TRACING_EXTENSION_NAME };
 
 	pickPhysicalDevice();
@@ -74,6 +74,7 @@ void Wolf::Vulkan::createInstance()
 
 	std::vector<const char*> extensions = getRequiredExtensions();
 	extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+	extensions.push_back(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	createInfo.ppEnabledExtensionNames = extensions.data();
 
@@ -187,6 +188,7 @@ void Wolf::Vulkan::createDevice()
 	VkPhysicalDeviceFeatures2 supportedFeatures = {};
 	supportedFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	supportedFeatures.pNext = &descIndexFeatures;
+	supportedFeatures.features.shaderStorageImageMultisample = VK_TRUE;
 	vkGetPhysicalDeviceFeatures2(m_physicalDevice, &supportedFeatures);
 
 	VkDeviceCreateInfo createInfo = {};
@@ -216,13 +218,13 @@ void Wolf::Vulkan::createDevice()
 	vkGetDeviceQueue(m_device, indices.computeFamily, 0, &m_computeQueue);
 
 	m_mutexGraphicsQueue = new std::mutex();
-	if (indices.graphicsFamily != indices.presentFamily)
-		m_mutexPresentQueue = new std::mutex();
-	else
+// 	if (indices.graphicsFamily != indices.presentFamily)
+// 		m_mutexPresentQueue = new std::mutex();
+// 	else
 		m_mutexPresentQueue = m_mutexGraphicsQueue;
-	if (indices.graphicsFamily != indices.computeFamily)
-		m_mutexComputeQueue = new std::mutex();
-	else
+// 	if (indices.graphicsFamily != indices.computeFamily)
+// 		m_mutexComputeQueue = new std::mutex();
+// 	else
 		m_mutexComputeQueue = m_mutexGraphicsQueue;
 }
 

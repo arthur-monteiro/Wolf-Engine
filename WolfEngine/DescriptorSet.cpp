@@ -215,8 +215,8 @@ void Wolf::DescriptorSetGenerator::addAccelerationStructure(AccelerationStructur
 void Wolf::DescriptorSetGenerator::addBuffer(Buffer* buffer, VkShaderStageFlags accessibility, uint32_t binding)
 {
 	DescriptorSetCreateInfo::BufferData bufferData;
-	bufferData.buffer = buffer->getBuffer();
-	bufferData.size = buffer->getSize();
+	bufferData.buffer = buffer ? buffer->getBuffer() : VK_NULL_HANDLE;
+	bufferData.size = buffer ? buffer->getSize() : VK_WHOLE_SIZE;
 
 	DescriptorLayout descriptorLayout;
 	descriptorLayout.accessibility = accessibility;

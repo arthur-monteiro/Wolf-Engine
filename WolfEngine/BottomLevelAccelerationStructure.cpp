@@ -103,7 +103,7 @@ void Wolf::BottomLevelAccelerationStructure::buildAccelerationStructureBuffers()
 	VkAccelerationStructureInfoNV buildInfo;
 	buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
 	buildInfo.pNext = nullptr;
-	buildInfo.flags = 0;
+	buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV;
 	buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
 	buildInfo.geometryCount = static_cast<uint32_t>(m_vertexBuffers.size());
 	buildInfo.pGeometries = m_vertexBuffers.data();

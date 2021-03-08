@@ -12,15 +12,17 @@ namespace Wolf
 	class OVR
 	{
 	public:
-		OVR(VkDevice device, ovrSession session, ovrGraphicsLuid luid);
+		OVR(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, ovrSession session, ovrGraphicsLuid luid);
 		~OVR();
 
 		void update();
 		int getCurrentImage(VkDevice device, VkQueue presentQueue);
 		void present(int imageIndex);
 
-		std::array < glm::mat4, 2> getProjMatrices() { return m_projMatrices; }
-		std::array < glm::mat4, 2> getViewMatrices() { return m_viewMatrices; }
+		std::array<glm::mat4, 2>& getProjMatrices() { return m_projMatrices; }
+		std::array<glm::mat4, 2>& getViewMatrices() { return m_viewMatrices; }
+		std::array<glm::vec3, 2>& getEyePostions() { return m_eyePositions; }
+		std::array<glm::vec3, 2>& getEyeDirections() { return m_eyeDirections; }
 
 		void setPlayerPos(glm::vec3 playerPos) { m_playerPos = playerPos; }
 
@@ -43,5 +45,8 @@ namespace Wolf
 		glm::vec3 m_playerPos = glm::vec3(0.0f, 0.0f, 3.0f);
 		std::array < glm::mat4, 2> m_projMatrices;
 		std::array < glm::mat4, 2> m_viewMatrices;
+
+		std::array<glm::vec3, 2> m_eyePositions;
+		std::array<glm::vec3, 2> m_eyeDirections;
 	};
 }

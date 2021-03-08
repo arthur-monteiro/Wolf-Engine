@@ -78,9 +78,9 @@ namespace Wolf
 		VkQueue m_computeQueue;
 
 		/* Mutex queues */
-		std::mutex* m_mutexGraphicsQueue;
-		std::mutex* m_mutexPresentQueue;
-		std::mutex* m_mutexComputeQueue;
+		std::mutex* m_mutexGraphicsQueue = nullptr;
+		std::mutex* m_mutexPresentQueue = nullptr;
+		std::mutex* m_mutexComputeQueue = nullptr;
 
 		/* Extensions / Layers */
 		std::vector<const char*> m_validationLayers = std::vector<const char*>();
@@ -90,6 +90,7 @@ namespace Wolf
 		/* Ray Tracing Availability */
 		bool m_raytracingAvailable = false;
 		std::vector<const char*> m_raytracingDeviceExtensions = std::vector<const char*>();
+		std::vector<const char*> m_OVRDeviceExtensions = std::vector<const char*>();
 		VkPhysicalDeviceRayTracingPropertiesNV m_raytracingProperties = {};
 
 		/* Properties */

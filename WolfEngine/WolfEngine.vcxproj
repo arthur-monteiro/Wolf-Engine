@@ -153,6 +153,7 @@
     <ClCompile Include="BottomLevelAccelerationStructure.cpp" />
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="CascadedShadowMapping.cpp" />
+    <ClCompile Include="CascadedShadowMappingStereoscopic.cpp" />
     <ClCompile Include="CommandBuffer.cpp" />
     <ClCompile Include="CommandPool.cpp" />
     <ClCompile Include="ComputePass.cpp" />
@@ -161,9 +162,11 @@
     <ClCompile Include="DescriptorPool.cpp" />
     <ClCompile Include="DescriptorSet.cpp" />
     <ClCompile Include="DirectLightingPBR.cpp" />
+    <ClCompile Include="DirectLightingStereoscopic.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="GBuffer.cpp" />
+    <ClCompile Include="GBufferStereoscopic.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="InputVertexTemplate.cpp" />
     <ClCompile Include="Instance.cpp" />
@@ -206,6 +209,7 @@
     <ClInclude Include="BottomLevelAccelerationStructure.h" />
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="CascadedShadowMapping.h" />
+    <ClInclude Include="CascadedShadowMappingStereoscopic.h" />
     <ClInclude Include="CommandBuffer.h" />
     <ClInclude Include="CommandPool.h" />
     <ClInclude Include="ComputePass.h" />
@@ -214,9 +218,11 @@
     <ClInclude Include="DescriptorPool.h" />
     <ClInclude Include="DescriptorSet.h" />
     <ClInclude Include="DirectLightingPBR.h" />
+    <ClInclude Include="DirectLightingStereoscopic.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="GBuffer.h" />
+    <ClInclude Include="GBufferStereoscopic.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="InputVertexTemplate.h" />
     <ClInclude Include="Instance.h" />

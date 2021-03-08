@@ -83,7 +83,7 @@ void Wolf::SwapChain::initialize(VkSurfaceKHR surface,
 
 	for (size_t i(0); i < imageCount; ++i)
 	{
-		m_images[i] = std::make_unique<Image>(m_device, temporarySwapChainImages[i], surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, extent);
+		m_images[i] = std::make_unique<Image>(m_device, m_commandPool, m_graphicsQueue, temporarySwapChainImages[i], surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, extent);
 		m_images[i]->setImageLayoutWithoutOperation(VK_IMAGE_LAYOUT_GENERAL);
 	}
 
@@ -118,7 +118,7 @@ VkSurfaceFormatKHR Wolf::SwapChain::chooseSwapSurfaceFormat(const std::vector<Vk
 VkPresentModeKHR Wolf::SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
 	VkPresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
-	//return bestMode;
+	return bestMode;
 
 	for (const auto& availablePresentMode : availablePresentModes)
 	{

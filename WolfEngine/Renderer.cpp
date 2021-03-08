@@ -33,6 +33,11 @@ int Wolf::Renderer::addMesh(AddMeshInfo addMeshInfo)
 	return static_cast<int>(m_meshes.size() - 1);
 }
 
+void Wolf::Renderer::updateVertexBuffer(int id, VertexBuffer& vertexBuffer)
+{
+	m_meshes[id].vertexBuffer = vertexBuffer;
+}
+
 void Wolf::Renderer::create(VkDescriptorPool descriptorPool)
 {
 	m_descriptorPool = descriptorPool;
@@ -55,12 +60,15 @@ void Wolf::Renderer::setViewport(std::array<float, 2> viewportScale, std::array<
 	m_renderingPipelineCreate.viewportOffset = viewportOffset;
 }
 
-std::vector<std::tuple<Wolf::VertexBuffer, Wolf::InstanceBuffer, VkDescriptorSet>> Wolf::Renderer::getMeshes()
+std::vector<std::tuple<Wolf::VertexBuffer, Wolf::InstanceBuffer, VkDescriptorSet>> Wolf::Renderer::getMeshes(int frambufferID)
 {
-	std::vector<std::tuple<Wolf::VertexBuffer, Wolf::InstanceBuffer, VkDescriptorSet>> r(m_meshes.size());
+	std::vector<std::tuple<Wolf::VertexBuffer, Wolf::InstanceBuffer, VkDescriptorSet>> r;
 	for(size_t i(0); i < m_meshes.size(); ++i)
 	{
-		r[i] = std::make_tuple(m_meshes[i].vertexBuffer, m_meshes[i].instanceBuffer, m_meshes[i].descriptorSet);
+		if (m_meshes[i].frameBufferID == frambufferID)
+		{
+			r.push_back(std::make_tuple(m_meshes[i].vertexBuffer, m_meshes[i].instanceBuffer, m_meshes[i].descriptorSet));
+		}
 	}
 
 	return r;
