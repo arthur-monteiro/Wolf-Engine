@@ -47,7 +47,7 @@ namespace Wolf
 		template<typename T>
 		Instance<T>* createInstanceBuffer();
 		UniformBuffer* createUniformBufferObject(void* data, VkDeviceSize size);
-		Buffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usage);
+		Buffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags);
 		[[deprecated("Use createImage instead")]]
 		Texture* createTexture();
 
@@ -62,7 +62,8 @@ namespace Wolf
 		Font* createFont(int ySize, std::string path);
 		Text* createText();
 
-		AccelerationStructure* createAccelerationStructure(std::vector<BottomLevelAccelerationStructure::GeometryInfo> geometryInfos);
+		AccelerationStructure* createAccelerationStructure(std::vector<BottomLevelAccelerationStructure::GeometryInfo> geometryInfos, 
+			VkBuildAccelerationStructureFlagsNV buildFlags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
 
 		void updateOVR();
 		void frame(Scene* scene, std::vector<int> commandBufferIDs, std::vector<std::pair<int, int>> commandBufferSynchronisation);

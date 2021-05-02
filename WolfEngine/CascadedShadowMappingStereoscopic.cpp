@@ -16,13 +16,9 @@ Wolf::CascadedShadowMappingStereoscopic::CascadedShadowMappingStereoscopic(Wolf:
 	for (int i(0); i < m_depthPasses.size(); ++i)
 	{
 		// We use separate command buffers because we want to update cascade separately -> Crytek paper
-		Scene::CommandBufferCreateInfo commandBufferCreateInfo;
-		commandBufferCreateInfo.commandType = Scene::CommandType::GRAPHICS;
-		commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-		m_cascadeCommandBuffers[i] = scene->addCommandBuffer(commandBufferCreateInfo);
-
-		m_depthPasses[i] = std::make_unique<DepthPass>(engineInstance, scene, m_cascadeCommandBuffers[i], false, m_shadowMapExtents[i], VK_SAMPLE_COUNT_1_BIT, model, glm::mat4(1.0f), true,
+		m_depthPasses[i] = std::make_unique<DepthPass>(engineInstance, scene, false, m_shadowMapExtents[i], VK_SAMPLE_COUNT_1_BIT, model, glm::mat4(1.0f), true,
 			true);
+		m_cascadeCommandBuffers[i] = m_depthPasses[i]->getCommandBufferID();
 	}
 
 	// Cascade splits

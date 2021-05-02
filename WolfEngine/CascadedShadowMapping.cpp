@@ -1,7 +1,7 @@
 #include "CascadedShadowMapping.h"
 
 Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, Model* model, float cameraNear, float cameraFar, float shadowFar, 
-	float cameraFOV, VkExtent2D extent, Image* depth, glm::mat4 projection)
+	float cameraFOV, VkExtent2D extent, Image* depth, glm::mat4 projection, std::array<DepthPass*, CASCADE_COUNT> depthPasses)
 {
 	m_engineInstance = engineInstance;
 	m_scene = scene;
@@ -12,17 +12,23 @@ Wolf::CascadedShadowMapping::CascadedShadowMapping(Wolf::WolfInstance* engineIns
 	m_extent = extent;
 
 	m_shadowMapExtents = { { 2048, 2048 }, { 2048, 2048 }, { 1024, 1024 }, { 1024, 1024 } };
-
-	for(int i(0); i < m_depthPasses.size(); ++i)
+	if (!depthPasses[0])
 	{
-		// We use separate command buffers because we want to update cascade separately -> Crytek paper
-		Scene::CommandBufferCreateInfo commandBufferCreateInfo;
-		commandBufferCreateInfo.commandType = Scene::CommandType::GRAPHICS;
-		commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-		m_cascadeCommandBuffers[i] = scene->addCommandBuffer(commandBufferCreateInfo);
-		
-		m_depthPasses[i] = std::make_unique<DepthPass>(engineInstance, scene, m_cascadeCommandBuffers[i], false, m_shadowMapExtents[i], VK_SAMPLE_COUNT_1_BIT, model, glm::mat4(1.0f), true,
-			true);
+		for (int i(0); i < m_depthPasses.size(); ++i)
+		{
+			// We use separate command buffers because we want to update cascade separately -> Crytek paper
+			m_depthPasses[i] = std::make_unique<DepthPass>(engineInstance, scene, false, m_shadowMapExtents[i], VK_SAMPLE_COUNT_1_BIT, model, glm::mat4(1.0f), true,
+				true);
+			m_cascadeCommandBuffers[i] = m_depthPasses[i]->getCommandBufferID();
+		}
+	}
+	else
+	{
+		for (int i(0); i < m_depthPasses.size(); ++i)
+		{
+			m_depthPasses[i] = std::unique_ptr<DepthPass>(depthPasses[i]);
+			m_cascadeCommandBuffers[i] = m_depthPasses[i]->getCommandBufferID();
+		}
 	}
 
 	// Cascade splits

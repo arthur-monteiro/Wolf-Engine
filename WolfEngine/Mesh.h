@@ -42,6 +42,9 @@ namespace Wolf
 
 		VertexBuffer getVertexBuffer() { return { m_vertexBuffer, static_cast<unsigned int>(m_vertices.size()), m_indexBuffer, static_cast<unsigned int>(m_indices.size()) }; }
 
+		const std::vector<T> getVertices() { return m_vertices; }
+		const std::vector<uint32_t> getIndices() { return m_indices; }
+
 	private:
 		// Vertex
 		std::vector<T> m_vertices = {};

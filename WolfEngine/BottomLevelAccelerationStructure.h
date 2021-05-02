@@ -2,12 +2,13 @@
 
 #include <glm/gtx/transform.hpp>
 
+#include "VulkanElement.h"
 #include "Mesh.h"
 #include "VulkanHelper.h"
 
 namespace Wolf
 {
-	class BottomLevelAccelerationStructure
+	class BottomLevelAccelerationStructure : public VulkanElement
 	{
 	public:
 		struct GeometryInfo
@@ -25,21 +26,22 @@ namespace Wolf
 		struct BottomLevelAccelerationStructureCreateInfo
 		{
 			std::vector<GeometryInfo> geometryInfos;
+			VkBuildAccelerationStructureFlagsNV buildFlags;
 		};
 		
 		BottomLevelAccelerationStructure(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkCommandBuffer commandBuffer,
 			BottomLevelAccelerationStructureCreateInfo& bottomLevelAccelerationStructureCreateInfo);
 
+		void update(VkCommandBuffer commandBuffer, BottomLevelAccelerationStructureCreateInfo& bottomLevelAccelerationStructureCreateInfo);
+
 		VkAccelerationStructureNV getAccelerationStructure() { return m_accelerationStructureData.structure; }
+		glm::mat4 getTransformMatrix() const { return m_transformMatrix; }
 
 	private:
 		void getAccelerationBufferSizes();
-		void buildAccelerationStructureBuffers();
+		void buildAccelerationStructureBuffers(bool update = false);
 
 	private:
-		VkDevice m_device;
-		VkPhysicalDevice m_physicalDevice;
-		VkCommandPool m_commandPool;
 		VkCommandBuffer m_commandBuffer;
 		
 		std::vector<VkGeometryNV> m_vertexBuffers;
@@ -57,5 +59,8 @@ namespace Wolf
 			VkAccelerationStructureNV structure = VK_NULL_HANDLE;
 		};
 		AccelerationStructureData m_accelerationStructureData;
+
+		glm::mat4 m_transformMatrix;
+		VkBuildAccelerationStructureFlagsNV m_buildFlags;
 	};
 }

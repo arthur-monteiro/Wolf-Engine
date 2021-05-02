@@ -8,6 +8,8 @@ Wolf::BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(VkDevic
 	m_physicalDevice = physicalDevice;
 	m_commandPool = commandPool;
 	m_commandBuffer = commandBuffer;
+	m_transformMatrix = bottomLevelAccelerationStructureCreateInfo.geometryInfos[0].transform;
+	m_buildFlags = bottomLevelAccelerationStructureCreateInfo.buildFlags;
 	
 	m_vertexBuffers.resize(bottomLevelAccelerationStructureCreateInfo.geometryInfos.size());
 
@@ -39,9 +41,44 @@ Wolf::BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(VkDevic
 		m_vertexBuffers[i++] = geometry;
 	}
 
-	m_accelerationStructureData.structure = createAccelerationStructure(m_device, m_vertexBuffers, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV, 0);
+	m_accelerationStructureData.structure = createAccelerationStructure(m_device, m_vertexBuffers, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV, 0, m_buildFlags);
 	getAccelerationBufferSizes();
 	buildAccelerationStructureBuffers();
+}
+
+void Wolf::BottomLevelAccelerationStructure::update(VkCommandBuffer commandBuffer, BottomLevelAccelerationStructureCreateInfo& bottomLevelAccelerationStructureCreateInfo)
+{
+	m_commandBuffer = commandBuffer;
+
+	int i(0);
+	for (auto& geometryInfo : bottomLevelAccelerationStructureCreateInfo.geometryInfos)
+	{
+		VkGeometryNV geometry;
+		geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+		geometry.pNext = nullptr;
+		geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
+		geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
+		geometry.geometry.triangles.pNext = nullptr;
+		geometry.geometry.triangles.vertexData = geometryInfo.vertexBuffer.vertexBuffer;
+		geometry.geometry.triangles.vertexOffset = 0;
+		geometry.geometry.triangles.vertexCount = geometryInfo.vertexBuffer.nbVertices;
+		geometry.geometry.triangles.vertexStride = geometryInfo.vertexSize;
+		// Limitation to 3xfloat32 for vertices
+		geometry.geometry.triangles.vertexFormat = geometryInfo.vertexFormat;
+		geometry.geometry.triangles.indexData = geometryInfo.vertexBuffer.indexBuffer;
+		geometry.geometry.triangles.indexOffset = 0;
+		geometry.geometry.triangles.indexCount = geometryInfo.vertexBuffer.nbIndices;
+		// Limitation to 32-bit indices
+		geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+		geometry.geometry.triangles.transformData = geometryInfo.transformBuffer;
+		geometry.geometry.triangles.transformOffset = geometryInfo.transformOffsetInBytes;
+		geometry.geometry.aabbs = { VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV };
+		geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
+
+		m_vertexBuffers[i++] = geometry;
+	}
+
+	buildAccelerationStructureBuffers(true);
 }
 
 void Wolf::BottomLevelAccelerationStructure::getAccelerationBufferSizes()
@@ -73,37 +110,40 @@ void Wolf::BottomLevelAccelerationStructure::getAccelerationBufferSizes()
 		memoryRequirements.memoryRequirements.size;
 }
 
-void Wolf::BottomLevelAccelerationStructure::buildAccelerationStructureBuffers()
+void Wolf::BottomLevelAccelerationStructure::buildAccelerationStructureBuffers(bool update)
 {
 	if (m_resultSizeInBytes == 0 || m_scratchSizeInBytes == 0)
 	{
 		Debug::sendError("Invalid scratch and result buffer sizes in buildAccelerationStructureBuffers");
 	}
 	
-	createBuffer(m_device, m_physicalDevice, m_scratchSizeInBytes, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-		m_accelerationStructureData.scratchBuffer, m_accelerationStructureData.scratchMem);
-	createBuffer(m_device, m_physicalDevice, m_resultSizeInBytes, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-		m_accelerationStructureData.resultBuffer, m_accelerationStructureData.resultMem);
+	if (!update)
+	{
+		createBuffer(m_device, m_physicalDevice, m_scratchSizeInBytes, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			m_accelerationStructureData.scratchBuffer, m_accelerationStructureData.scratchMem);
+		createBuffer(m_device, m_physicalDevice, m_resultSizeInBytes, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			m_accelerationStructureData.resultBuffer, m_accelerationStructureData.resultMem);
 
-	VkBindAccelerationStructureMemoryInfoNV bindInfo;
-	bindInfo.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
-	bindInfo.pNext = nullptr;
-	bindInfo.accelerationStructure = m_accelerationStructureData.structure;
-	bindInfo.memory = m_accelerationStructureData.resultMem;
-	bindInfo.memoryOffset = 0;
-	bindInfo.deviceIndexCount = 0;
-	bindInfo.pDeviceIndices = nullptr;
+		VkBindAccelerationStructureMemoryInfoNV bindInfo;
+		bindInfo.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
+		bindInfo.pNext = nullptr;
+		bindInfo.accelerationStructure = m_accelerationStructureData.structure;
+		bindInfo.memory = m_accelerationStructureData.resultMem;
+		bindInfo.memoryOffset = 0;
+		bindInfo.deviceIndexCount = 0;
+		bindInfo.pDeviceIndices = nullptr;
 
-	VkResult code = vkBindAccelerationStructureMemoryNV(m_device, 1, &bindInfo);
+		VkResult code = vkBindAccelerationStructureMemoryNV(m_device, 1, &bindInfo);
 
-	if (code != VK_SUCCESS)
-		Debug::sendError("vkBindAccelerationStructureMemoryNV failed");
+		if (code != VK_SUCCESS)
+			Debug::sendError("vkBindAccelerationStructureMemoryNV failed");
+	}
 
 	// Build the actual bottom-level acceleration structure
 	VkAccelerationStructureInfoNV buildInfo;
 	buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
 	buildInfo.pNext = nullptr;
-	buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV;
+	buildInfo.flags = m_buildFlags;
 	buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
 	buildInfo.geometryCount = static_cast<uint32_t>(m_vertexBuffers.size());
 	buildInfo.pGeometries = m_vertexBuffers.data();

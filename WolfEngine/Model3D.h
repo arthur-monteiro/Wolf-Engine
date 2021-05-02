@@ -15,6 +15,8 @@ namespace Wolf
 		int addMeshFromVertices(void* vertices, uint32_t vertexCount, size_t vertexSize, std::vector<uint32_t> indices);
 		void loadObj(ModelLoadingInfo modelLoadingInfo);
 
+		bool checkIntersection(glm::vec3 point1, glm::vec3 point2);
+
 		std::vector<Wolf::VertexBuffer> getVertexBuffers();
 
 	private:

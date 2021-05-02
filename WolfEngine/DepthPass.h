@@ -10,17 +10,21 @@ namespace Wolf
 	class DepthPass
 	{
 	public:
-		DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int commandBufferID, bool outputIsSwapChain, VkExtent2D extent, VkSampleCountFlagBits sampleCount,
+		DepthPass() = default;
+		DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, bool outputIsSwapChain, VkExtent2D extent, VkSampleCountFlagBits sampleCount,
 			Model* model, glm::mat4 mvp, bool useAsStorage, bool useAsSampled);
 		~DepthPass() = default;
 
 		void update(glm::mat4 mvp);
+
+		int getCommandBufferID() { return m_commandBufferID; }
 		Image* getResult() { return m_scene->getRenderPassOutput(m_renderPassID, 0); }
 
-	private:
+	protected:
 		Wolf::WolfInstance* m_engineInstance;
 		Wolf::Scene* m_scene;
 
+		int m_commandBufferID = -2;
 		int m_renderPassID = -1;
 		
 		Attachment m_attachment;

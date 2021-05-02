@@ -1,2 +1,22 @@
-﻿  Vulkan.cpp
+﻿  AccelerationStructure.cpp
+  Blur.cpp
+  BottomLevelAccelerationStructure.cpp
+  CascadedShadowMapping.cpp
+  CascadedShadowMappingStereoscopic.cpp
+  ComputePass.cpp
+  DepthPass.cpp
+  DescriptorSet.cpp
+  DirectLightingPBR.cpp
+  DirectLightingStereoscopic.cpp
+  GBuffer.cpp
+  GBufferStereoscopic.cpp
+  LightPropagationVolumes.cpp
+  RayTracingPass.cpp
+  Renderer.cpp
+  SSAO.cpp
+  Scene.cpp
+  Template3D.cpp
+  Template3D_VR.cpp
+  WolfEngine.cpp
+  Generating Code...
   WolfEngine.vcxproj -> D:\Wolf-Engine\x64\Debug\WolfEngine.lib

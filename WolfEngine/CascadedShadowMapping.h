@@ -12,7 +12,7 @@ namespace Wolf
 	{
 	public:
 		CascadedShadowMapping(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, Model* model, float cameraNear, float cameraFar, float shadowFar, float cameraFOV, VkExtent2D extent,
-			Image* depth, glm::mat4 projection);
+			Image* depth, glm::mat4 projection, std::array<DepthPass*, CASCADE_COUNT> depthPasses = { nullptr });
 
 		void updateMatrices(glm::vec3 lightDir, glm::vec3 cameraPosition, glm::vec3 cameraOrientation, glm::mat4 model, glm::mat4 invModelView);
 

@@ -9,21 +9,23 @@ namespace Wolf
 	class TopLevelAccelerationStructure
 	{
 	public:
-        struct Instance
-        {
-            VkAccelerationStructureNV bottomLevelAS;
-            glm::mat4 transform;
-            uint32_t instanceID; // Instance ID visible in the shader
-            uint32_t hitGroupIndex; // Hit group index used to fetch the shaders from the SBT
-        };
+    struct Instance
+    {
+        VkAccelerationStructureNV bottomLevelAS;
+        glm::mat4 transform;
+        uint32_t instanceID; // Instance ID visible in the shader
+        uint32_t hitGroupIndex; // Hit group index used to fetch the shaders from the SBT
+    };
 
 		TopLevelAccelerationStructure(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandBuffer commandBuffer, std::vector<Instance> instances);
+
+		void update(VkCommandBuffer commandBuffer, std::vector<Instance> instances);
 
 		VkAccelerationStructureNV* getStructure() { return &m_accelerationStructureData.structure; }
 
 	private:
 		void getAccelerationBufferSizes();
-		void buildAccelerationStructureBuffers();
+		void buildAccelerationStructureBuffers(bool rebuild = false);
 
 		// Geometry instance, with the layout expected by VK_NV_ray_tracing
 		struct VkGeometryInstance

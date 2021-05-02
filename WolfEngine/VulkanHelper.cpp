@@ -360,12 +360,13 @@ void copyImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, 
 	endSingleTimeCommands(device, graphicsQueue, commandBuffer, commandPool);
 }
 
-VkAccelerationStructureNV createAccelerationStructure(VkDevice device, std::vector<VkGeometryNV> geometry, VkAccelerationStructureTypeNV accelerationStructureType, uint32_t instanceCount)
+VkAccelerationStructureNV createAccelerationStructure(VkDevice device, std::vector<VkGeometryNV> geometry, VkAccelerationStructureTypeNV accelerationStructureType, uint32_t instanceCount,
+	VkBuildAccelerationStructureFlagsNV buildFlags)
 {
 	VkAccelerationStructureInfoNV accelerationStructureInfo{
 	 VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
 	accelerationStructureInfo.type = accelerationStructureType;
-	accelerationStructureInfo.flags = 0;
+	accelerationStructureInfo.flags = buildFlags;
 	accelerationStructureInfo.instanceCount = instanceCount;
 	accelerationStructureInfo.geometryCount = static_cast<uint32_t>(geometry.size());
 	accelerationStructureInfo.pGeometries = geometry.data();

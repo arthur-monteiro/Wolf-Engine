@@ -19,6 +19,7 @@ namespace Wolf
 		virtual ~Model() = default;
 
 		virtual int addMeshFromVertices(void* vertices, uint32_t vertexCount, size_t vertexSize, std::vector<uint32_t> indices) { return -1; }
+		virtual bool checkIntersection(glm::vec3 point1, glm::vec3 point2) { return false; };
 
 		struct ModelLoadingInfo
 		{

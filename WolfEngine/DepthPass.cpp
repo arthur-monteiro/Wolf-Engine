@@ -1,10 +1,16 @@
 #include "DepthPass.h"
 
-Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int commandBufferID, bool outputIsSwapChain, VkExtent2D extent, VkSampleCountFlagBits sampleCount,
+Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, bool outputIsSwapChain, VkExtent2D extent, VkSampleCountFlagBits sampleCount,
 	Model* model, glm::mat4 mvp, bool useAsStorage, bool useAsSampled)
 {
 	m_engineInstance = engineInstance;
 	m_scene = scene;
+
+	// Command Buffer creation
+	Scene::CommandBufferCreateInfo commandBufferCreateInfo;
+	commandBufferCreateInfo.commandType = Scene::CommandType::GRAPHICS;
+	commandBufferCreateInfo.finalPipelineStage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	m_commandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
 
 	// Render Pass Creation
 	m_sampleCount = sampleCount;
@@ -15,7 +21,7 @@ Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scen
 	
 	Scene::RenderPassCreateInfo renderPassCreateInfo{};
 	renderPassCreateInfo.name = "Depth Pass";
-	renderPassCreateInfo.commandBufferID = commandBufferID;
+	renderPassCreateInfo.commandBufferID = m_commandBufferID;
 	renderPassCreateInfo.outputIsSwapChain = outputIsSwapChain; // should be equal to "no"
 
 	VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;

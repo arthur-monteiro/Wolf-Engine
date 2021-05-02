@@ -191,7 +191,7 @@ int Wolf::Scene::addRayTracingPass(RayTracingPassAddInfo rayTracingPassAddInfo)
 			updateDescriptorPool(rayTracingPassAddInfo.rayTracingPassCreateInfo.descriptorSetCreateInfo);
 		}
 
-		rayTracingPassAddInfo.extent = { m_swapChainImages[0]->getExtent().width, m_swapChainImages[0]->getExtent().height };
+		rayTracingPassAddInfo.extent = { m_swapChainImages[0]->getExtent().width, m_swapChainImages[0]->getExtent().height, 1 };
 	}
 
 	m_sceneRayTracingPasses.back().extent = rayTracingPassAddInfo.extent;
@@ -585,7 +585,7 @@ void Wolf::Scene::record()
 						1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0);
 
 					m_sceneRayTracingPasses[j].rayTracingPasses[i]->record(m_swapChainCommandBuffers[i]->getCommandBuffer(),
-						{ m_swapChainImages[i]->getExtent().width, m_swapChainImages[i]->getExtent().height });
+						{ m_swapChainImages[i]->getExtent().width, m_swapChainImages[i]->getExtent().height, 1 });
 
 					Image::transitionImageLayoutUsingCommandBuffer(m_swapChainCommandBuffers[i]->getCommandBuffer(), m_swapChainImages[i]->getImage(), m_swapChainImages[i]->getFormat(),
 						VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,

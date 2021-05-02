@@ -43,9 +43,9 @@ Wolf::UniformBuffer* Wolf::WolfInstance::createUniformBufferObject(void* data, V
 	return m_uniformBufferObjects[m_uniformBufferObjects.size() - 1].get();
 }
 
-Wolf::Buffer* Wolf::WolfInstance::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage)
+Wolf::Buffer* Wolf::WolfInstance::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags)
 {
-	m_buffers.push_back(std::make_unique<Buffer>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), size, usage));
+	m_buffers.push_back(std::make_unique<Buffer>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(), size, usage, memoryPropertyFlags));
 
 	return m_buffers.back().get();
 }
@@ -101,10 +101,11 @@ Wolf::Text* Wolf::WolfInstance::createText()
 	return m_texts[m_texts.size() - 1].get();
 }
 
-Wolf::AccelerationStructure* Wolf::WolfInstance::createAccelerationStructure(std::vector<BottomLevelAccelerationStructure::GeometryInfo> geometryInfos)
+Wolf::AccelerationStructure* Wolf::WolfInstance::createAccelerationStructure(std::vector<BottomLevelAccelerationStructure::GeometryInfo> geometryInfos,
+	VkBuildAccelerationStructureFlagsNV buildFlags)
 {
 	m_accelerationStructures.push_back(std::make_unique<AccelerationStructure>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(),
-		m_vulkan->getGraphicsQueue(), std::move(geometryInfos)));
+		m_vulkan->getGraphicsQueue(), std::move(geometryInfos), buildFlags));
 
 	return m_accelerationStructures.back().get();
 }

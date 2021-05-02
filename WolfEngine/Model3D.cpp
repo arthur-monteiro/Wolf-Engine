@@ -4,6 +4,7 @@
 #include <tiny_obj_loader.h>
 #include <unordered_map>
 #include <array>
+#include <glm/gtx/intersect.hpp>
 
 #include "Debug.h"
 
@@ -161,6 +162,30 @@ void Wolf::Model3D::loadObj(ModelLoadingInfo modelLoadingInfo)
 	m_meshes.push_back(mesh);
 	
 	Debug::sendInfo("Model loaded with " + std::to_string(indices.size() / 3) + " triangles");
+}
+
+bool Wolf::Model3D::checkIntersection(glm::vec3 point1, glm::vec3 point2)
+{
+	for (int i(0); i < m_meshes.size(); ++i)
+	{
+		const std::vector<uint32_t> indices = m_meshes[i].getIndices();
+		const std::vector<Vertex3D> vertices = m_meshes[i].getVertices();
+		for (int j(0); j < indices.size(); j += 3)
+		{
+			glm::vec3 p1 = vertices[indices[j]].pos;
+			glm::vec3 p2 = vertices[indices[j + 1]].pos;
+			glm::vec3 p3 = vertices[indices[j + 2]].pos;
+
+			glm::vec3 bary;
+			bool intersect = glm::intersectRayTriangle(point1, point2 - point1, p1, p2, p3, bary);
+			glm::vec3 intersectPosition = point1 + (point2 - point1) * bary.z;
+
+			if (intersect && glm::dot(point2 - point1, intersectPosition - point1) < glm::dot(point2 - point1, point2 - point1))
+				return true;
+		}
+	}
+
+	return false;
 }
 
 std::vector<Wolf::VertexBuffer> Wolf::Model3D::getVertexBuffers()
