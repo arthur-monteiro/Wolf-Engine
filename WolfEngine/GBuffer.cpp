@@ -75,7 +75,7 @@ Wolf::GBuffer::GBuffer(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, i
 	descriptorSetGenerator.addSampler(model->getSampler(), VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 	descriptorSetGenerator.addImages(model->getImages(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
 
-	rendererCreateInfo.descriptorLayouts = descriptorSetGenerator.getDescriptorLayouts();
+	rendererCreateInfo.descriptorSetLayout = descriptorSetGenerator.getDescriptorLayouts();
 	
 	rendererCreateInfo.pipelineCreateInfo.alphaBlending = { false, false };
 

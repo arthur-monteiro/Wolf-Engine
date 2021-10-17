@@ -54,8 +54,8 @@ Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scen
 		// Direct Lighting
 		m_directLightingSSRBloomCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
 		m_directLighting = std::make_unique<DirectLightingPBR>(wolfInstance, scene, m_directLightingSSRBloomCommandBufferID, m_wolfInstance->getWindowSize(), depth,
-			albedo, normalRoughnessMetal, m_cascadedShadowMapping->getOutputShadowMaskTexture()->getImage(), m_cascadedShadowMapping->getOutputVolumetricLightMaskTexture()->getImage(),
-			m_ssao->getOutputTexture()->getImage(), m_lightPropagationVolumes->getPropagationTexture()->getImage(), m_projectionMatrix, 0.1f, 100.0f);
+			albedo, normalRoughnessMetal, m_cascadedShadowMapping->getOutputShadowMaskTexture(), m_cascadedShadowMapping->getOutputVolumetricLightMaskImage(),
+			m_ssao->getOutputImage(), m_lightPropagationVolumes->getPropagationTexture()->getImage(), m_projectionMatrix, 0.1f, 100.0f);
 
 		// Merge
 		Scene::ComputePassCreateInfo mergeComputePassCreateInfo;
@@ -65,7 +65,7 @@ Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scen
 		mergeComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
 
 		DescriptorSetGenerator mergeDescriptorSetGenerator;
-		mergeDescriptorSetGenerator.addImages({ m_directLighting->getOutputTexture()->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
+		mergeDescriptorSetGenerator.addImages({ m_directLighting->getOutputImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
 
 		mergeComputePassCreateInfo.descriptorSetCreateInfo = mergeDescriptorSetGenerator.getDescritorSetCreateInfo();
 		mergeComputePassCreateInfo.outputBinding = 1;

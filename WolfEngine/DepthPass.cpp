@@ -59,7 +59,7 @@ Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scen
 	DescriptorSetGenerator descriptorSetGenerator;
 	descriptorSetGenerator.addUniformBuffer(m_uboMVP, VK_SHADER_STAGE_VERTEX_BIT, 0);
 
-	rendererCreateInfo.descriptorLayouts = descriptorSetGenerator.getDescriptorLayouts();
+	rendererCreateInfo.descriptorSetLayout = descriptorSetGenerator.getDescriptorLayouts();
 	
 	m_rendererID = scene->addRenderer(rendererCreateInfo);
 

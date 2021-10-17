@@ -11,7 +11,7 @@ namespace Wolf
 		SSAO(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int commandBufferID, VkExtent2D extent, glm::mat4 projection,
 			Image* depth, Image* normal, float near, float far);
 
-		Texture* getOutputTexture() { return m_blur->getTextureOutput(); }
+		Image* getOutputImage() { return m_blur->getOutputImage(); }
 
 		std::vector<int> getCommandBufferIDs() { return m_blur->getCommandBufferIDs(); }
 		std::vector<std::pair<int, int>> getCommandBufferSynchronisation() { return m_blur->getCommandBufferSynchronisation(); }

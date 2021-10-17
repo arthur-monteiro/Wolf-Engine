@@ -7,11 +7,12 @@
 Wolf::Renderer::Renderer(VkDevice device, RendererCreateInfo rendererCreateInfo)
 {
 	m_device = device;
-	m_descriptorLayouts = rendererCreateInfo.descriptorLayouts;
-	createDescriptorSetLayout(rendererCreateInfo.descriptorLayouts);
+	m_descriptorLayouts = rendererCreateInfo.descriptorSetLayout;
+	createDescriptorSetLayout(rendererCreateInfo.descriptorSetLayout);
 
 	rendererCreateInfo.pipelineCreateInfo.descriptorSetLayouts = { m_descriptorSetLayout };
 	m_renderingPipelineCreate = rendererCreateInfo.pipelineCreateInfo;
+	m_pipeline = std::make_unique<Pipeline>(m_device, rendererCreateInfo.pipelineCreateInfo);
 }
 
 Wolf::Renderer::~Renderer()
@@ -40,10 +41,7 @@ void Wolf::Renderer::updateVertexBuffer(int id, VertexBuffer& vertexBuffer)
 
 void Wolf::Renderer::create(VkDescriptorPool descriptorPool)
 {
-	m_descriptorPool = descriptorPool;
-	
-	if (!m_pipeline)
-		m_pipeline = std::make_unique<Pipeline>(m_device, m_renderingPipelineCreate);
+	m_descriptorPool = descriptorPool;		
 
 	for(size_t i(0); i < m_meshes.size(); ++i)
 	{
@@ -77,7 +75,7 @@ std::vector<std::tuple<Wolf::VertexBuffer, Wolf::InstanceBuffer, VkDescriptorSet
 Wolf::RendererCreateInfo Wolf::Renderer::getRendererCreateInfoStructure()
 {
 	RendererCreateInfo r;
-	r.descriptorLayouts = m_descriptorLayouts;
+	r.descriptorSetLayout = m_descriptorLayouts;
 	r.pipelineCreateInfo = m_renderingPipelineCreate;
 
 	return r;

@@ -40,15 +40,13 @@ Wolf::CascadedShadowMappingStereoscopic::CascadedShadowMappingStereoscopic(Wolf:
 	m_uboData.projectionParams.y = (-cameraFar * cameraNear) / (cameraFar - cameraNear);
 	m_uniformBuffer = engineInstance->createUniformBufferObject(&m_uboData, sizeof(ShadowMaskUBO));
 
-	m_shadowMaskOutputTexture = engineInstance->createTexture();
-	m_shadowMaskOutputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT,
+	m_shadowMaskOutputImage = engineInstance->createImage({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT,
 		VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-	m_shadowMaskOutputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	m_shadowMaskOutputImage->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-	m_volumetricLightOutputTexture = engineInstance->createTexture();
-	m_volumetricLightOutputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT,
+	m_volumetricLightOutputImage = engineInstance->createImage({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT,
 		VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-	m_volumetricLightOutputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	m_volumetricLightOutputImage->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 	// Shadow Mask
 	Scene::CommandBufferCreateInfo commandBufferCreateInfo;
@@ -69,8 +67,8 @@ Wolf::CascadedShadowMappingStereoscopic::CascadedShadowMappingStereoscopic(Wolf:
 	for (int i(0); i < CASCADE_COUNT; ++i)
 		depthPassResults[i] = m_depthPasses[i]->getResult();
 	descriptorSetGenerator.addImages(depthPassResults, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-	descriptorSetGenerator.addImages({ m_shadowMaskOutputTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, CASCADE_COUNT + 1);
-	descriptorSetGenerator.addImages({ m_volumetricLightOutputTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, CASCADE_COUNT + 2);
+	descriptorSetGenerator.addImages({ m_shadowMaskOutputImage }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, CASCADE_COUNT + 1);
+	descriptorSetGenerator.addImages({ m_volumetricLightOutputImage }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, CASCADE_COUNT + 2);
 
 	descriptorSetGenerator.addUniformBuffer(m_uniformBuffer, VK_SHADER_STAGE_COMPUTE_BIT, CASCADE_COUNT + 3);
 
@@ -78,7 +76,7 @@ Wolf::CascadedShadowMappingStereoscopic::CascadedShadowMappingStereoscopic(Wolf:
 
 	m_shadowMaskComputePassID = scene->addComputePass(computePassCreateInfo);
 
-	m_blur = std::make_unique<Blur>(engineInstance, scene, m_shadowMaskCommandBufferID, m_volumetricLightOutputTexture->getImage(), nullptr);
+	m_blur = std::make_unique<Blur>(engineInstance, scene, m_shadowMaskCommandBufferID, m_volumetricLightOutputImage, nullptr);
 }
 
 void Wolf::CascadedShadowMappingStereoscopic::updateMatrices(glm::vec3 lightDir,

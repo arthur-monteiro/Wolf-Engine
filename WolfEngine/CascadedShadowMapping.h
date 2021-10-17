@@ -41,8 +41,8 @@ namespace Wolf
 			return r;
 		}
 
-		Texture* getOutputShadowMaskTexture() { return m_shadowMaskOutputTexture; }
-		Texture* getOutputVolumetricLightMaskTexture() { return m_blur->getTextureOutput(); }
+		Image* getOutputShadowMaskTexture() { return m_shadowMaskOutputImage; }
+		Image* getOutputVolumetricLightMaskImage() { return m_blur->getOutputImage(); }
 
 		glm::vec4 getCascadeSplits() { return glm::vec4(m_cascadeSplits[0], m_cascadeSplits[1], m_cascadeSplits[2], m_cascadeSplits[3]); }
 		std::array<glm::mat4, CASCADE_COUNT> getLightSpaceMatrices() { return m_lightSpaceMatrices; }
@@ -72,8 +72,8 @@ namespace Wolf
 
 		/* Shadow Mask*/
 		int m_shadowMaskComputePassID;
-		Texture* m_shadowMaskOutputTexture;
-		Texture* m_volumetricLightOutputTexture;
+		Image* m_shadowMaskOutputImage;
+		Image* m_volumetricLightOutputImage;
 		int m_shadowMaskCommandBufferID = -2;
 
 		struct ShadowMaskUBO

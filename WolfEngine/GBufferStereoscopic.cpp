@@ -85,7 +85,7 @@ Wolf::GBufferStereoscopic::GBufferStereoscopic(Wolf::WolfInstance* engineInstanc
 			rendererCreateInfo.pipelineCreateInfo.viewportOffset = { 0.5f, 0.0f };
 		}
 
-		rendererCreateInfo.descriptorLayouts = descriptorSetGenerator.getDescriptorLayouts();
+		rendererCreateInfo.descriptorSetLayout = descriptorSetGenerator.getDescriptorLayouts();
 
 		rendererCreateInfo.pipelineCreateInfo.alphaBlending = { false, false };
 

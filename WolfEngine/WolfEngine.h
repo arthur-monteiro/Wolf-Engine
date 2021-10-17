@@ -48,8 +48,7 @@ namespace Wolf
 		Instance<T>* createInstanceBuffer();
 		UniformBuffer* createUniformBufferObject(void* data, VkDeviceSize size);
 		Buffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags);
-		[[deprecated("Use createImage instead")]]
-		Texture* createTexture();
+		[[deprecated("Use createImage instead")]] Texture* createTexture();
 
 		// Image creation
 		Image* createImageFromFile(std::string filename);

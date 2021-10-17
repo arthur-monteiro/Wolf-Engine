@@ -9,7 +9,7 @@ namespace Wolf
 	public:
 		Blur(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int commandBufferID, Image* inputImage, Image* depthImage);
 
-		Texture* getTextureOutput() { return m_downscaledBlurredTexture2; }
+		Image* getOutputImage() { return m_downscaledBlurredImage2; }
 		std::vector<int> getCommandBufferIDs()
 		{
 			std::vector<int> r =  m_downscaleCommandBufferIDs;
@@ -40,14 +40,14 @@ namespace Wolf
 		// Downscale
 		std::vector<int> m_downscaleCommandBufferIDs;
 		std::vector<int> m_downscaleComputePasses;
-		std::vector<Texture*> m_downscaledTextures;
+		std::vector<Image*> m_downscaledImages;
 
 		// Blur
 		int m_horizontalBlurComputePass = -1;
 		int m_horizontalBlurCommandBuffer = -2;
 		int m_verticalBlurComputePass = -1;
 		int m_verticalBlurCommandBuffer = -2;
-		Texture* m_downscaledBlurredTexture;
-		Texture* m_downscaledBlurredTexture2;
+		Image* m_downscaledBlurredImage;
+		Image* m_downscaledBlurredImage2;
 	};
 }

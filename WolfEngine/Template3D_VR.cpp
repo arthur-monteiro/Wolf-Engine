@@ -49,7 +49,7 @@ Wolf::Template3D_VR::Template3D_VR(Wolf::WolfInstance* wolfInstance, Wolf::Scene
  
  		m_directLightingCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
  		m_directLighting = std::make_unique<DirectLightingStereoscopic>(wolfInstance, scene, m_directLightingCommandBufferID, m_wolfInstance->getWindowSize(), depth,
- 			albedo, normalRoughnessMetal, m_cascadedShadowMapping->getOutputShadowMaskTexture()->getImage(), m_cascadedShadowMapping->getOutputVolumetricLightMaskTexture()->getImage(),
+ 			albedo, normalRoughnessMetal, m_cascadedShadowMapping->getOutputShadowMaskImage(), m_cascadedShadowMapping->getOutputVolumetricLightMaskTexture(),
  			nullptr, nullptr, m_wolfInstance->getVRProjMatrices(), 0.2f, 100.0f);
  	}
 

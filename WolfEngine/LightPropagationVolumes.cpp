@@ -102,7 +102,7 @@ Wolf::LightPropagationVolumes::LightPropagationVolumes(Wolf::WolfInstance* engin
 		descriptorSetGenerator.addImages({ m_voxelTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 		descriptorSetGenerator.addUniformBuffer(m_uboVoxelization, VK_SHADER_STAGE_VERTEX_BIT, 0);
 
-		rendererCreateInfo.descriptorLayouts = descriptorSetGenerator.getDescriptorLayouts();
+		rendererCreateInfo.descriptorSetLayout = descriptorSetGenerator.getDescriptorLayouts();
 
 		m_voxelisationRendererID = m_scene->addRenderer(rendererCreateInfo);
 
@@ -283,7 +283,7 @@ void Wolf::LightPropagationVolumes::buildInjection(Model* model, glm::vec4 casca
 	
 	descriptorSetGenerator.addUniformBuffer(m_uboInjection, VK_SHADER_STAGE_VERTEX_BIT, 0);
 
-	rendererCreateInfo.descriptorLayouts = descriptorSetGenerator.getDescriptorLayouts();
+	rendererCreateInfo.descriptorSetLayout = descriptorSetGenerator.getDescriptorLayouts();
 
 	m_voxelisationRendererID = m_scene->addRenderer(rendererCreateInfo);
 

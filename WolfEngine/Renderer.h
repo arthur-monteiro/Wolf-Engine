@@ -28,7 +28,7 @@ namespace Wolf
 		InstanceTemplate instanceTemplate = InstanceTemplate::NO;
 
 		// Descriptor set layout
-		std::vector<DescriptorLayout> descriptorLayouts;
+		std::vector<DescriptorLayout> descriptorSetLayout;
 	};
 	
 	class Renderer

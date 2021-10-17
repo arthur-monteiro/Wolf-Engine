@@ -1,20 +1,15 @@
-﻿  AccelerationStructure.cpp
-  Blur.cpp
-  BottomLevelAccelerationStructure.cpp
+﻿  Blur.cpp
   CascadedShadowMapping.cpp
   CascadedShadowMappingStereoscopic.cpp
-  ComputePass.cpp
   DepthPass.cpp
-  DescriptorSet.cpp
   DirectLightingPBR.cpp
   DirectLightingStereoscopic.cpp
   GBuffer.cpp
   GBufferStereoscopic.cpp
   LightPropagationVolumes.cpp
-  RayTracingPass.cpp
   Renderer.cpp
-  SSAO.cpp
   Scene.cpp
+  SSAO.cpp
   Template3D.cpp
   Template3D_VR.cpp
   WolfEngine.cpp
