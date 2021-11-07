@@ -12,7 +12,7 @@ namespace Wolf
 	public:
 		DepthPass() = default;
 		DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, bool outputIsSwapChain, VkExtent2D extent, VkSampleCountFlagBits sampleCount,
-			Model* model, glm::mat4 mvp, bool useAsStorage, bool useAsSampled);
+			const Model* model, glm::mat4 mvp, bool useAsStorage, bool useAsSampled);
 		~DepthPass() = default;
 
 		void update(glm::mat4 mvp);

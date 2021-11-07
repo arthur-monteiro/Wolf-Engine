@@ -1,7 +1,7 @@
 #include "DepthPass.h"
 
 Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, bool outputIsSwapChain, VkExtent2D extent, VkSampleCountFlagBits sampleCount,
-	Model* model, glm::mat4 mvp, bool useAsStorage, bool useAsSampled)
+	const Model* model, glm::mat4 mvp, bool useAsStorage, bool useAsSampled)
 {
 	m_engineInstance = engineInstance;
 	m_scene = scene;
@@ -71,6 +71,8 @@ Wolf::DepthPass::DepthPass(Wolf::WolfInstance* engineInstance, Wolf::Scene* scen
 	addMeshInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 
 	m_scene->addMesh(addMeshInfo);
+
+	//m_scene->getRenderPassOutput(m_renderPassID, 0, 0)->setImageLayout(VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, useAsStorage ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 }
 
 void Wolf::DepthPass::update(glm::mat4 mvp)

@@ -35,10 +35,10 @@ namespace Wolf
 		};
 		virtual void loadObj(ModelLoadingInfo modelLoadingInfo) {}
 
-		virtual std::vector<VertexBuffer> getVertexBuffers() { return {}; }
-		virtual size_t getNumberOfImages() { return m_images.size(); }
-		virtual Sampler* getSampler() { return m_sampler.get(); }
-		virtual std::vector<Image*> getImages();
+		virtual std::vector<VertexBuffer> getVertexBuffers() const { return {}; }
+		virtual size_t getNumberOfImages() const { return m_images.size(); }
+		virtual Sampler* getSampler() const { return m_sampler.get(); }
+		virtual std::vector<Image*> getImages() const;
 		
 	protected:
 		VkDevice m_device;

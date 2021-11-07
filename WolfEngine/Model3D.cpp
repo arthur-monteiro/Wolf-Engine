@@ -188,7 +188,7 @@ bool Wolf::Model3D::checkIntersection(glm::vec3 point1, glm::vec3 point2)
 	return false;
 }
 
-std::vector<Wolf::VertexBuffer> Wolf::Model3D::getVertexBuffers()
+std::vector<Wolf::VertexBuffer> Wolf::Model3D::getVertexBuffers() const
 {
 	std::vector<VertexBuffer> vertexBuffers;
 

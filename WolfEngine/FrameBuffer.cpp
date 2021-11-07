@@ -23,7 +23,14 @@ bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDev
 		else
 		{
 			VkExtent3D extent3D = { extent.width, extent.height, 1 };
-			m_images[i] = std::make_unique<Image>(device, physicalDevice, commandPool, graphicsQueue, extent3D, attachments[i].usageType, attachments[i].format, attachments[i].sampleCount, aspect);
+			Image::CreateImageInfo createImageInfo;
+			createImageInfo.extent = extent3D;
+			createImageInfo.usage = attachments[i].usageType;
+			createImageInfo.format = attachments[i].format;
+			createImageInfo.sampleCount = attachments[i].sampleCount;
+			createImageInfo.aspect = aspect;
+			createImageInfo.mipLevels = 1;
+			m_images[i] = std::make_unique<Image>(device, physicalDevice, commandPool, graphicsQueue, createImageInfo);
 			imageViewAttachments[i] = m_images[i]->getImageView();
 		}
 	}
@@ -78,8 +85,14 @@ bool Wolf::Framebuffer::initialize(VkDevice device, VkPhysicalDevice physicalDev
 				aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
 
 			VkExtent3D extent = { image->getExtent().width, image->getExtent().height, 1 };
-			m_images[currentImage] = std::make_unique<Image>(device, physicalDevice, commandPool, graphicsQueue, extent, attachments[i].usageType, attachments[i].format, 
-				attachments[i].sampleCount, aspect);
+			Image::CreateImageInfo createImageInfo;
+			createImageInfo.extent = extent;
+			createImageInfo.usage = attachments[i].usageType;
+			createImageInfo.format = attachments[i].format;
+			createImageInfo.sampleCount = attachments[i].sampleCount;
+			createImageInfo.aspect = aspect;
+			createImageInfo.mipLevels = 1;
+			m_images[currentImage] = std::make_unique<Image>(device, physicalDevice, commandPool, graphicsQueue, createImageInfo);
 
 			imageViewAttachments[i] = m_images[currentImage]->getImageView();
 

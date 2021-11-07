@@ -43,10 +43,15 @@ Wolf::SSAO::SSAO(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 
 	m_uniformBuffer = engineInstance->createUniformBufferObject(&m_uboData, sizeof(UBOData));
 
-	m_outputTexture = engineInstance->createTexture();
-	m_outputTexture->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_SFLOAT, VK_SAMPLE_COUNT_1_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT);
-	m_outputTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	Image::CreateImageInfo createImageInfo;
+	createImageInfo.extent = { engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 };
+	createImageInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+	createImageInfo.format = VK_FORMAT_R32_SFLOAT;
+	createImageInfo.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+	createImageInfo.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+	createImageInfo.mipLevels = 1;
+	m_outputImage = engineInstance->createImage(createImageInfo);
+	m_outputImage->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 	
 	Scene::ComputePassCreateInfo computePassCreateInfo;
 	computePassCreateInfo.extent = engineInstance->getWindowSize();
@@ -57,12 +62,12 @@ Wolf::SSAO::SSAO(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 	DescriptorSetGenerator descriptorSetGenerator;
 	descriptorSetGenerator.addImages({ depth }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
 	descriptorSetGenerator.addImages({ normal }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-	descriptorSetGenerator.addImages({ m_outputTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 2);
+	descriptorSetGenerator.addImages({ m_outputImage }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 2);
 	descriptorSetGenerator.addUniformBuffer(m_uniformBuffer, VK_SHADER_STAGE_COMPUTE_BIT, 3);
 
 	computePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 	
 	m_computePassID = scene->addComputePass(computePassCreateInfo);
 
-	m_blur = std::make_unique<Blur>(engineInstance, scene, commandBufferID, m_outputTexture->getImage(), nullptr);
+	m_blur = std::make_unique<Blur>(engineInstance, scene, commandBufferID, m_outputImage, nullptr);
 }

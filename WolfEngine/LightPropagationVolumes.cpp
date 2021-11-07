@@ -6,10 +6,15 @@ Wolf::LightPropagationVolumes::LightPropagationVolumes(Wolf::WolfInstance* engin
 	m_engineInstance = engineInstance;
 	m_scene = scene;
 
-	m_voxelTexture = engineInstance->createTexture();
-	m_voxelTexture->create({ VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R8_UNORM, VK_SAMPLE_COUNT_1_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT);
-	m_voxelTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	Image::CreateImageInfo createImageInfo;
+	createImageInfo.extent = { VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE };
+	createImageInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+	createImageInfo.format = VK_FORMAT_R8_UNORM;
+	createImageInfo.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+	createImageInfo.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+	createImageInfo.mipLevels = 1;
+	m_voxelImage = engineInstance->createImage(createImageInfo);
+	m_voxelImage->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 	//modelMat = glm::mat4(1.0f);
 	// X
@@ -99,7 +104,7 @@ Wolf::LightPropagationVolumes::LightPropagationVolumes(Wolf::WolfInstance* engin
 		rendererCreateInfo.pipelineCreateInfo.alphaBlending = { false };
 
 		DescriptorSetGenerator descriptorSetGenerator;
-		descriptorSetGenerator.addImages({ m_voxelTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+		descriptorSetGenerator.addImages({ m_voxelImage }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 		descriptorSetGenerator.addUniformBuffer(m_uboVoxelization, VK_SHADER_STAGE_VERTEX_BIT, 0);
 
 		rendererCreateInfo.descriptorSetLayout = descriptorSetGenerator.getDescriptorLayouts();
@@ -122,9 +127,13 @@ Wolf::LightPropagationVolumes::LightPropagationVolumes(Wolf::WolfInstance* engin
 	// Voxel viewer
 	{
 		// Data
-		m_viewerOutput = engineInstance->createTexture();
-		m_viewerOutput->create({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_SAMPLE_COUNT_1_BIT,
-			VK_IMAGE_ASPECT_COLOR_BIT);
+		createImageInfo.extent = { engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 };
+		createImageInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+		createImageInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		createImageInfo.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+		createImageInfo.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+		createImageInfo.mipLevels = 1;
+		m_viewerOutput = engineInstance->createImage(createImageInfo);
 		m_viewerOutput->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 		m_voxelViewerMatrices[2] = glm::ortho(-32.0f, 32.0f, -4.0f, 16.0f, 0.0f, 64.0f) *
@@ -144,11 +153,11 @@ Wolf::LightPropagationVolumes::LightPropagationVolumes(Wolf::WolfInstance* engin
 		voxelViewerComputePassCreateInfo.dispatchGroups = { 16, 16, 1 };
 
 		DescriptorSetGenerator descriptorSetGenerator;
-		descriptorSetGenerator.addImages({ m_injectionTextures[0]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
-		descriptorSetGenerator.addImages({ m_injectionTextures[1]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-		descriptorSetGenerator.addImages({ m_injectionTextures[2]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 2);
-		descriptorSetGenerator.addImages({ m_injectionTextures.back()->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 3);
-		descriptorSetGenerator.addImages({ m_viewerOutput->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 4);
+		descriptorSetGenerator.addImages({ m_injectionImages[0] }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
+		descriptorSetGenerator.addImages({ m_injectionImages[1] }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+		descriptorSetGenerator.addImages({ m_injectionImages[2] }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 2);
+		descriptorSetGenerator.addImages({ m_injectionImages.back() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 3);
+		descriptorSetGenerator.addImages({ m_viewerOutput }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 4);
 		descriptorSetGenerator.addUniformBuffer(m_uboVoxelViewer, VK_SHADER_STAGE_COMPUTE_BIT, 5);
 
 		voxelViewerComputePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
@@ -171,8 +180,8 @@ Wolf::LightPropagationVolumes::LightPropagationVolumes(Wolf::WolfInstance* engin
 
 		DescriptorSetGenerator descriptorSetGenerator;
 
-		for (int i(0); i < m_injectionTextures.size(); ++i)
-			descriptorSetGenerator.addImages({ m_injectionTextures[i]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, i);
+		for (int i(0); i < m_injectionImages.size(); ++i)
+			descriptorSetGenerator.addImages({ m_injectionImages[i] }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, i);
 
 		clearComputePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 			
@@ -194,12 +203,17 @@ void Wolf::LightPropagationVolumes::update(glm::mat4 view, std::array<glm::mat4,
 void Wolf::LightPropagationVolumes::buildInjection(Model* model, glm::vec4 cascadeSplits, std::array<Image*, 4> depthTextures)
 {
 	// Data
-	for(int i(0); i < m_injectionTextures.size(); ++i)
+	for(int i(0); i < m_injectionImages.size(); ++i)
 	{
-		m_injectionTextures[i] = m_engineInstance->createTexture();
-		m_injectionTextures[i]->create({ VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32_UINT, VK_SAMPLE_COUNT_1_BIT,
-			VK_IMAGE_ASPECT_COLOR_BIT);
-		m_injectionTextures[i]->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 
+		Image::CreateImageInfo createImageInfo;
+		createImageInfo.extent = { VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE };
+		createImageInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+		createImageInfo.format = VK_FORMAT_R32_UINT;
+		createImageInfo.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+		createImageInfo.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+		createImageInfo.mipLevels = 1;
+		m_injectionImages[i] = m_engineInstance->createImage(createImageInfo);
+		m_injectionImages[i]->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 
 			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 	}
 	
@@ -263,9 +277,9 @@ void Wolf::LightPropagationVolumes::buildInjection(Model* model, glm::vec4 casca
 
 	DescriptorSetGenerator descriptorSetGenerator;
 	
-	std::vector<Image*> voxelImages(m_injectionTextures.size());
-	for (int i(0); i < m_injectionTextures.size(); ++i)
-		voxelImages[i] = m_injectionTextures[i]->getImage();
+	std::vector<Image*> voxelImages(m_injectionImages.size());
+	for (int i(0); i < m_injectionImages.size(); ++i)
+		voxelImages[i] = m_injectionImages[i];
 	descriptorSetGenerator.addImages(voxelImages, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
 	
 	descriptorSetGenerator.addSampler(model->getSampler(), VK_SHADER_STAGE_FRAGMENT_BIT, 1);
@@ -301,10 +315,15 @@ void Wolf::LightPropagationVolumes::buildInjection(Model* model, glm::vec4 casca
 void Wolf::LightPropagationVolumes::buildPropagation()
 {
 	// Data
-	m_lightVolumesPropagationTexture = m_engineInstance->createTexture();
-	m_lightVolumesPropagationTexture->create({ VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_SAMPLE_COUNT_1_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT);
-	m_lightVolumesPropagationTexture->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	Image::CreateImageInfo createImageInfo;
+	createImageInfo.extent = { VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE };
+	createImageInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+	createImageInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	createImageInfo.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+	createImageInfo.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+	createImageInfo.mipLevels = 1;
+	m_lightVolumesPropagationImage = m_engineInstance->createImage(createImageInfo);
+	m_lightVolumesPropagationImage->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 	// Command Buffer
 	Scene::CommandBufferCreateInfo commandBufferCreateInfo;
@@ -322,11 +341,11 @@ void Wolf::LightPropagationVolumes::buildPropagation()
 
 	DescriptorSetGenerator descriptorSetGenerator;
 
-	for(int i(0);  i < m_injectionTextures.size(); ++i)
-		descriptorSetGenerator.addImages({ m_injectionTextures[i]->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, i);
+	for(int i(0);  i < m_injectionImages.size(); ++i)
+		descriptorSetGenerator.addImages({ m_injectionImages[i] }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, i);
 
-	descriptorSetGenerator.addImages({ m_lightVolumesPropagationTexture->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 
-		static_cast<uint32_t>(m_injectionTextures.size()));
+	descriptorSetGenerator.addImages({ m_lightVolumesPropagationImage }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 
+		static_cast<uint32_t>(m_injectionImages.size()));
 
 	propagationComputePassCreateInfo.descriptorSetCreateInfo = descriptorSetGenerator.getDescritorSetCreateInfo();
 

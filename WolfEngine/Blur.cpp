@@ -12,8 +12,14 @@ Wolf::Blur::Blur(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 	VkExtent2D extent = { inputImage->getExtent().width / 2, inputImage->getExtent().height / 2 };
 	for(int i(0);  i < 3; ++i)
 	{
-		m_downscaledImages[i] = engineInstance->createImage({ extent.width, extent.height, 1 },
-			VK_IMAGE_USAGE_STORAGE_BIT, inputImage->getFormat(), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+		Image::CreateImageInfo createImageInfo;
+		createImageInfo.extent = { extent.width, extent.height, 1 };
+		createImageInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+		createImageInfo.format = inputImage->getFormat();
+		createImageInfo.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+		createImageInfo.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+		createImageInfo.mipLevels = 1;
+		m_downscaledImages[i] = engineInstance->createImage({ createImageInfo });
 		m_downscaledImages[i]->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 		Scene::CommandBufferCreateInfo commandBufferCreateInfo;
@@ -43,8 +49,14 @@ Wolf::Blur::Blur(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 
 	// Blur
 	{
-		m_downscaledBlurredImage = engineInstance->createImage({ m_downscaledImages.back()->getExtent().width, m_downscaledImages.back()->getExtent().height, 1 },
-			VK_IMAGE_USAGE_STORAGE_BIT, inputImage->getFormat(), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+		Image::CreateImageInfo createImageInfo;
+		createImageInfo.extent = { m_downscaledImages.back()->getExtent().width, m_downscaledImages.back()->getExtent().height, 1 };
+		createImageInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+		createImageInfo.format = inputImage->getFormat();
+		createImageInfo.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+		createImageInfo.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+		createImageInfo.mipLevels = 1;
+		m_downscaledBlurredImage = engineInstance->createImage(createImageInfo);
 		m_downscaledBlurredImage->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 		Scene::CommandBufferCreateInfo commandBufferCreateInfo;
@@ -71,8 +83,14 @@ Wolf::Blur::Blur(Wolf::WolfInstance* engineInstance, Wolf::Scene* scene, int com
 
 		// Vertical
 		{
-			m_downscaledBlurredImage2 = engineInstance->createImage({ m_downscaledImages.back()->getExtent().width, m_downscaledImages.back()->getExtent().height, 1 },
-				VK_IMAGE_USAGE_STORAGE_BIT, inputImage->getFormat(), VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+			Image::CreateImageInfo createImageInfo;
+			createImageInfo.extent = { m_downscaledImages.back()->getExtent().width, m_downscaledImages.back()->getExtent().height, 1 };
+			createImageInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+			createImageInfo.format = inputImage->getFormat();
+			createImageInfo.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+			createImageInfo.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+			createImageInfo.mipLevels = 1;
+			m_downscaledBlurredImage2 = engineInstance->createImage(createImageInfo);
 			m_downscaledBlurredImage2->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 			m_verticalBlurCommandBuffer = scene->addCommandBuffer(commandBufferCreateInfo);

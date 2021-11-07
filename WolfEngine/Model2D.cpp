@@ -21,7 +21,7 @@ Wolf::Model2D::~Model2D()
 		m_mesh.cleanup(m_device);
 }
 
-std::vector<Wolf::VertexBuffer> Wolf::Model2D::getVertexBuffers()
+std::vector<Wolf::VertexBuffer> Wolf::Model2D::getVertexBuffers() const
 {
 	std::vector<VertexBuffer> vertexBuffers;
 

@@ -54,7 +54,7 @@ VkCommandPool createCommandPool(VkDevice device, VkPhysicalDevice physicalDevice
 bool hasStencilComponent(VkFormat format);
 bool hasDepthComponent(VkFormat format);
 VkPhysicalDeviceRayTracingPropertiesNV getPhysicalDeviceRayTracingProperties(VkPhysicalDevice physicalDevice);
-void copyImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage source, VkImage dst, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t mipLevel);
+void copyImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage source, VkImage dst, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t dstMipLevel);
 
 // Ray Tracing
 VkAccelerationStructureNV createAccelerationStructure(VkDevice device, std::vector<VkGeometryNV> geometry, VkAccelerationStructureTypeNV accelerationStructureType, uint32_t instanceCount,

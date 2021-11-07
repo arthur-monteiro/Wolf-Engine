@@ -79,10 +79,10 @@ int Wolf::Scene::addRenderPass(Wolf::Scene::RenderPassCreateInfo createInfo, int
 	SceneRenderPass& sceneRenderPass = forceID < 0 ? m_sceneRenderPasses.back() : m_sceneRenderPasses[forceID];
 
 	if (sceneRenderPass.outputIsSwapChain)
-		(sceneRenderPass.renderPass) = std::make_unique<RenderPass>(m_device, m_physicalDevice,
+		sceneRenderPass.renderPass = std::make_unique<RenderPass>(m_device, m_physicalDevice,
 			m_graphicsCommandPool, m_graphicsQueue, attachments, m_swapChainImages);
 	else
-		(sceneRenderPass.renderPass) = std::make_unique<RenderPass>(m_device,
+		sceneRenderPass.renderPass = std::make_unique<RenderPass>(m_device,
 			m_physicalDevice, m_graphicsCommandPool, m_graphicsQueue, attachments, std::vector<VkExtent2D>(createInfo.framebufferCount, createInfo.extent));
 
 	sceneRenderPass.beforeRecord = createInfo.beforeRecord;

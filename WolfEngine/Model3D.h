@@ -17,7 +17,7 @@ namespace Wolf
 
 		bool checkIntersection(glm::vec3 point1, glm::vec3 point2);
 
-		std::vector<Wolf::VertexBuffer> getVertexBuffers();
+		std::vector<Wolf::VertexBuffer> getVertexBuffers() const;
 
 	private:
 		static std::string getTexName(std::string texName, std::string folder);

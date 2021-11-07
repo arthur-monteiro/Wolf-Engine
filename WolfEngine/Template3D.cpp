@@ -55,7 +55,7 @@ Wolf::Template3D::Template3D(Wolf::WolfInstance* wolfInstance, Wolf::Scene* scen
 		m_directLightingSSRBloomCommandBufferID = scene->addCommandBuffer(commandBufferCreateInfo);
 		m_directLighting = std::make_unique<DirectLightingPBR>(wolfInstance, scene, m_directLightingSSRBloomCommandBufferID, m_wolfInstance->getWindowSize(), depth,
 			albedo, normalRoughnessMetal, m_cascadedShadowMapping->getOutputShadowMaskTexture(), m_cascadedShadowMapping->getOutputVolumetricLightMaskImage(),
-			m_ssao->getOutputImage(), m_lightPropagationVolumes->getPropagationTexture()->getImage(), m_projectionMatrix, 0.1f, 100.0f);
+			m_ssao->getOutputImage(), m_lightPropagationVolumes->getPropagationImage(), m_projectionMatrix, 0.1f, 100.0f);
 
 		// Merge
 		Scene::ComputePassCreateInfo mergeComputePassCreateInfo;

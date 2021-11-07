@@ -5,7 +5,6 @@
 #include "Semaphore.h"
 #include "Image.h"
 #include "UniformBuffer.h"
-#include "Texture.h"
 #include "Pipeline.h"
 #include "VulkanElement.h"
 #include "DescriptorSet.h"

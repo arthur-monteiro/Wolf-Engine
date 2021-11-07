@@ -44,7 +44,13 @@ Wolf::Font::Font(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool
 
 		m_images.emplace_back();
 		VkExtent3D extent3D = { texWidth, texHeight, 1 };
-		m_images[m_images.size() - 1] = std::make_unique<Image>(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, extent3D, VK_FORMAT_R8_UNORM, pixels);
+
+		Image::CreateImageInfo createImageInfo;
+		createImageInfo.extent = extent3D;
+		createImageInfo.format = VK_FORMAT_R8_UNORM;
+		createImageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		m_images[m_images.size() - 1] = std::make_unique<Image>(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, createImageInfo);
+		m_images.back()->copyPixels(pixels);
 
 		m_characters[c].textureID = static_cast<unsigned int>(m_images.size() - 1);
 

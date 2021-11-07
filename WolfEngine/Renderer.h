@@ -6,7 +6,6 @@
 #include "VulkanHelper.h"
 #include "Image.h"
 #include "InputVertexTemplate.h"
-#include "Texture.h"
 #include "UniformBuffer.h"
 #include "Instance.h"
 #include "InstanceTemplate.h"

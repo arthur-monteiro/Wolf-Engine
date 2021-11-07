@@ -68,10 +68,16 @@ Wolf::Template3D_VR::Template3D_VR(Wolf::WolfInstance* wolfInstance, Wolf::Scene
 		toneMappingComputePassCreateInfo.extent = m_wolfInstance->getWindowSize();
 
 		DescriptorSetGenerator mergeDescriptorSetGenerator;
-		mergeDescriptorSetGenerator.addImages({ m_directLighting->getOutputTexture()->getImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
+		mergeDescriptorSetGenerator.addImages({ m_directLighting->getOutputImage() }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
 
-		m_toneMappingOutputImage = wolfInstance->createImage({ m_wolfInstance->getWindowSize().width, m_wolfInstance->getWindowSize().height, 1 }, 
-			VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+		Image::CreateImageInfo createImageInfo;
+		createImageInfo.extent = { m_wolfInstance->getWindowSize().width, m_wolfInstance->getWindowSize().height, 1 };
+		createImageInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+		createImageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+		createImageInfo.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+		createImageInfo.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+		createImageInfo.mipLevels = 1;
+		m_toneMappingOutputImage = wolfInstance->createImage(createImageInfo);
 		m_toneMappingOutputImage->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		mergeDescriptorSetGenerator.addImages({ m_toneMappingOutputImage }, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
 

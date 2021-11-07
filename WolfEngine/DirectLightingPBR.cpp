@@ -5,8 +5,14 @@ Wolf::DirectLightingPBR::DirectLightingPBR(Wolf::WolfInstance* engineInstance, W
 	glm::mat4 projection, float near, float far)
 {
 	// Data
-	m_outputImage = engineInstance->createImage({ engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 }, VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_R32G32B32A32_SFLOAT,
-		VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+	Image::CreateImageInfo createImageInfo;
+	createImageInfo.extent = { engineInstance->getWindowSize().width, engineInstance->getWindowSize().height, 1 };
+	createImageInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+	createImageInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	createImageInfo.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+	createImageInfo.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+	createImageInfo.mipLevels = 1;
+	m_outputImage = engineInstance->createImage(createImageInfo);
 	m_outputImage->setImageLayout(VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 	m_uboData.directionDirectionalLight = glm::vec4(-1.0f, -5.0f, 0.0f, 1.0f);

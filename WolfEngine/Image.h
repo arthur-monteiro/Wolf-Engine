@@ -16,18 +16,30 @@ namespace Wolf
 {
 	class Image : public VulkanElement
 	{
-	public:		
-		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect);
+	public:
+		struct CreateImageInfo
+		{
+			VkExtent3D extent = { 0, 0, 0};
+			VkImageUsageFlags usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+			VkFormat format = VK_FORMAT_UNDEFINED;
+			VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
+			VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+			uint32_t mipLevels = UINT32_MAX;
+			uint32_t arrayLayers = 1;
+		};
+
+		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, const CreateImageInfo& createImageInfo);
 		Image(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkExtent2D extent);
-		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format, unsigned char* pixels);
-		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkExtent3D extent, VkFormat format, VkBuffer buffer);
 		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::string filename);
-		Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, std::array<Image*, 6> images);
 
 		~Image();
 
 		Image(const Image&) = default;
 		Image& operator=(const Image&) = default;
+
+		void copyPixels(unsigned char* pixels);
+		void copyBuffer(VkBuffer buffer);
+		void copyImagesToCubemap(std::array<Image*, 6> images, std::vector<std::pair<uint8_t, uint8_t>> mipsToCopy, bool generateMipsLevels);
 
 		void setImageLayout(VkImageLayout newLayout, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage);
 		void setImageLayoutWithoutOperation(VkImageLayout newImageLayout) { m_imageLayout = newImageLayout; }
@@ -52,6 +64,7 @@ namespace Wolf
 		uint32_t m_mipLevels;
 		VkExtent3D m_extent;
 		VkSampleCountFlagBits m_sampleCount;
+		uint32_t m_arrayLayers;
 
 	private:
 		static void createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipLevels, VkSampleCountFlagBits numSamples, 
@@ -63,9 +76,6 @@ namespace Wolf
 		static void copyBufferToImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t baseArrayLayer);
 		static void generateMipmaps(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue, VkImage image, VkFormat imageFormat, int32_t texWidth,
 			int32_t texHeight, uint32_t mipLevels, uint32_t baseArrayLayer);
-
-		void initFromPixels(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, Queue graphicsQueue,
-			VkExtent3D extent, VkFormat format, unsigned char* pixels);
 
 	public:
 		static void transitionImageLayoutUsingCommandBuffer(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,

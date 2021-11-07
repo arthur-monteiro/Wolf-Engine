@@ -48,12 +48,10 @@ namespace Wolf
 		Instance<T>* createInstanceBuffer();
 		UniformBuffer* createUniformBufferObject(void* data, VkDeviceSize size);
 		Buffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags);
-		[[deprecated("Use createImage instead")]] Texture* createTexture();
 
 		// Image creation
 		Image* createImageFromFile(std::string filename);
-		Image* createImage(VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect);
-		Image* createCubemapFromImages(std::array<Image*, 6> images);
+		Image* createImage(Image::CreateImageInfo createImageInfo);
 
 		// Sampler creation
 		Sampler* createSampler(VkSamplerAddressMode addressMode, float mipLevels, VkFilter filter, float maxAnisotropy = 16.0f, float minLod = 0.0f, float mipLodBias = 0.0f);
@@ -104,7 +102,6 @@ namespace Wolf
 		std::vector<std::unique_ptr<Model>> m_models;
 		std::vector<std::unique_ptr<InstanceParent>> m_instances;
 		std::vector<std::unique_ptr<UniformBuffer>> m_uniformBufferObjects;
-		std::vector<std::unique_ptr<Texture>> m_textures;
 		std::vector<std::unique_ptr<Image>> m_images;
 		std::vector<std::unique_ptr<Sampler>> m_samplers;
 		std::vector<std::unique_ptr<Font>> m_fonts;

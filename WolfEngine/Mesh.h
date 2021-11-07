@@ -40,7 +40,7 @@ namespace Wolf
 			vkFreeMemory(device, m_indexBufferMemory, nullptr);
 		}
 
-		VertexBuffer getVertexBuffer() { return { m_vertexBuffer, static_cast<unsigned int>(m_vertices.size()), m_indexBuffer, static_cast<unsigned int>(m_indices.size()) }; }
+		VertexBuffer getVertexBuffer() const { return { m_vertexBuffer, static_cast<unsigned int>(m_vertices.size()), m_indexBuffer, static_cast<unsigned int>(m_indices.size()) }; }
 
 		const std::vector<T> getVertices() { return m_vertices; }
 		const std::vector<uint32_t> getIndices() { return m_indices; }

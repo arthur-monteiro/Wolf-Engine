@@ -192,7 +192,6 @@
     <ClCompile Include="Template3D.cpp" />
     <ClCompile Include="Template3D_VR.cpp" />
     <ClCompile Include="Text.cpp" />
-    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TopLevelAccelerationStructure.cpp" />
     <ClCompile Include="UniformBuffer.cpp" />
     <ClCompile Include="Vulkan.cpp" />
@@ -248,7 +247,6 @@
     <ClInclude Include="Template3D.h" />
     <ClInclude Include="Template3D_VR.h" />
     <ClInclude Include="Text.h" />
-    <ClInclude Include="Texture.h" />
     <ClInclude Include="TopLevelAccelerationStructure.h" />
     <ClInclude Include="UniformBuffer.h" />
     <ClInclude Include="Vulkan.h" />

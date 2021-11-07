@@ -50,13 +50,6 @@ Wolf::Buffer* Wolf::WolfInstance::createBuffer(VkDeviceSize size, VkBufferUsageF
 	return m_buffers.back().get();
 }
 
-Wolf::Texture* Wolf::WolfInstance::createTexture()
-{
-	m_textures.push_back(std::make_unique<Texture>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue()));
-
-	return m_textures[m_textures.size() - 1].get();
-}
-
 Wolf::Image* Wolf::WolfInstance::createImageFromFile(std::string filename)
 {
 	m_images.push_back(std::make_unique<Image>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(), 
@@ -65,16 +58,9 @@ Wolf::Image* Wolf::WolfInstance::createImageFromFile(std::string filename)
 	return m_images.back().get();
 }
 
-Wolf::Image* Wolf::WolfInstance::createImage(VkExtent3D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageAspectFlags aspect)
+Wolf::Image* Wolf::WolfInstance::createImage(Image::CreateImageInfo createImageInfo)
 {
-	m_images.push_back(std::make_unique<Image>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(), extent, usage, format, sampleCount, aspect));
-
-	return m_images.back().get();
-}
-
-Wolf::Image* Wolf::WolfInstance::createCubemapFromImages(std::array<Image*, 6> images)
-{
-	m_images.push_back(std::make_unique<Image>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(), std::move(images)));
+	m_images.push_back(std::make_unique<Image>(m_vulkan->getDevice(), m_vulkan->getPhysicalDevice(), m_graphicsCommandPool.getCommandPool(), m_vulkan->getGraphicsQueue(), createImageInfo));
 
 	return m_images.back().get();
 }

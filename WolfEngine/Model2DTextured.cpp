@@ -22,7 +22,7 @@ int Wolf::Model2DTextured::addMeshFromVertices(void* vertices, uint32_t vertexCo
 	return static_cast<int>(m_meshes.size() - 1);
 }
 
-std::vector<Wolf::VertexBuffer> Wolf::Model2DTextured::getVertexBuffers()
+std::vector<Wolf::VertexBuffer> Wolf::Model2DTextured::getVertexBuffers() const
 {
 	std::vector<VertexBuffer> vertexBuffers;
 

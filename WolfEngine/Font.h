@@ -6,7 +6,8 @@
 #include <map>
 
 #include "VulkanElement.h"
-#include "Texture.h"
+#include "Image.h"
+#include "Sampler.h"
 
 namespace Wolf
 {

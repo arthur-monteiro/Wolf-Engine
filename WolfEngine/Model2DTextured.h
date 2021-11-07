@@ -14,7 +14,7 @@ namespace Wolf
 		
 		int addMeshFromVertices(void* vertices, uint32_t vertexCount, size_t vertexSize, std::vector<uint32_t> indices) override;
 
-		std::vector<Wolf::VertexBuffer> getVertexBuffers();
+		std::vector<Wolf::VertexBuffer> getVertexBuffers() const;
 
 	private:
 		std::vector<Wolf::Mesh<Vertex2DTextured>> m_meshes;

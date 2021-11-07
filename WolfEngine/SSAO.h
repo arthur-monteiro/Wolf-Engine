@@ -18,7 +18,7 @@ namespace Wolf
 
 	private:
 		int m_computePassID;
-		Texture* m_outputTexture;
+		Image* m_outputImage;
 
 		struct UBOData
 		{

@@ -25,8 +25,8 @@ namespace Wolf
 
 			return r;
 		}
-		Texture* getPropagationTexture() { return m_lightVolumesPropagationTexture; }
-		Texture* getVoxelViewerOutput() { return m_viewerOutput; }
+		Image* getPropagationImage() { return m_lightVolumesPropagationImage; }
+		Image* getVoxelViewerOutput() { return m_viewerOutput; }
 
 	private:
 		void buildInjection(Model* model, glm::vec4 cascadeSplits, std::array<Image*, 4> depthTextures);
@@ -41,7 +41,7 @@ namespace Wolf
 		int m_commandBufferID = -2;
 		int m_renderPassID = -1;
 		int m_voxelisationRendererID = -1;
-		Texture* m_voxelTexture;
+		Image* m_voxelImage;
 
 		UniformBuffer* m_uboVoxelization;
 		std::array<glm::mat4, 3> m_projections;
@@ -52,7 +52,7 @@ namespace Wolf
 		/* Voxel viewer*/
 		int m_viewerBufferID = -2;
 		int m_viewerComputePassID = -1;
-		Texture* m_viewerOutput;
+		Image* m_viewerOutput;
 		UniformBuffer* m_uboVoxelViewer;
 		std::array<glm::mat4, 3> m_voxelViewerMatrices;
 
@@ -65,7 +65,7 @@ namespace Wolf
 		int m_injectionRenderPassID = -1;
 		int m_injectionRendererID = -1;
 
-		std::array<Texture*, 7> m_injectionTextures;
+		std::array<Image*, 7> m_injectionImages;
 		UniformBuffer* m_uboInjection;
 
 		struct InjectionUBO
@@ -106,7 +106,7 @@ namespace Wolf
 		UniformBufferObjectInjection m_uboInjectionData;*/
 
 		/* Propagation */
-		Texture* m_lightVolumesPropagationTexture;
+		Image* m_lightVolumesPropagationImage;
 		int m_propagationCommandBufferID = -2;
 		int m_propagationComputePassID = -1;
 	};

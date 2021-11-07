@@ -16,7 +16,7 @@ namespace Wolf
 
 		int addMeshFromVertices(void* vertices, uint32_t vertexCount, size_t vertexSize, std::vector<uint32_t> indices) override;
 
-		std::vector<Wolf::VertexBuffer> getVertexBuffers();
+		std::vector<Wolf::VertexBuffer> getVertexBuffers() const;
 
 	private:
 		std::vector<Wolf::Mesh<T>> m_meshes;
@@ -47,7 +47,7 @@ namespace Wolf
 	}
 
 	template <typename T>
-	std::vector<Wolf::VertexBuffer> ModelCustom<T>::getVertexBuffers()
+	std::vector<Wolf::VertexBuffer> ModelCustom<T>::getVertexBuffers() const
 	{
 		std::vector<VertexBuffer> vertexBuffers;
 

@@ -14,11 +14,11 @@ namespace Wolf
 
 		void update(std::array<glm::vec3, 2> lightDirectionsInViewPosSpace, glm::mat4 voxelProjection);
 
-		Texture* getOutputTexture() { return m_outputTexture; }
+		Image* getOutputImage() { return m_outputImage; }
 
 	private:
 		int m_computePassID;
-		Texture* m_outputTexture;
+		Image* m_outputImage;
 
 		struct UBOData
 		{

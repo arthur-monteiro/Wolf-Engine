@@ -326,7 +326,7 @@ VkPhysicalDeviceRayTracingPropertiesNV getPhysicalDeviceRayTracingProperties(VkP
 	return raytracingProperties;
 }
 
-void copyImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage source, VkImage dst, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t mipLevel)
+void copyImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage source, VkImage dst, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t dstMipLevel)
 {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
 
@@ -340,7 +340,7 @@ void copyImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, 
 
 	copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	copyRegion.dstSubresource.baseArrayLayer = baseArrayLayer;
-	copyRegion.dstSubresource.mipLevel = mipLevel;
+	copyRegion.dstSubresource.mipLevel = dstMipLevel;
 	copyRegion.dstSubresource.layerCount = 1;
 	copyRegion.dstOffset = { 0, 0, 0 };
 

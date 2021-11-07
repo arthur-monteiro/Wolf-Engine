@@ -78,9 +78,6 @@
     <ClCompile Include="Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Texture.cpp">
-      <Filter>Vulkan Elements</Filter>
-    </ClCompile>
     <ClCompile Include="Sampler.cpp">
       <Filter>Vulkan Elements</Filter>
     </ClCompile>
@@ -241,9 +238,6 @@
     </ClInclude>
     <ClInclude Include="Renderer.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Texture.h">
-      <Filter>Vulkan Elements</Filter>
     </ClInclude>
     <ClInclude Include="Sampler.h">
       <Filter>Vulkan Elements</Filter>

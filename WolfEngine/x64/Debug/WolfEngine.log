@@ -1,17 +1,2 @@
-﻿  Blur.cpp
-  CascadedShadowMapping.cpp
-  CascadedShadowMappingStereoscopic.cpp
-  DepthPass.cpp
-  DirectLightingPBR.cpp
-  DirectLightingStereoscopic.cpp
-  GBuffer.cpp
-  GBufferStereoscopic.cpp
-  LightPropagationVolumes.cpp
-  Renderer.cpp
-  Scene.cpp
-  SSAO.cpp
-  Template3D.cpp
-  Template3D_VR.cpp
-  WolfEngine.cpp
-  Generating Code...
-  WolfEngine.vcxproj -> D:\Wolf-Engine\x64\Debug\WolfEngine.lib
+﻿  DepthPass.cpp
+  WolfEngine.vcxproj -> F:\Code\WolfEngine\x64\Debug\WolfEngine.lib
