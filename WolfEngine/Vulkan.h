@@ -87,11 +87,13 @@ namespace Wolf
 		std::vector<const char*> m_deviceExtensions = std::vector<const char*>();
 		VkDebugUtilsMessengerEXT m_debugMessenger;
 
-		/* Ray Tracing Availability */
-		bool m_raytracingAvailable = false;
+		/* Ray Tracing */
 		std::vector<const char*> m_raytracingDeviceExtensions = std::vector<const char*>();
-		std::vector<const char*> m_OVRDeviceExtensions = std::vector<const char*>();
 		VkPhysicalDeviceRayTracingPropertiesNV m_raytracingProperties = {};
+
+		/* Mesh Shader */
+		std::vector<const char*> m_meshShaderDeviceExtensions = std::vector<const char*>();
+		VkPhysicalDeviceMeshShaderPropertiesNV m_meshShaderProperties = {};
 
 		/* Properties */
 		VkSampleCountFlagBits m_maxMsaaSamples = VK_SAMPLE_COUNT_1_BIT;

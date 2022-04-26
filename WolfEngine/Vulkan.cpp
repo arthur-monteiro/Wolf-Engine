@@ -34,6 +34,7 @@ Wolf::Vulkan::Vulkan(GLFWwindow* glfwWindowPointer, bool useOVR)
 	m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, "VK_KHR_external_memory_win32", VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
 		"VK_KHR_external_semaphore_win32", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, "VK_KHR_external_fence", "VK_KHR_external_fence_win32" };
 	m_raytracingDeviceExtensions = { VK_NV_RAY_TRACING_EXTENSION_NAME };
+	m_meshShaderDeviceExtensions = { VK_NV_MESH_SHADER_EXTENSION_NAME };
 
 	pickPhysicalDevice();
 	createDevice();
@@ -131,10 +132,10 @@ void Wolf::Vulkan::pickPhysicalDevice()
 	{
 		if (isDeviceSuitable(device, m_surface, m_deviceExtensions, m_hardwareCapabilities))
 		{
-			m_raytracingAvailable = isDeviceSuitable(device, m_surface, m_raytracingDeviceExtensions, m_hardwareCapabilities);
-			m_hardwareCapabilities.rayTracingAvailable = m_raytracingAvailable;
+			m_hardwareCapabilities.rayTracingAvailable = isDeviceSuitable(device, m_surface, m_raytracingDeviceExtensions, m_hardwareCapabilities);
+			m_hardwareCapabilities.meshShaderAvailable = isDeviceSuitable(device, m_surface, m_meshShaderDeviceExtensions, m_hardwareCapabilities);
 
-			if (m_raytracingAvailable)
+			if (m_hardwareCapabilities.rayTracingAvailable)
 				for (int i(0); i < m_raytracingDeviceExtensions.size(); ++i)
 					m_deviceExtensions.push_back(m_raytracingDeviceExtensions[i]);
 
@@ -149,8 +150,10 @@ void Wolf::Vulkan::pickPhysicalDevice()
 			deviceProps2.pNext = &m_conservativeRasterProps;
 			vkGetPhysicalDeviceProperties2KHR(m_physicalDevice, &deviceProps2);
 			
-			if (m_raytracingAvailable)
+			if (m_hardwareCapabilities.rayTracingAvailable)
 				m_raytracingProperties = getPhysicalDeviceRayTracingProperties(m_physicalDevice);
+			if (m_hardwareCapabilities.meshShaderAvailable)
+				m_meshShaderProperties = getPhysicalDeviceMeshShaderProperties(m_physicalDevice);
 			break;
 		}
 	}

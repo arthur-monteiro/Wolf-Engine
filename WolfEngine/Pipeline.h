@@ -25,6 +25,7 @@ namespace Wolf
 		std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
 		std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		bool primitiveRestartEnable = false;
 
 		// Viewport
 		VkExtent2D extent = {0, 0 };

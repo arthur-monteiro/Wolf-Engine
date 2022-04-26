@@ -59,7 +59,7 @@ Wolf::Pipeline::Pipeline(VkDevice device, RenderingPipelineCreateInfo renderingP
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	inputAssembly.topology = renderingPipelineCreateInfo.topology;
-	inputAssembly.primitiveRestartEnable = VK_FALSE;
+	inputAssembly.primitiveRestartEnable = renderingPipelineCreateInfo.primitiveRestartEnable;
 
 	/* Viewport */
 	VkViewport viewport = {};

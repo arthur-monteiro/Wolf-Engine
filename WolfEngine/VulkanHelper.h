@@ -28,6 +28,7 @@ struct SwapChainSupportDetails
 struct HardwareCapabilities
 {
 	bool rayTracingAvailable = false;
+	bool meshShaderAvailable = false;
 	VkDeviceSize VRAMSize = 0;
 };
 
@@ -54,6 +55,7 @@ VkCommandPool createCommandPool(VkDevice device, VkPhysicalDevice physicalDevice
 bool hasStencilComponent(VkFormat format);
 bool hasDepthComponent(VkFormat format);
 VkPhysicalDeviceRayTracingPropertiesNV getPhysicalDeviceRayTracingProperties(VkPhysicalDevice physicalDevice);
+VkPhysicalDeviceMeshShaderPropertiesNV getPhysicalDeviceMeshShaderProperties(VkPhysicalDevice physicalDevice);
 void copyImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage source, VkImage dst, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t dstMipLevel);
 
 // Ray Tracing

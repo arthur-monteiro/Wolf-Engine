@@ -326,6 +326,21 @@ VkPhysicalDeviceRayTracingPropertiesNV getPhysicalDeviceRayTracingProperties(VkP
 	return raytracingProperties;
 }
 
+VkPhysicalDeviceMeshShaderPropertiesNV getPhysicalDeviceMeshShaderProperties(VkPhysicalDevice physicalDevice)
+{
+	VkPhysicalDeviceMeshShaderPropertiesNV meshShaderProperties{};
+
+	meshShaderProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV;
+	meshShaderProperties.pNext = nullptr;
+	VkPhysicalDeviceProperties2 props;
+	props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	props.pNext = &meshShaderProperties;
+	props.properties = {};
+	vkGetPhysicalDeviceProperties2(physicalDevice, &props);
+
+	return meshShaderProperties;
+}
+
 void copyImage(VkDevice device, VkCommandPool commandPool, Queue graphicsQueue, VkImage source, VkImage dst, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t dstMipLevel)
 {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
