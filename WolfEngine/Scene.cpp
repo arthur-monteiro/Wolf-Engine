@@ -340,7 +340,7 @@ void Wolf::Scene::addText(AddTextInfo addTextInfo)
 
 	DescriptorSetGenerator descriptorSetGenerator;
 
-	// Uniform Buffer Objects
+	// Uniform Buffer
 	descriptorSetGenerator.addUniformBuffer(addTextInfo.text->getUBO(), VK_SHADER_STAGE_VERTEX_BIT, 0);
 
 	// Images
@@ -446,8 +446,10 @@ void Wolf::Scene::record()
 						{
 							bool isInstancied = std::get<1>(mesh).nInstances > 0 && std::get<1>(mesh).instanceBuffer;
 
-							vkCmdBindVertexBuffers(m_swapChainCommandBuffers[i]->getCommandBuffer(), 0, 1, &std::get<0>(mesh).vertexBuffer, offsets);
-							vkCmdBindIndexBuffer(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(mesh).indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+							if(std::get<0>(mesh).vertexBuffer != VK_NULL_HANDLE)
+								vkCmdBindVertexBuffers(m_swapChainCommandBuffers[i]->getCommandBuffer(), 0, 1, &std::get<0>(mesh).vertexBuffer, offsets);
+							if (std::get<0>(mesh).indexBuffer != VK_NULL_HANDLE)
+								vkCmdBindIndexBuffer(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(mesh).indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 							if (isInstancied)
 								vkCmdBindVertexBuffers(m_swapChainCommandBuffers[i]->getCommandBuffer(), 1, 1, &std::get<1>(mesh).instanceBuffer, offsets);
@@ -456,10 +458,17 @@ void Wolf::Scene::record()
 								vkCmdBindDescriptorSets(m_swapChainCommandBuffers[i]->getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
 									renderer->getPipelineLayout(), 0, 1, &std::get<2>(mesh), 0, nullptr);
 
-							if (!isInstancied)
-								vkCmdDrawIndexed(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(mesh).nbIndices, 1, 0, 0, 0);
+							if (renderer->useMeshShader())
+							{
+								vkCmdDrawMeshTasksNV(m_swapChainCommandBuffers[i]->getCommandBuffer(), 1, 0);
+							}
 							else
-								vkCmdDrawIndexed(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(mesh).nbIndices, std::get<1>(meshesToRender[j]).nInstances, 0, 0, 0);
+							{
+								if (!isInstancied)
+									vkCmdDrawIndexed(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(mesh).nbIndices, 1, 0, 0, 0);
+								else
+									vkCmdDrawIndexed(m_swapChainCommandBuffers[i]->getCommandBuffer(), std::get<0>(mesh).nbIndices, std::get<1>(meshesToRender[j]).nInstances, 0, 0, 0);
+							}
 						}
 					}
 

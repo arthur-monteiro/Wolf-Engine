@@ -20,8 +20,10 @@ namespace Wolf
 		// Programming stages
 		std::vector<ShaderCreateInfo> shaderCreateInfos;
 
-		// IA
+		// Descriptor Set Layout
 		std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+
+		// IA
 		std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
 		std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -61,6 +63,7 @@ namespace Wolf
 
 		VkPipeline getPipeline() const { return m_pipeline; }
 		VkPipelineLayout getPipelineLayout() const { return m_pipelineLayout; }
+		bool useMeshShader() const { return m_useMeshShader; }
 
 	private:
 		void createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayout);
@@ -70,6 +73,8 @@ namespace Wolf
 		
 		VkPipelineLayout m_pipelineLayout;
 		VkPipeline m_pipeline;
+
+		bool m_useMeshShader = false;
 
 	public:
 		static std::vector<char> readFile(const std::string& filename);

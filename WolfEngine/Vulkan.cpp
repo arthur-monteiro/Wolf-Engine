@@ -1,6 +1,18 @@
 #include "Vulkan.h"
 #include "Debug.h"
 
+static VkDevice s_global_device = VK_NULL_HANDLE;
+
+VKAPI_ATTR void VKAPI_CALL
+vkCmdDrawMeshTasksNV(VkCommandBuffer                             commandBuffer,
+	uint32_t                                    taskCount,
+	uint32_t                                    firstTask)
+{
+	static const auto call = reinterpret_cast<PFN_vkCmdDrawMeshTasksNV>(
+		vkGetDeviceProcAddr(s_global_device, "vkCmdDrawMeshTasksNV"));
+	return call(commandBuffer, taskCount, firstTask);
+}
+
 Wolf::Vulkan::Vulkan(GLFWwindow* glfwWindowPointer, bool useOVR)
 {
 	if (useOVR)
@@ -38,6 +50,8 @@ Wolf::Vulkan::Vulkan(GLFWwindow* glfwWindowPointer, bool useOVR)
 
 	pickPhysicalDevice();
 	createDevice();
+
+	s_global_device = m_device;
 }
 
 Wolf::Vulkan::~Vulkan()
@@ -138,6 +152,10 @@ void Wolf::Vulkan::pickPhysicalDevice()
 			if (m_hardwareCapabilities.rayTracingAvailable)
 				for (int i(0); i < m_raytracingDeviceExtensions.size(); ++i)
 					m_deviceExtensions.push_back(m_raytracingDeviceExtensions[i]);
+
+			if (m_hardwareCapabilities.meshShaderAvailable)
+				for (int i(0); i < m_meshShaderDeviceExtensions.size(); ++i)
+					m_deviceExtensions.push_back(m_meshShaderDeviceExtensions[i]);
 
 			m_physicalDevice = device;
 			m_maxMsaaSamples = getMaxUsableSampleCount(m_physicalDevice);

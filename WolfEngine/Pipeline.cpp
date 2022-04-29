@@ -22,6 +22,9 @@ Wolf::Pipeline::Pipeline(VkDevice device, RenderingPipelineCreateInfo renderingP
 	/* Shaders */
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
+#ifndef NDEBUG
+	bool useVertexShader = false;
+#endif
 	std::vector<VkShaderModule> shaderModules;
 	for(auto& shaderCreateInfo : renderingPipelineCreateInfo.shaderCreateInfos)
 	{
@@ -44,8 +47,20 @@ Wolf::Pipeline::Pipeline(VkDevice device, RenderingPipelineCreateInfo renderingP
 		shaderStageInfo.module = shaderModules.back();
 		shaderStageInfo.pName = shaderCreateInfo.entryPointName.data();
 
+#ifndef NDEBUG
+		if (shaderCreateInfo.stage == VK_SHADER_STAGE_VERTEX_BIT)
+			useVertexShader = true;
+#endif
+		if (shaderCreateInfo.stage == VK_SHADER_STAGE_MESH_BIT_NV)
+			m_useMeshShader = true;
+
 		shaderStages.push_back(shaderStageInfo);
 	}
+
+#ifndef NDEBUG
+	if (useVertexShader == m_useMeshShader)
+		Debug::sendError("Pipeline created with mesh shader " + std::to_string(m_useMeshShader) + " and vertex shader " + std::to_string(useVertexShader));
+#endif // !NDEBUG
 
 	/* Input */
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};

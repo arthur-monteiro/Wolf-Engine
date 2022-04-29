@@ -66,9 +66,10 @@ namespace Wolf
 
 		VkPipeline getPipeline() { return m_pipeline->getPipeline(); }
 		std::vector<std::tuple<VertexBuffer, InstanceBuffer, VkDescriptorSet>> getMeshes(int framebufferID = 0);
-		std::vector<AddMeshInfo> getMeshInfos() { return m_meshes; }
-		VkPipelineLayout getPipelineLayout() { return m_pipeline->getPipelineLayout(); }
+		std::vector<AddMeshInfo> getMeshInfos() const { return m_meshes; }
+		VkPipelineLayout getPipelineLayout() const { return m_pipeline->getPipelineLayout(); }
 		RendererCreateInfo getRendererCreateInfoStructure();
+		bool useMeshShader() const { return m_pipeline->useMeshShader(); }
 
 		//void setPipelineCreated(bool status) { m_pipelineCreated = status; }
 
