@@ -13,4 +13,4 @@ This engine helps you to develop Vulkan project with:
 
 You can find [some basic examples here](https://github.com/arthur-monteiro/Wolf-Engine-Examples).
 
-Currently in development.
+Deprecated, now developping Wolf Engine 2.0 (https://github.com/arthur-monteiro/WolfEngine-2.0)
